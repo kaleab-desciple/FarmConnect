@@ -1,0 +1,1 @@
+# FastAPI dependencies (DB, auth, roles)

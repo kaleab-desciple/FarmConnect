@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/reputation.schema.json",
+  "title": "Reputation",
+  "type": "object",
+  "required": [
+    "user_id",
+    "reputation_score"
+  ],
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "completed_orders": {
+      "type": "integer",
+      "default": 0
+    },
+    "successful_orders": {
+      "type": "integer",
+      "default": 0
+    },
+    "disputes_lost": {
+      "type": "integer",
+      "default": 0
+    },
+    "penalties_total": {
+      "type": "number",
+      "default": 0
+    },
+    "avg_delivery_delay": {
+      "type": "integer",
+      "nullable": true
+    },
+    "reputation_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 50
+    }
+  },
+  "additionalProperties": false
+}

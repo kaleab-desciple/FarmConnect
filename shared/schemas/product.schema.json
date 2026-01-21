@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/product.schema.json",
+  "title": "Product",
+  "description": "Product offered by a farmer for sale through the platform",
+  "type": "object",
+  "required": [
+    "id",
+    "farmer_id",
+    "name",
+    "category",
+    "unit",
+    "base_price",
+    "quantity_available",
+    "is_active",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique product identifier"
+    },
+    "farmer_id": {
+      "type": "string",
+      "description": "Owner farmer ID"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "GRAINS",
+        "VEGETABLES",
+        "FRUITS",
+        "DAIRY",
+        "MEAT",
+        "SPICES",
+        "OTHER"
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "KG",
+        "GRAM",
+        "TON",
+        "LITER",
+        "PIECE",
+        "CRATE",
+        "BAG"
+      ],
+      "description": "Measurement unit"
+    },
+    "base_price": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Farmer-set price per unit (before delivery & platform margin)"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "default": "USD"
+    },
+    "quantity_available": {
+      "type": "number",
+      "minimum": 0
+    },
+    "quality_grade": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ],
+      "description": "Optional quality grading"
+    },
+    "harvest_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "location": {
+      "type": "object",
+      "required": [
+        "latitude",
+        "longitude"
+      ],
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "description": "Farm location for geo-clustering & logistics"
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
+      "maxItems": 10
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Whether the product is currently sellable"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Future-proof extension field (certifications, tags, etc.)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

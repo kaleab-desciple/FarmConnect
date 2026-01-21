@@ -1,0 +1,2 @@
+class DisputeRules:
+    pass

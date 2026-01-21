@@ -1,0 +1,2 @@
+class LoanScoringService:
+    pass

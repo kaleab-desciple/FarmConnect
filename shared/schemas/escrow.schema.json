@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/escrow.schema.json",
+  "title": "Escrow",
+  "type": "object",
+  "required": [
+    "id",
+    "order_id",
+    "state",
+    "amount",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "state": {
+      "$ref": "enums.schema.json#/definitions/EscrowState"
+    },
+    "amount": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "penalty_applied": {
+      "type": "boolean",
+      "default": false
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "BANK",
+        "WALLET"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "funded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provider_reference": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

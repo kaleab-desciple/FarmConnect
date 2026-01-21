@@ -1,0 +1,2 @@
+class UserPolicy:
+    pass

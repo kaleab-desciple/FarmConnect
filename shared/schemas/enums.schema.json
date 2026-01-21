@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/enums.schema.json",
+  "definitions": {
+    "UserRole": {
+      "type": "string",
+      "enum": [
+        "FARMER",
+        "MERCHANT",
+        "DELIVERY",
+        "AGENT",
+        "MANAGER",
+        "ADMIN"
+      ]
+    },
+    "OrderStatus": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "CONFIRMED",
+        "DELIVERED",
+        "CANCELLED"
+      ]
+    },
+    "EscrowState": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "FUNDED",
+        "RELEASED",
+        "DISPUTED",
+        "REFUNDED",
+        "SETTLED",
+        "REVERSED"
+      ]
+    },
+    "DisputeState": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "UNDER_REVIEW",
+        "RESOLVED",
+        "REOPENED"
+      ]
+    },
+    "LoanState": {
+      "type": "string",
+      "enum": [
+        "PROPOSED",
+        "APPROVED",
+        "DISBURSED",
+        "ACTIVE",
+        "OVERDUE",
+        "CLOSED",
+        "DEFAULTED"
+      ]
+    },
+    "DisputeResolution": {
+      "type": "string",
+      "enum": [
+        "RELEASE",
+        "PARTIAL_RELEASE",
+        "REFUND"
+      ]
+    }
+  }
+}
