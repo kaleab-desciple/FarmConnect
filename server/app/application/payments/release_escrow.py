@@ -1,4 +1,5 @@
 from app.domain.payments.entities import Escrow, EscrowState
+from app.domain.payments.services.escrow_service import EscrowService
 from app.domain.payments.ports import PaymentProvider
 from app.infrastructure.repositories.payment_repo import EscrowRepository
 from app.infrastructure.repositories.order_repo import OrderRepository
@@ -25,60 +26,50 @@ class ReleaseEscrowUseCase:
         if not escrow:
             raise ValueError("Escrow not found")
 
-        # Ensure state is FUNDED
-        if escrow.state not in (EscrowState.FUNDED, 'FUNDED'):
-            raise ValueError(f"Escrow must be in FUNDED state to be released, current state: {escrow.state}")
+        # Get order to get farmer_id
+        order = self.order_repo.get_by_id(escrow.order_id)
+        if not order or not order.farmer_id:
+            raise ValueError("Order or farmer not found")
 
         # Call payment provider
         reference = self.payment_provider.release_funds(escrow_id)
 
-        # Mark as released
-        escrow.release(reference)
+        # Use domain service for state transition and accounting
+        transition_result = EscrowService.release_escrow(escrow, order.farmer_id, reference)
 
-        # Record Ledger events
-        # 1. Debit the Escrow (Escrow system liability decrease)
-        escrow_debit = LedgerEvent(
-            aggregate_type=AggregateType.ESCROW,
-            aggregate_id=escrow_id,
-            event_type=LedgerEventType.ESCROW_RELEASED,
-            amount=Decimal(escrow.amount),
-            direction=Direction.DEBIT,
-            reference_type=ReferenceType.ESCROW,
-            reference_id=escrow_id,
-            event_metadata={"reference": reference}
-        )
-        self.record_ledger_event.execute(escrow_debit)
+        # Apply the transition
+        escrow.state = transition_result.new_state
+        escrow.provider_reference = reference
 
-        # 2. Credit the Farmer (Asset/Wallet increase)
-        order = self.order_repo.get_by_id(escrow.order_id)
-        if order and order.farmer_id:
-            farmer_credit = LedgerEvent(
-                aggregate_type=AggregateType.USER,
-                aggregate_id=order.farmer_id,
+        # Record the accounting instructions as ledger events
+        for instruction in transition_result.accounting_instructions:
+            ledger_event = LedgerEvent(
+                aggregate_type=AggregateType.ESCROW,
+                aggregate_id=escrow_id,
                 event_type=LedgerEventType.ESCROW_RELEASED,
-                amount=Decimal(escrow.amount),
-                direction=Direction.CREDIT,
+                amount=Decimal(instruction.debit or instruction.credit),
+                direction=Direction.DEBIT if instruction.debit else Direction.CREDIT,
                 reference_type=ReferenceType.ESCROW,
                 reference_id=escrow_id,
-                event_metadata={"reference": reference, "note": "Funds released from escrow for completed order"}
+                event_metadata={
+                    "reference": reference,
+                    "account_type": instruction.account_type,
+                    "account_owner": instruction.account_owner
+                }
             )
-            self.record_ledger_event.execute(farmer_credit)
-
-        # Save
+            self.record_ledger_event.execute(ledger_event)
 
         # Update reputation for successful order completion
-        if order:
-            # Update farmer reputation
-            if order.farmer_id:
-                farmer_reputation = self.reputation_repo.create_or_get(order.farmer_id)
-                farmer_reputation.record_successful_order()
-                self.reputation_repo.save(farmer_reputation)
-            
-            # Update merchant reputation
-            if order.merchant_id:
-                merchant_reputation = self.reputation_repo.create_or_get(order.merchant_id)
-                merchant_reputation.record_successful_order()
-                self.reputation_repo.save(merchant_reputation)
+        # Update farmer reputation
+        farmer_reputation = self.reputation_repo.create_or_get(order.farmer_id)
+        farmer_reputation.record_successful_order()
+        self.reputation_repo.save(farmer_reputation)
+
+        # Update merchant reputation
+        if order.merchant_id:
+            merchant_reputation = self.reputation_repo.create_or_get(order.merchant_id)
+            merchant_reputation.record_successful_order()
+            self.reputation_repo.save(merchant_reputation)
 
         # Save
         return self.escrow_repo.save(escrow)

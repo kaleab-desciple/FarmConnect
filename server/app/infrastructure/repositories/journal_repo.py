@@ -28,7 +28,7 @@ class JournalRepository:
             )
             orm.lines.append(line_orm)
         self.session.add(orm)
-        self.session.commit()
+        # Removed self.session.commit() to allow atomic transactions with other operations
 
     def get_balance_for_account(self, account_id: str) -> Decimal:
         result = self.session.query(
@@ -38,15 +38,24 @@ class JournalRepository:
 
     def get_trial_balance(self) -> Dict[str, Decimal]:
         # Group by account type and sum balances
+        # For assets: debit - credit
+        # For liabilities/equity: credit - debit
         query = self.session.query(
             AccountORM.account_type,
-            func.sum(JournalLineORM.debit_amount - JournalLineORM.credit_amount).label('balance')
+            func.sum(
+                case(
+                    (AccountORM.account_type == 'ASSET', JournalLineORM.debit_amount - JournalLineORM.credit_amount),
+                    else_=JournalLineORM.credit_amount - JournalLineORM.debit_amount
+                )
+            ).label('balance')
         ).join(JournalLineORM, AccountORM.id == JournalLineORM.account_id
         ).group_by(AccountORM.account_type).all()
 
         balances = {account_type.value.lower(): Decimal(str(balance or 0)) for account_type, balance in query}
+        # Include revenue in equity
+        equity = balances.get('equity', Decimal(0)) + balances.get('revenue', Decimal(0))
         return {
             'assets': balances.get('asset', Decimal(0)),
             'liabilities': balances.get('liability', Decimal(0)),
-            'equity': balances.get('equity', Decimal(0))
+            'equity': equity
         }

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from shared_models import Escrow
 from app.infrastructure.db.mappers import dto_to_orm, orm_to_domain, domain_to_dto

@@ -1,69 +1,112 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from shared_models.escrow import Escrow as EscrowDTO
 from app.core.database import get_db
-from app.infrastructure.repositories.payment_repo import EscrowRepository
-from app.infrastructure.repositories.ledger_repo import LedgerRepository
-from app.infrastructure.repositories.order_repo import OrderRepository
-from app.infrastructure.repositories.reputation_repo import ReputationRepository
-from app.infrastructure.repositories.account_repo import AccountRepository
-from app.infrastructure.repositories.journal_repo import JournalRepository
-from app.infrastructure.external.banks.mock_bank import MockBankProvider
-from app.application.payments.fund_escrow import FundEscrowUseCase
-from app.application.payments.release_escrow import ReleaseEscrowUseCase
-from app.infrastructure.db.mappers import domain_to_dto
+from app.application.services.escrow_lifecycle_service import EscrowLifecycleService
+from app.infrastructure.external.provider_factory import get_payment_provider
 
 router = APIRouter()
 
 @router.post("/{escrow_id}/fund", response_model=dict)
 def fund_escrow(escrow_id: str, db: Session = Depends(get_db)):
-    escrow_repo = EscrowRepository(db)
-    order_repo = OrderRepository(db)
-    ledger_repo = LedgerRepository(db)
-    account_repo = AccountRepository(db)
-    journal_repo = JournalRepository(db)
-    payment_provider = MockBankProvider()
-    use_case = FundEscrowUseCase(escrow_repo, order_repo, payment_provider, ledger_repo, account_repo, journal_repo)
+    """
+    Fund an escrow - CREATED → FUNDED
 
+    Creates accounting entries for customer payment obligation.
+    """
     try:
-        funded_escrow = use_case.execute(escrow_id)
-        escrow_dto = domain_to_dto(funded_escrow)
-        db.commit()
+        # Get payment provider reference (simulate external payment confirmation)
+        payment_provider = get_payment_provider("BANK")
+        provider_reference = f"MOCK-TXN-{escrow_id[:8].upper()}"
+
+        # Use lifecycle service for atomic transition
+        lifecycle_service = EscrowLifecycleService(db)
+        funded_escrow = lifecycle_service.fund_escrow(escrow_id, provider_reference)
+
         return {
-            "escrow_id": escrow_dto.id,
-            "state": escrow_dto.state,
-            "provider_reference": escrow_dto.provider_reference
+            "escrow_id": funded_escrow.id,
+            "state": funded_escrow.state.value,
+            "provider_reference": provider_reference,
+            "message": "Escrow funded successfully"
         }
+
     except ValueError as e:
-        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        db.rollback()
-        raise e
+        raise HTTPException(status_code=500, detail=f"Failed to fund escrow: {str(e)}")
 
 @router.post("/{escrow_id}/release", response_model=dict)
 def release_escrow(escrow_id: str, db: Session = Depends(get_db)):
-    escrow_repo = EscrowRepository(db)
-    order_repo = OrderRepository(db)
-    ledger_repo = LedgerRepository(db)
-    account_repo = AccountRepository(db)
-    journal_repo = JournalRepository(db)
-    reputation_repo = ReputationRepository(db)
-    payment_provider = MockBankProvider()
-    use_case = ReleaseEscrowUseCase(escrow_repo, order_repo, payment_provider, ledger_repo, account_repo, journal_repo, reputation_repo)
+    """
+    Release an escrow - FUNDED → RELEASED
 
+    Creates accounting entries for farmer payment.
+    """
     try:
-        released_escrow = use_case.execute(escrow_id)
-        escrow_dto = domain_to_dto(released_escrow)
-        db.commit()
+        provider_reference = f"RELEASE-{escrow_id[:8].upper()}"
+
+        lifecycle_service = EscrowLifecycleService(db)
+        released_escrow = lifecycle_service.release_escrow(escrow_id, provider_reference)
+
         return {
-            "escrow_id": escrow_dto.id,
-            "state": escrow_dto.state,
-            "provider_reference": escrow_dto.provider_reference
+            "escrow_id": released_escrow.id,
+            "state": released_escrow.state.value,
+            "provider_reference": provider_reference,
+            "message": "Escrow released successfully"
         }
+
     except ValueError as e:
-        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        db.rollback()
-        raise e
+        raise HTTPException(status_code=500, detail=f"Failed to release escrow: {str(e)}")
+
+
+@router.post("/{escrow_id}/refund", response_model=dict)
+def refund_escrow(escrow_id: str, db: Session = Depends(get_db)):
+    """
+    Refund an escrow - FUNDED → REFUNDED
+
+    Creates accounting entries for customer refund.
+    """
+    try:
+        provider_reference = f"REFUND-{escrow_id[:8].upper()}"
+
+        lifecycle_service = EscrowLifecycleService(db)
+        refunded_escrow = lifecycle_service.refund_escrow(escrow_id, provider_reference)
+
+        return {
+            "escrow_id": refunded_escrow.id,
+            "state": refunded_escrow.state.value,
+            "provider_reference": provider_reference,
+            "message": "Escrow refunded successfully"
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to refund escrow: {str(e)}")
+
+
+@router.post("/{escrow_id}/penalize", response_model=dict)
+def penalize_escrow(escrow_id: str, db: Session = Depends(get_db)):
+    """
+    Penalize an escrow - FUNDED → PENALIZED
+
+    Creates accounting entries for platform penalty revenue.
+    """
+    try:
+        provider_reference = f"PENALTY-{escrow_id[:8].upper()}"
+
+        lifecycle_service = EscrowLifecycleService(db)
+        penalized_escrow = lifecycle_service.penalize_escrow(escrow_id, provider_reference)
+
+        return {
+            "escrow_id": penalized_escrow.id,
+            "state": penalized_escrow.state.value,
+            "provider_reference": provider_reference,
+            "message": "Escrow penalized successfully"
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to penalize escrow: {str(e)}")
