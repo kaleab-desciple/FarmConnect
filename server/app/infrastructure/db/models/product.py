@@ -4,7 +4,7 @@ from sqlalchemy import String, Float, Date, DateTime, Boolean, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.infrastructure.db.base import Base
-from shared_models.product import Category, Unit, QualityGrade
+from app.domain.common.enums import Category, Unit, QualityGrade
 
 class ProductORM(Base):
     __tablename__ = "products"

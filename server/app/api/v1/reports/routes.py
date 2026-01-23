@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from datetime import date
 from app.core.database import get_db
 from app.infrastructure.repositories.report_repo import ReportRepository
-from app.application.reports.generate_balance_sheet import GenerateBalanceSheet, GenerateBalanceSheetRequest, BalanceSheetDTO
-from app.application.reports.generate_profit_loss import GenerateProfitLoss, GenerateProfitLossRequest, ProfitLossDTO
-from app.application.reports.generate_cash_flow import GenerateCashFlow, GenerateCashFlowRequest, CashFlowDTO
+from app.application.reports.generate_balance_sheet import GenerateBalanceSheet, GenerateBalanceSheetRequest
+from app.application.reports.generate_profit_loss import GenerateProfitLoss, GenerateProfitLossRequest
+from app.application.reports.generate_cash_flow import GenerateCashFlow, GenerateCashFlowRequest
+from app.domain.reports.entities import BalanceSheet, ProfitLoss, CashFlow
 
 # Use title-case tag to match how the router is included in the main api router
 router = APIRouter(tags=["Reports"])
@@ -23,7 +24,9 @@ def get_balance_sheet(as_of: date = Query(..., description="Balance sheet date")
         "assets": {k: float(v) for k, v in report.assets.items()},
         "liabilities": {k: float(v) for k, v in report.liabilities.items()},
         "equity": {k: float(v) for k, v in report.equity.items()},
-        "balanced": report.balanced
+        "total_assets": float(report.total_assets),
+        "total_liabilities": float(report.total_liabilities),
+        "total_equity": float(report.total_equity)
     }
 
 
@@ -45,7 +48,9 @@ def get_profit_loss(
         },
         "revenue": {k: float(v) for k, v in report.revenue.items()},
         "expenses": {k: float(v) for k, v in report.expenses.items()},
-        "net_income": float(report.net_income)
+        "total_revenue": float(report.total_revenue),
+        "total_expenses": float(report.total_expenses),
+        "net_profit": float(report.net_profit)
     }
 
 
@@ -65,8 +70,11 @@ def get_cash_flow(
             "from": report.from_date.isoformat(),
             "to": report.to_date.isoformat()
         },
-        "operating_activities": {k: float(v) for k, v in report.operating.items()},
-        "investing_activities": {k: float(v) for k, v in report.investing.items()},
-        "financing_activities": {k: float(v) for k, v in report.financing.items()},
+        "operating": {k: float(v) for k, v in report.operating.items()},
+        "investing": {k: float(v) for k, v in report.investing.items()},
+        "financing": {k: float(v) for k, v in report.financing.items()},
+        "total_operating": float(report.total_operating),
+        "total_investing": float(report.total_investing),
+        "total_financing": float(report.total_financing),
         "net_cash_flow": float(report.net_cash_flow)
     }

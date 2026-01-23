@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/pricing_rule.schema.json",
+  "title": "PricingRule",
+  "type": "object",
+  "required": [
+    "id",
+    "rule_type",
+    "fee_type",
+    "fee_value",
+    "priority",
+    "active",
+    "valid_from"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "rule_type": {
+      "$ref": "enums.schema.json#/definitions/RuleType"
+    },
+    "product_category": {
+      "type": ["string", "null"]
+    },
+    "quality_grade": {
+      "type": ["string", "null"]
+    },
+    "region": {
+      "type": ["string", "null"]
+    },
+    "min_distance_km": {
+      "type": ["number", "null"]
+    },
+    "max_distance_km": {
+      "type": ["number", "null"]
+    },
+    "fee_type": {
+      "$ref": "enums.schema.json#/definitions/FeeType"
+    },
+    "fee_value": {
+      "type": "number"
+    },
+    "priority": {
+      "type": "integer"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_to": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

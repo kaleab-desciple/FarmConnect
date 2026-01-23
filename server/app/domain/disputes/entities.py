@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Any
 from uuid import UUID
 from datetime import datetime, timezone
-from shared_models.enums import DisputeState, DisputeResolution
+from app.domain.common.enums import DisputeState, DisputeResolution
 
 @dataclass
 class Dispute:

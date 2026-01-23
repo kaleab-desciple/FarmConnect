@@ -3,7 +3,7 @@ from datetime import datetime, date
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 
-from shared_models.product import Category, Unit, QualityGrade
+from app.domain.common.enums import Category, Unit, QualityGrade
 
 
 @dataclass(frozen=True)

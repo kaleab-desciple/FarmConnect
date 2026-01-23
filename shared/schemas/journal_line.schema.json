@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/journal_line.schema.json",
+  "title": "JournalLine",
+  "type": "object",
+  "required": [
+    "id",
+    "journal_entry_id",
+    "account_id",
+    "debit_amount",
+    "credit_amount"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "journal_entry_id": {
+      "type": "string"
+    },
+    "account_id": {
+      "type": "string"
+    },
+    "debit_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "credit_amount": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "additionalProperties": false
+}

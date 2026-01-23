@@ -7,7 +7,7 @@ from app.infrastructure.repositories.dispute_repo import DisputeRepository
 from app.infrastructure.repositories.payment_repo import EscrowRepository
 from app.infrastructure.repositories.reputation_repo import ReputationRepository
 from app.application.reputation.update_reputation import UpdateReputationUseCase
-from shared_models.enums import DisputeResolution
+from app.domain.common.enums import DisputeResolution
 
 
 class ResolveDisputeUseCase:

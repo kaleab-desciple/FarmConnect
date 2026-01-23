@@ -1,19 +1,14 @@
 export interface Enums {
     $schema:     string;
     $id:         string;
-    definitions: Definitions;
+    definitions: { [key: string]: Definition };
 }
 
-export interface Definitions {
-    UserRole:          DisputeResolution;
-    OrderStatus:       DisputeResolution;
-    EscrowState:       DisputeResolution;
-    DisputeState:      DisputeResolution;
-    LoanState:         DisputeResolution;
-    DisputeResolution: DisputeResolution;
-}
-
-export interface DisputeResolution {
-    type: string;
+export interface Definition {
+    type: Type;
     enum: string[];
+}
+
+export enum Type {
+    String = "string",
 }

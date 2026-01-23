@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, Float, Enum as SAEnum, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from app.infrastructure.db.base import Base
-from shared_models.enums import OrderStatus
+from app.domain.common.enums import OrderStatus
 
 class OrderORM(Base):
     __tablename__ = "orders"
@@ -14,7 +14,10 @@ class OrderORM(Base):
     product_id: Mapped[str] = mapped_column(String, nullable=True)
     quantity: Mapped[float] = mapped_column(Float, nullable=True)
     unit_price: Mapped[float] = mapped_column(Float, nullable=True)
-    delivery_cost: Mapped[float] = mapped_column(Float, nullable=True)
+    subtotal: Mapped[float] = mapped_column(Float, nullable=True)
+    delivery_fee: Mapped[float] = mapped_column(Float, nullable=True)
+    delivery_margin: Mapped[float] = mapped_column(Float, nullable=True)
+    quality_fee: Mapped[float] = mapped_column(Float, nullable=True)
     platform_fee: Mapped[float] = mapped_column(Float, nullable=True)
     total_price: Mapped[float] = mapped_column(Float, nullable=True)
     status: Mapped[OrderStatus] = mapped_column(SAEnum(OrderStatus, name='order_status_enum'), nullable=True)

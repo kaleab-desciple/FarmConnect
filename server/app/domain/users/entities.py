@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from datetime import datetime
-from shared_models.enums import UserRole
+from app.domain.common.enums import UserRole
 
 @dataclass(frozen=True)
 class User:

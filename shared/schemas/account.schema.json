@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/account.schema.json",
+  "title": "Account",
+  "type": "object",
+  "required": [
+    "id",
+    "owner_type",
+    "owner_id",
+    "account_type",
+    "name",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "owner_type": {
+      "$ref": "enums.schema.json#/definitions/OwnerType"
+    },
+    "owner_id": {
+      "type": "string"
+    },
+    "account_type": {
+      "$ref": "enums.schema.json#/definitions/AccountType"
+    },
+    "name": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "default": "ETB"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

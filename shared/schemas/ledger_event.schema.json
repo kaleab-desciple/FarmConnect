@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/ledger_event.schema.json",
+  "title": "LedgerEvent",
+  "type": "object",
+  "required": [
+    "id",
+    "aggregate_type",
+    "aggregate_id",
+    "event_type",
+    "amount",
+    "currency",
+    "direction",
+    "reference_type",
+    "reference_id",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "aggregate_type": {
+      "$ref": "enums.schema.json#/definitions/AggregateType"
+    },
+    "aggregate_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "$ref": "enums.schema.json#/definitions/LedgerEventType"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "ETB"
+    },
+    "direction": {
+      "$ref": "enums.schema.json#/definitions/Direction"
+    },
+    "reference_type": {
+      "$ref": "enums.schema.json#/definitions/ReferenceType"
+    },
+    "reference_id": {
+      "type": "string"
+    },
+    "event_metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

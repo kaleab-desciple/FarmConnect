@@ -4,7 +4,7 @@ from sqlalchemy import String, Enum as SAEnum, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.infrastructure.db.base import Base
-from shared_models.enums import DisputeState, DisputeResolution  # enum from shared models
+from app.domain.common.enums import DisputeState, DisputeResolution
 
 class DisputeORM(Base):
     __tablename__ = "disputes"

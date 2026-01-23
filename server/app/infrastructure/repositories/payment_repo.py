@@ -1,8 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 
-from shared_models import Escrow
-from app.infrastructure.db.mappers import dto_to_orm, orm_to_domain, domain_to_dto
+from app.infrastructure.db.mappers import domain_to_orm, orm_to_domain
 from app.infrastructure.db.models import EscrowORM
 from app.domain.payments.entities import Escrow as DomainEscrow
 
@@ -12,8 +11,7 @@ class EscrowRepository:
         self.session = session
 
     def save(self, escrow: DomainEscrow) -> DomainEscrow:
-        dto = domain_to_dto(escrow)
-        orm = dto_to_orm(dto)
+        orm = domain_to_orm(escrow)
         merged_orm = self.session.merge(orm)
         self.session.flush()  # to get id if new
         return orm_to_domain(merged_orm)

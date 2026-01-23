@@ -18,9 +18,16 @@ class ReportRepository:
         as_of_datetime = datetime.combine(as_of, datetime.max.time())
 
         # Query balances for each account type
+        # Assets: debit - credit (normal debit balance)
+        # Liabilities/Equity: credit - debit (normal credit balance)
+        balance_expr = case(
+            (AccountORM.account_type == AccountType.ASSET, func.sum(JournalLineORM.debit_amount - JournalLineORM.credit_amount)),
+            else_=func.sum(JournalLineORM.credit_amount - JournalLineORM.debit_amount)
+        ).label('balance')
+
         balances_query = self.session.query(
             AccountORM.account_type,
-            func.sum(JournalLineORM.debit_amount - JournalLineORM.credit_amount).label('balance')
+            balance_expr
         ).join(
             JournalLineORM, AccountORM.id == JournalLineORM.account_id
         ).join(
@@ -43,6 +50,12 @@ class ReportRepository:
             elif account_type == AccountType.EQUITY:
                 equity['total'] = equity.get('total', Decimal(0)) + balance_dec
 
+        # Calculate retained earnings (cumulative profit/loss up to as_of date)
+        # Retained earnings = total revenue - total expenses up to as_of
+        pl_data = self.get_profit_loss_data(date(1900, 1, 1), as_of)  # from beginning to as_of
+        retained_earnings = pl_data['revenue'].get('total', Decimal(0)) - pl_data['expenses'].get('total', Decimal(0))
+        equity['total'] = equity.get('total', Decimal(0)) + retained_earnings
+
         return {
             'assets': assets,
             'liabilities': liabilities,
@@ -55,9 +68,16 @@ class ReportRepository:
         to_datetime = datetime.combine(to_date, datetime.max.time())
 
         # Query revenue and expenses
+        # Revenue: credit - debit (normal credit balance)
+        # Expense: debit - credit (normal debit balance)
+        amount_expr = case(
+            (AccountORM.account_type == AccountType.REVENUE, func.sum(JournalLineORM.credit_amount - JournalLineORM.debit_amount)),
+            else_=func.sum(JournalLineORM.debit_amount - JournalLineORM.credit_amount)
+        ).label('amount')
+
         pl_query = self.session.query(
             AccountORM.account_type,
-            func.sum(JournalLineORM.debit_amount - JournalLineORM.credit_amount).label('amount')
+            amount_expr
         ).join(
             JournalLineORM, AccountORM.id == JournalLineORM.account_id
         ).join(

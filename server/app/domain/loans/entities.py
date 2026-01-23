@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Any
 from uuid import UUID
 from datetime import datetime
-from shared_models.enums import LoanState
+from app.domain.common.enums import LoanState
 
 @dataclass(frozen=True)
 class Loan:

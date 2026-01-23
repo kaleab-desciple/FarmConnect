@@ -2,7 +2,7 @@ from typing import Optional
 from decimal import Decimal
 from dataclasses import dataclass
 from datetime import datetime
-from shared_models.enums import OrderStatus
+from app.domain.common.enums import OrderStatus
 
 @dataclass(frozen=True)
 class Order:
@@ -12,7 +12,11 @@ class Order:
     product_id: Optional[str] = None
     quantity: Optional[Decimal] = None
     unit_price: Optional[Decimal] = None
+    subtotal: Optional[Decimal] = None
     delivery_cost: Optional[Decimal] = None
+    delivery_fee: Optional[Decimal] = None
+    delivery_margin: Optional[Decimal] = None
+    quality_fee: Optional[Decimal] = None
     platform_fee: Optional[Decimal] = None
     total_price: Optional[Decimal] = None
     status: Optional[OrderStatus] = None

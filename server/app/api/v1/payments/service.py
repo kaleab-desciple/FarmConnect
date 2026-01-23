@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from decimal import Decimal
 
-from app.infrastructure.db.models.payment import EscrowORM
+from app.infrastructure.db.models.escrow import EscrowORM
 from app.infrastructure.external.provider_factory import get_payment_provider
 from app.domain.payments.entities import EscrowState
 from app.domain.payments.exceptions import PaymentFailed

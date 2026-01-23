@@ -8,13 +8,7 @@ Create Date: 2026-01-18 20:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as psql
-from shared_models.enums import UserRole
-from shared_models.enums import OrderStatus
-from shared_models.enums import EscrowState
-from shared_models.enums import LoanState
-from shared_models.enums import DisputeState
-from shared_models.product import Category, Unit, QualityGrade
-from shared_models.escrow import Provider
+from app.domain.common.enums import UserRole, OrderStatus, EscrowState, LoanState, DisputeState, Category, Unit, QualityGrade, Provider
 
 # revision identifiers, used by Alembic.
 revision = '001_create_core_tables'

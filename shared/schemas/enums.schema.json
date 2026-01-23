@@ -63,6 +63,115 @@
         "PARTIAL_RELEASE",
         "REFUND"
       ]
+    },
+    "Provider": {
+      "type": "string",
+      "enum": [
+        "BANK",
+        "WALLET"
+      ]
+    },
+    "Category": {
+      "type": "string",
+      "enum": [
+        "GRAINS",
+        "VEGETABLES",
+        "FRUITS",
+        "DAIRY",
+        "MEAT",
+        "SPICES",
+        "OTHER"
+      ]
+    },
+    "Unit": {
+      "type": "string",
+      "enum": [
+        "KG",
+        "GRAM",
+        "TON",
+        "LITER",
+        "PIECE",
+        "CRATE",
+        "BAG"
+      ]
+    },
+    "QualityGrade": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    "OwnerType": {
+      "type": "string",
+      "enum": [
+        "USER",
+        "ESCROW",
+        "SYSTEM"
+      ]
+    },
+    "AccountType": {
+      "type": "string",
+      "enum": [
+        "ASSET",
+        "LIABILITY",
+        "EQUITY",
+        "REVENUE",
+        "EXPENSE"
+      ]
+    },
+    "AggregateType": {
+      "type": "string",
+      "enum": [
+        "USER",
+        "ESCROW",
+        "SYSTEM"
+      ]
+    },
+    "LedgerEventType": {
+      "type": "string",
+      "enum": [
+        "ESCROW_FUNDED",
+        "ESCROW_RELEASED",
+        "ESCROW_REFUNDED",
+        "PLATFORM_FEE_COLLECTED",
+        "PENALTY_APPLIED",
+        "LOAN_DISBURSED",
+        "LOAN_REPAID"
+      ]
+    },
+    "Direction": {
+      "type": "string",
+      "enum": [
+        "DEBIT",
+        "CREDIT"
+      ]
+    },
+    "ReferenceType": {
+      "type": "string",
+      "enum": [
+        "ORDER",
+        "ESCROW",
+        "DISPUTE",
+        "LOAN"
+      ]
+    },
+    "RuleType": {
+      "type": "string",
+      "enum": [
+        "PLATFORM_FEE",
+        "DELIVERY",
+        "QUALITY",
+        "DISTANCE"
+      ]
+    },
+    "FeeType": {
+      "type": "string",
+      "enum": [
+        "PERCENTAGE",
+        "FIXED"
+      ]
     }
   }
 }

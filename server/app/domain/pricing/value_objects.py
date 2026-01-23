@@ -24,6 +24,23 @@ class PricingInput:
 
 
 @dataclass(frozen=True)
+class PricingBreakdown:
+    """Detailed breakdown of pricing calculation."""
+    subtotal: Decimal
+    platform_fee: Decimal
+    delivery_fee: Decimal
+    delivery_margin: Decimal
+    quality_fee: Decimal
+    total_price: Decimal
+
+    @property
+    def is_valid(self) -> bool:
+        """Check if the pricing breakdown is mathematically correct."""
+        expected_total = self.subtotal + self.platform_fee + self.delivery_fee + self.delivery_margin + self.quality_fee
+        return abs(self.total_price - expected_total) < Decimal('0.01')
+
+
+@dataclass(frozen=True)
 class PricingResult:
     """Result of pricing calculation."""
     base_price: Decimal

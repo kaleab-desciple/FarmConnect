@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
-from shared_models.enums import UserRole
+from app.domain.common.enums import UserRole
 from app.infrastructure.db.base import Base
 
 class UserORM(Base):

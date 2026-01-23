@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from decimal import Decimal
-from shared_models.enums import DisputeResolution
+from app.domain.common.enums import DisputeResolution
 
 
 @dataclass(frozen=True)

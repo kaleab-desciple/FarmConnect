@@ -25,7 +25,7 @@ from app.infrastructure.repositories.journal_repo import JournalRepository
 from app.application.accounting.ledger_to_journal_mapper import LedgerToJournalMapper
 from app.application.accounting.post_journal_entry import PostJournalEntry, PostJournalEntryRequest
 
-from shared_models.escrow import Provider
+from app.domain.common.enums import Provider
 
 
 class OrderCreationRequest:
@@ -110,6 +110,7 @@ class OrderApplicationService:
                     product_id=request.product_id,
                     quantity=Decimal(request.quantity),
                     unit_price=request.unit_price,
+                    subtotal=pricing_result.base_price,  # Mapped from base_price
                     delivery_cost=pricing_result.delivery_cost,
                     platform_fee=pricing_result.platform_fee,
                     total_price=pricing_result.total_price,

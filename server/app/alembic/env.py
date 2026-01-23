@@ -25,9 +25,12 @@ from app.infrastructure.db.models import (
     LoanORM,
     DisputeORM,
     ReputationORM,
-    LedgerEventORM
+    AccountORM,
+    JournalEntryORM,
+    JournalLineORM,
+    LedgerEventORM,
+    PricingRuleORM
 )
-
 target_metadata = Base.metadata
 
 # Get DATABASE_URL from .env

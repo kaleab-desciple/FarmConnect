@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/journal_entry.schema.json",
+  "title": "JournalEntry",
+  "type": "object",
+  "required": [
+    "id",
+    "reference_type",
+    "reference_id",
+    "description",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "reference_type": {
+      "type": "string"
+    },
+    "reference_id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

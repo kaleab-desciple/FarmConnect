@@ -31,9 +31,17 @@ class JournalRepository:
         # Removed self.session.commit() to allow atomic transactions with other operations
 
     def get_balance_for_account(self, account_id: str) -> Decimal:
-        result = self.session.query(
-            func.sum(JournalLineORM.debit_amount - JournalLineORM.credit_amount)
-        ).filter(JournalLineORM.account_id == account_id).scalar()
+        # Get account type first
+        account = self.session.query(AccountORM).filter(AccountORM.id == account_id).first()
+        if not account:
+            return Decimal(0)
+
+        if account.account_type == 'ASSET':
+            balance_expr = JournalLineORM.debit_amount - JournalLineORM.credit_amount
+        else:  # LIABILITY, EQUITY, REVENUE
+            balance_expr = JournalLineORM.credit_amount - JournalLineORM.debit_amount
+
+        result = self.session.query(func.sum(balance_expr)).filter(JournalLineORM.account_id == account_id).scalar()
         return Decimal(str(result or 0))
 
     def get_trial_balance(self) -> Dict[str, Decimal]:

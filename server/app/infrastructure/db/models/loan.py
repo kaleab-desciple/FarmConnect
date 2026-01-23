@@ -4,7 +4,7 @@ from sqlalchemy import String, Float, Enum as SAEnum, DateTime, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.infrastructure.db.base import Base
-from shared_models.enums import LoanState  # enum from shared models
+from app.domain.common.enums import LoanState
 
 class LoanORM(Base):
     __tablename__ = "loans"
