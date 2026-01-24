@@ -9,8 +9,18 @@ from .disputes.routes import router as disputes_router
 from .ledger import router as ledger_router
 from .accounting.routes import router as accounting_router
 from .reports.routes import router as reports_router
+from .auth.routes import router as auth_router
+from .auth.provisioning_routes import router as provisioning_router
+from .examples.protected_routes import router as examples_router
 
 api_router = APIRouter()
+
+# Register auth routers (public endpoints, no auth required)
+api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(provisioning_router, prefix="/auth", tags=["User Provisioning"])
+
+# Register example protected routes
+api_router.include_router(examples_router, prefix="/examples", tags=["Examples (Protected)"])
 
 # Register all feature routers
 api_router.include_router(users_router, prefix="/users", tags=["Users"])

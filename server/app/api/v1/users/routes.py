@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from shared_models.user import User
@@ -6,15 +6,15 @@ from app.infrastructure.db.mappers import dto_to_orm, orm_to_domain
 from app.infrastructure.repositories.user_repo import UserRepository
 from app.infrastructure.repositories.reputation_repo import ReputationRepository
 from app.core.database import get_db
+from app.core.auth import require_permission, TokenPayload
 
 router = APIRouter()
 
-@router.post("/", response_model=User)
+@router.post("/", response_model=User, dependencies=[Depends(require_permission("users:write"))])
 def create_user(user: User, db: Session = Depends(get_db)):
     repo = UserRepository(db)
     try:
         repo.save(user)
-        # Note: repo.save() calls db.commit()
     except IntegrityError as e:
         db.rollback()
         error_msg = str(e.orig)
@@ -25,12 +25,9 @@ def create_user(user: User, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"Database integrity error: {error_msg}")
     return user
 
-@router.get("/{user_id}/reputation", response_model=dict)
+@router.get("/{user_id}/reputation", response_model=dict, dependencies=[Depends(require_permission("users:reputation"))])
 def get_user_reputation(user_id: str, db: Session = Depends(get_db)):
     repo = ReputationRepository(db)
-#    reputation = repo.get_by_user_id(user_id)
-#    if not reputation:
-#        raise HTTPException(status_code=404, detail="Reputation not found")
     reputation = repo.create_or_get(user_id)
     db.commit()
     return {
@@ -43,7 +40,7 @@ def get_user_reputation(user_id: str, db: Session = Depends(get_db)):
         "reputation_score": reputation.reputation_score
     }
 
-@router.get("/{user_id}/credit-score", response_model=dict)
+@router.get("/{user_id}/credit-score", response_model=dict, dependencies=[Depends(require_permission("users:read"))])
 def get_user_credit_score(user_id: str, db: Session = Depends(get_db)):
     repo = ReputationRepository(db)
     reputation = repo.create_or_get(user_id)

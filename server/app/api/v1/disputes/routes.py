@@ -13,6 +13,9 @@ from app.application.disputes.resolve_dispute import ResolveDisputeUseCase
 from shared_models.enums import DisputeResolution
 
 
+from app.core.auth import require_permission
+
+
 class CreateDisputeRequest(BaseModel):
     order_id: str
     raised_by: str
@@ -27,7 +30,7 @@ class ResolveDisputeRequest(BaseModel):
 router = APIRouter()
 
 
-@router.post("/", response_model=dict)
+@router.post("/", response_model=dict, dependencies=[Depends(require_permission("disputes:create"))])
 def create_dispute(request: CreateDisputeRequest, db: Session = Depends(get_db)):
     dispute_repo = DisputeRepository(db)
     order_repo = OrderRepository(db)
@@ -51,7 +54,7 @@ def create_dispute(request: CreateDisputeRequest, db: Session = Depends(get_db))
         raise e
 
 
-@router.post("/{dispute_id}/resolve", response_model=dict)
+@router.post("/{dispute_id}/resolve", response_model=dict, dependencies=[Depends(require_permission("disputes:resolve"))])
 def resolve_dispute(dispute_id: str, request: ResolveDisputeRequest, db: Session = Depends(get_db)):
     dispute_repo = DisputeRepository(db)
     escrow_repo = EscrowRepository(db)

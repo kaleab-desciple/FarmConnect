@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import require_permission
 from app.infrastructure.repositories.account_repo import AccountRepository
 from app.infrastructure.repositories.journal_repo import JournalRepository
 from app.application.accounting.get_trial_balance import GetTrialBalance, TrialBalance
@@ -11,8 +12,7 @@ from decimal import Decimal
 # so the OpenAPI UI groups endpoints under a single, consistent heading.
 router = APIRouter(tags=["Accounting"])
 
-
-@router.get("/trial-balance", response_model=dict)
+@router.get("/trial-balance", response_model=dict, dependencies=[Depends(require_permission("ledger:read"))])
 def get_trial_balance(db: Session = Depends(get_db)):
     journal_repo = JournalRepository(db)
     use_case = GetTrialBalance(journal_repo)
@@ -24,7 +24,7 @@ def get_trial_balance(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/accounts", response_model=list)
+@router.get("/accounts", response_model=list, dependencies=[Depends(require_permission("ledger:read"))])
 def get_accounts(db: Session = Depends(get_db)):
     from app.infrastructure.db.models.account import AccountORM
     accounts = db.query(AccountORM).all()
@@ -42,7 +42,7 @@ def get_accounts(db: Session = Depends(get_db)):
     ]
 
 
-@router.get("/accounts/{account_id}/balance", response_model=dict)
+@router.get("/accounts/{account_id}/balance", response_model=dict, dependencies=[Depends(require_permission("ledger:read"))])
 def get_account_balance(account_id: str, db: Session = Depends(get_db)):
     journal_repo = JournalRepository(db)
     use_case = GetAccountBalance(journal_repo)
@@ -51,7 +51,7 @@ def get_account_balance(account_id: str, db: Session = Depends(get_db)):
     return {"balance": float(balance)}
 
 
-@router.get("/journal/{reference_type}/{reference_id}", response_model=list)
+@router.get("/journal/{reference_type}/{reference_id}", response_model=list, dependencies=[Depends(require_permission("ledger:read"))])
 def get_journal_entries(reference_type: str, reference_id: str, db: Session = Depends(get_db)):
     journal_repo = JournalRepository(db)
     # Query journal entries by reference

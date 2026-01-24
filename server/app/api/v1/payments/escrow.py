@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import require_permission
 from app.application.services.escrow_lifecycle_service import EscrowLifecycleService
 from app.infrastructure.external.provider_factory import get_payment_provider
 
 router = APIRouter()
 
-@router.post("/{escrow_id}/fund", response_model=dict)
+@router.post("/{escrow_id}/fund", response_model=dict, dependencies=[Depends(require_permission("escrow:fund"))])
 def fund_escrow(escrow_id: str, db: Session = Depends(get_db)):
     """
     Fund an escrow - CREATED → FUNDED
@@ -34,7 +35,7 @@ def fund_escrow(escrow_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fund escrow: {str(e)}")
 
-@router.post("/{escrow_id}/release", response_model=dict)
+@router.post("/{escrow_id}/release", response_model=dict, dependencies=[Depends(require_permission("escrow:release"))])
 def release_escrow(escrow_id: str, db: Session = Depends(get_db)):
     """
     Release an escrow - FUNDED → RELEASED
@@ -60,7 +61,7 @@ def release_escrow(escrow_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Failed to release escrow: {str(e)}")
 
 
-@router.post("/{escrow_id}/refund", response_model=dict)
+@router.post("/{escrow_id}/refund", response_model=dict, dependencies=[Depends(require_permission("escrow:refund"))])
 def refund_escrow(escrow_id: str, db: Session = Depends(get_db)):
     """
     Refund an escrow - FUNDED → REFUNDED
@@ -86,7 +87,7 @@ def refund_escrow(escrow_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Failed to refund escrow: {str(e)}")
 
 
-@router.post("/{escrow_id}/penalize", response_model=dict)
+@router.post("/{escrow_id}/penalize", response_model=dict, dependencies=[Depends(require_permission("escrow:penalize"))])
 def penalize_escrow(escrow_id: str, db: Session = Depends(get_db)):
     """
     Penalize an escrow - FUNDED → PENALIZED

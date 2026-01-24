@@ -1,0 +1,133 @@
+{
+    "realm": "farm-connect",
+    "enabled": true,
+    "displayName": "Farm Connect Platform",
+    "registrationAllowed": false,
+    "loginWithEmailAllowed": true,
+    "duplicateEmailsAllowed": false,
+    "resetPasswordAllowed": true,
+    "editUsernameAllowed": false,
+    "bruteForceProtected": true,
+    "roles": {
+        "realm": [
+            {
+                "name": "ADMIN",
+                "description": "System Administrator"
+            },
+            {
+                "name": "MANAGER",
+                "description": "Operations / Regional Manager"
+            },
+            {
+                "name": "AGENT",
+                "description": "Field Agent"
+            },
+            {
+                "name": "FARMER",
+                "description": "Farmer User"
+            },
+            {
+                "name": "MERCHANT",
+                "description": "Merchant User"
+            },
+            {
+                "name": "DELIVERY",
+                "description": "Delivery Personnel"
+            }
+        ],
+        "client": {
+            "farm-connect-backend": [
+                {
+                    "name": "system_internal",
+                    "description": "Internal backend system operations"
+                },
+                {
+                    "name": "escrow_service",
+                    "description": "Escrow and payment settlement service"
+                },
+                {
+                    "name": "reporting_service",
+                    "description": "Financial & regulatory reporting service"
+                }
+            ]
+        }
+    },
+    "groups": [
+        {
+            "name": "Admins",
+            "realmRoles": [
+                "ADMIN"
+            ]
+        },
+        {
+            "name": "Managers",
+            "realmRoles": [
+                "MANAGER"
+            ]
+        },
+        {
+            "name": "Agents",
+            "realmRoles": [
+                "AGENT"
+            ]
+        },
+        {
+            "name": "Farmers",
+            "realmRoles": [
+                "FARMER"
+            ]
+        },
+        {
+            "name": "Merchants",
+            "realmRoles": [
+                "MERCHANT"
+            ]
+        },
+        {
+            "name": "Delivery",
+            "realmRoles": [
+                "DELIVERY"
+            ]
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "farm-connect-backend",
+            "name": "Farm Connect Backend API",
+            "enabled": true,
+            "protocol": "openid-connect",
+            "publicClient": false,
+            "secret": "CHANGE_ME_BACKEND_SECRET",
+            "standardFlowEnabled": true,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "authorizationServicesEnabled": false,
+            "redirectUris": [
+                "*"
+            ],
+            "webOrigins": [
+                "*"
+            ],
+            "defaultClientScopes": [
+                "profile",
+                "email",
+                "roles"
+            ],
+            "protocolMappers": [
+                {
+                    "name": "realm-roles",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-realm-role-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "multivalued": "true",
+                        "access.token.claim": "true",
+                        "id.token.claim": "true",
+                        "claim.name": "realm_roles",
+                        "jsonType.label": "String"
+                    }
+                }
+            ]
+        }
+    ]
+}

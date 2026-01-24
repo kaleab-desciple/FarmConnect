@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import date
 from app.core.database import get_db
+from app.core.auth import require_permission
 from app.infrastructure.repositories.report_repo import ReportRepository
 from app.application.reports.generate_balance_sheet import GenerateBalanceSheet, GenerateBalanceSheetRequest
 from app.application.reports.generate_profit_loss import GenerateProfitLoss, GenerateProfitLossRequest
@@ -11,8 +12,7 @@ from app.domain.reports.entities import BalanceSheet, ProfitLoss, CashFlow
 # Use title-case tag to match how the router is included in the main api router
 router = APIRouter(tags=["Reports"])
 
-
-@router.get("/balance-sheet", response_model=dict)
+@router.get("/balance-sheet", response_model=dict, dependencies=[Depends(require_permission("reports:financial"))])
 def get_balance_sheet(as_of: date = Query(..., description="Balance sheet date"), db: Session = Depends(get_db)):
     report_repo = ReportRepository(db)
     use_case = GenerateBalanceSheet(report_repo)
@@ -30,7 +30,7 @@ def get_balance_sheet(as_of: date = Query(..., description="Balance sheet date")
     }
 
 
-@router.get("/profit-loss", response_model=dict)
+@router.get("/profit-loss", response_model=dict, dependencies=[Depends(require_permission("reports:financial"))])
 def get_profit_loss(
     from_date: date = Query(..., description="Start date"),
     to_date: date = Query(..., description="End date"),
@@ -54,7 +54,7 @@ def get_profit_loss(
     }
 
 
-@router.get("/cash-flow", response_model=dict)
+@router.get("/cash-flow", response_model=dict, dependencies=[Depends(require_permission("reports:financial"))])
 def get_cash_flow(
     from_date: date = Query(..., description="Start date"),
     to_date: date = Query(..., description="End date"),
