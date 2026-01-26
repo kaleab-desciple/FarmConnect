@@ -13,6 +13,12 @@
     "id": {
       "type": "string"
     },
+    "keycloak_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "role": {
       "$ref": "enums.schema.json#/definitions/UserRole"
     },

@@ -6,6 +6,7 @@ from app.domain.common.enums import UserRole
 @dataclass(frozen=True)
 class User:
     id: Optional[str] = None
+    keycloak_id: Optional[str] = None
     role: Optional[UserRole] = None
     name: Optional[str] = None
     email: Optional[str] = None

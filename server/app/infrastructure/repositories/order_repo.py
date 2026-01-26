@@ -18,25 +18,30 @@ class OrderRepository:
         if current_user.has_realm_role("ADMIN") or current_user.has_realm_role("MANAGER") or current_user.is_service_account:
             return query
 
+        business_user = (
+            self.session.query(UserORM)
+            .filter(UserORM.keycloak_id == current_user.user_id)
+            .one_or_none()
+        )
+        
+        if not business_user:
+            return query.filter(False)
+
+        business_id = business_user.id
+
         if current_user.has_realm_role("FARMER"):
-            return query.filter(OrderORM.farmer_id == current_user.user_id)
+            return query.filter(OrderORM.farmer_id == business_id)
 
         if current_user.has_realm_role("MERCHANT"):
-            return query.filter(OrderORM.merchant_id == current_user.user_id)
+            return query.filter(OrderORM.merchant_id == business_id)
 
         if current_user.has_realm_role("AGENT"):
-            # Fetch agent's region from their user metadata
-            agent_orm = self.session.query(UserORM).filter(UserORM.id == current_user.user_id).one_or_none()
-            if not agent_orm or not agent_orm.metadata_:
-                return query.filter(False)
-
-            agent_region = agent_orm.metadata_.get("location") # location is used for region in provisioning
+            # Fetch agent's region from metadata
+            agent_region = business_user.metadata_.get("location") if business_user.metadata_ else None
             if not agent_region:
                 return query.filter(False)
 
             # Join with User table to filter by farmer's region
-            # We alias the UserORM to avoid conflicts if needed, but here we just join for the farmer
-            # Assuming farmer_id points to a User record with location in metadata
             from sqlalchemy.orm import aliased
             FarmerUser = aliased(UserORM)
             return (
@@ -45,9 +50,7 @@ class OrderRepository:
             )
 
         if current_user.has_realm_role("DELIVERY"):
-            # Delivery can see orders they are involved in (though not explicitly in OrderORM yet)
-            # For now, let's assume they see all or restrict to a placeholder
-            return query
+            return query # Placeholder
 
         # Default: No access
         return query.filter(False)

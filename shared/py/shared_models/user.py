@@ -150,6 +150,7 @@ class User(BaseModel):
         extra="forbid",
     )
     id: str | None = None
+    keycloak_id: str | None = None
     role: UserRole | None = None
     name: constr(min_length=1) | None = None
     email: EmailStr | None = None

@@ -44,6 +44,16 @@ class UserRepository:
             return None
         return orm_to_domain(orm)
 
+    def get_by_keycloak_id(self, keycloak_id: str) -> Optional[DomainUser]:
+        orm = (
+            self.session.query(UserORM)
+            .filter(UserORM.keycloak_id == keycloak_id)
+            .one_or_none()
+        )
+        if not orm:
+            return None
+        return orm_to_domain(orm)
+
     def get_by_email(self, email: str) -> Optional[DomainUser]:
         orm = (
             self.session.query(UserORM)

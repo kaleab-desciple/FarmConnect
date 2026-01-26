@@ -10,6 +10,7 @@ class UserORM(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
+    keycloak_id: Mapped[str] = mapped_column(String, unique=True, nullable=True)
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole, name='user_role_enum'), nullable=True)
     name: Mapped[str] = mapped_column(String, nullable=True)
     email: Mapped[str] = mapped_column(String, nullable=True, unique=True)

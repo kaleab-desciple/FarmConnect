@@ -71,11 +71,19 @@ class UserProvisioningService:
         backend_user_id = None
         
         try:
-            # Step 1: Create user in backend database
-            logger.info(f"Provisioning user: {email} with role {role.value}")
-            
-            # We let the repository generate the special formatted ID (e.g. FAR-00001)
-            # instead of using a random UUID, to stay consistent with the system design.
+            # Step 1: Create user in Keycloak (Move to Step 1 to get ID first)
+            logger.info(f"Creating user in Keycloak: {email}")
+            keycloak_user_id = self.keycloak_admin.create_user(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone,
+                enabled=True,
+                email_verified=False
+            )
+
+            # Step 2: Create user in backend database with Keycloak ID
+            logger.info(f"Provisioning user in DB: {email} with role {role.value}")
             from shared_models.user import UserRole as ModelUserRole
             
             user = User(
@@ -83,6 +91,7 @@ class UserProvisioningService:
                 phone=phone,
                 name=f"{first_name} {last_name}",
                 role=ModelUserRole(role.value),
+                keycloak_id=keycloak_user_id,  # Save the link!
                 metadata={"location": location} if location else None
             )
             
@@ -110,17 +119,6 @@ class UserProvisioningService:
                 else:
                     raise e
             
-            # Step 2: Create user in Keycloak
-            keycloak_user_id = self.keycloak_admin.create_user(
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                phone=phone,
-                enabled=True,
-                email_verified=False
-            )
-            
-            # ... rest of the flow ...
             # Step 3: Assign to appropriate group
             group_name = self._get_group_name(role)
             self.keycloak_admin.assign_to_group(keycloak_user_id, group_name)
