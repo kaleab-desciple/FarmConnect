@@ -67,3 +67,29 @@ class JournalRepository:
             'liabilities': balances.get('liability', Decimal(0)),
             'equity': equity
         }
+
+    def get_by_reference(self, reference_type: str, reference_id: str) -> List[JournalEntry]:
+        orms = self.session.query(JournalEntryORM).filter(
+            JournalEntryORM.reference_type == reference_type,
+            JournalEntryORM.reference_id == reference_id
+        ).all()
+        
+        entries = []
+        for orm in orms:
+            lines = [
+                JournalLine(
+                    account_id=line.account_id,
+                    debit_amount=line.debit_amount,
+                    credit_amount=line.credit_amount
+                )
+                for line in orm.lines
+            ]
+            entries.append(JournalEntry(
+                id=orm.id,
+                reference_type=ReferenceType(orm.reference_type),
+                reference_id=orm.reference_id,
+                description=orm.description,
+                lines=lines,
+                created_at=orm.created_at
+            ))
+        return entries

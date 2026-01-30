@@ -86,28 +86,3 @@ def refund_escrow(escrow_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to refund escrow: {str(e)}")
 
-
-@router.post("/{escrow_id}/penalize", response_model=dict, dependencies=[Depends(require_permission("escrow:penalize"))])
-def penalize_escrow(escrow_id: str, db: Session = Depends(get_db)):
-    """
-    Penalize an escrow - FUNDED → PENALIZED
-
-    Creates accounting entries for platform penalty revenue.
-    """
-    try:
-        provider_reference = f"PENALTY-{escrow_id[:8].upper()}"
-
-        lifecycle_service = EscrowLifecycleService(db)
-        penalized_escrow = lifecycle_service.penalize_escrow(escrow_id, provider_reference)
-
-        return {
-            "escrow_id": penalized_escrow.id,
-            "state": penalized_escrow.state.value,
-            "provider_reference": provider_reference,
-            "message": "Escrow penalized successfully"
-        }
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to penalize escrow: {str(e)}")

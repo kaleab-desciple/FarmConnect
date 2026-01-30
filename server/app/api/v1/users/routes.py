@@ -35,7 +35,7 @@ def get_user_reputation(user_id: str, db: Session = Depends(get_db)):
         "completed_orders": reputation.completed_orders,
         "successful_orders": reputation.successful_orders,
         "disputes_lost": reputation.disputes_lost,
-        "penalties_total": reputation.penalties_total,
+
         "avg_delivery_delay": reputation.avg_delivery_delay,
         "reputation_score": reputation.reputation_score
     }

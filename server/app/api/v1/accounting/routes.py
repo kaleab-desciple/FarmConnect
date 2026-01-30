@@ -51,34 +51,30 @@ def get_account_balance(account_id: str, db: Session = Depends(get_db)):
     return {"balance": float(balance)}
 
 
-@router.get("/journal/{reference_type}/{reference_id}", response_model=list, dependencies=[Depends(require_permission("ledger:read"))])
+from app.application.accounting.get_journal_entries import GetJournalEntriesByReference, GetJournalEntriesByReferenceRequest
+
+@router.get("/journal/{reference_type}/{reference_id}", response_model=list)
 def get_journal_entries(reference_type: str, reference_id: str, db: Session = Depends(get_db)):
     journal_repo = JournalRepository(db)
-    # Query journal entries by reference
-    # For now, return a simple list - in production you'd implement proper repository method
-    from app.infrastructure.db.models.journal_entry import JournalEntryORM, JournalLineORM
-    from sqlalchemy.orm import joinedload
-
-    entries = db.query(JournalEntryORM).options(joinedload(JournalEntryORM.lines)).filter(
-        JournalEntryORM.reference_type == reference_type,
-        JournalEntryORM.reference_id == reference_id
-    ).all()
-
-    result = []
-    for entry in entries:
-        result.append({
-            "id": entry.id,
-            "reference_type": entry.reference_type,
+    use_case = GetJournalEntriesByReference(journal_repo)
+    request = GetJournalEntriesByReferenceRequest(reference_type, reference_id)
+    entries = use_case.execute(request)
+    
+    return [
+        {
+            "id": str(entry.id),
+            "reference_type": entry.reference_type.value,
             "reference_id": entry.reference_id,
             "description": entry.description,
             "created_at": entry.created_at.isoformat(),
             "lines": [
                 {
-                    "account_id": line.account_id,
+                    "account_id": str(line.account_id),
                     "debit_amount": float(line.debit_amount),
                     "credit_amount": float(line.credit_amount)
                 }
                 for line in entry.lines
             ]
-        })
-    return result
+        }
+        for entry in entries
+    ]

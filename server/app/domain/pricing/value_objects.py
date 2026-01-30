@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 @dataclass(frozen=True)
@@ -10,6 +10,9 @@ class PricingInput:
     quantity: int
     distance_km: float
     product_type: str
+    product_category: Optional[str] = None
+    quality_grade: Optional[str] = None
+    region: Optional[str] = None
 
     def __post_init__(self):
         """Validate input parameters."""

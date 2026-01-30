@@ -75,37 +75,46 @@ def downgrade() -> None:
     op.alter_column('products', 'id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='id::uuid')
     op.alter_column('orders', 'escrow_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='escrow_id::uuid')
     op.alter_column('orders', 'product_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='product_id::uuid')
     op.alter_column('orders', 'id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='id::uuid')
     op.alter_column('loans', 'id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='id::uuid')
     op.alter_column('escrows', 'order_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='order_id::uuid')
     op.alter_column('escrows', 'id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='id::uuid')
     op.alter_column('disputes', 'escrow_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='escrow_id::uuid')
     op.alter_column('disputes', 'id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='id::uuid')
     # ### end Alembic commands ###

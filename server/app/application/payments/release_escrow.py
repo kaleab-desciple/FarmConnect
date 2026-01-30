@@ -41,23 +41,21 @@ class ReleaseEscrowUseCase:
         escrow.state = transition_result.new_state
         escrow.provider_reference = reference
 
-        # Record the accounting instructions as ledger events
-        for instruction in transition_result.accounting_instructions:
-            ledger_event = LedgerEvent(
-                aggregate_type=AggregateType.ESCROW,
-                aggregate_id=escrow_id,
-                event_type=LedgerEventType.ESCROW_RELEASED,
-                amount=Decimal(instruction.debit or instruction.credit),
-                direction=Direction.DEBIT if instruction.debit else Direction.CREDIT,
-                reference_type=ReferenceType.ESCROW,
-                reference_id=escrow_id,
-                event_metadata={
-                    "reference": reference,
-                    "account_type": instruction.account_type,
-                    "account_owner": instruction.account_owner
-                }
-            )
-            self.record_ledger_event.execute(ledger_event)
+        # Record the accounting as a single balanced ledger event
+        ledger_event = LedgerEvent(
+            aggregate_type=AggregateType.USER,  # Target of the release
+            aggregate_id=order.farmer_id,       # The farmer who gets paid
+            event_type=LedgerEventType.ESCROW_RELEASED,
+            amount=escrow.amount,               # Full amount being debited from escrow
+            direction=Direction.CREDIT,         # Usually from user's perspective (they get a credit)
+            reference_type=ReferenceType.ESCROW,
+            reference_id=escrow_id,
+            event_metadata={
+                "reference": reference,
+                "order_id": order.id
+            }
+        )
+        self.record_ledger_event.execute(ledger_event)
 
         # Update reputation for successful order completion
         # Update farmer reputation

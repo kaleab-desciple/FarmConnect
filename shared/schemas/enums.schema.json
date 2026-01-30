@@ -31,7 +31,6 @@
         "DISPUTED",
         "REFUNDED",
         "SETTLED",
-        "PENALIZED",
         "REVERSED"
       ]
     },

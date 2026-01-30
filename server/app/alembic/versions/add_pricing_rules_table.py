@@ -20,19 +20,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Create enums
-    op.execute("CREATE TYPE rule_type_enum AS ENUM ('PLATFORM_FEE', 'DELIVERY', 'QUALITY', 'DISTANCE');")
-    op.execute("CREATE TYPE fee_type_enum AS ENUM ('PERCENTAGE', 'FIXED');")
+    op.execute("DO $$ BEGIN CREATE TYPE rule_type_enum AS ENUM ('PLATFORM_FEE', 'DELIVERY', 'QUALITY', 'DISTANCE'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
+    op.execute("DO $$ BEGIN CREATE TYPE fee_type_enum AS ENUM ('PERCENTAGE', 'FIXED'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
 
     # Create table
     op.create_table('pricing_rules',
         sa.Column('id', sa.String(), nullable=False),
-        sa.Column('rule_type', postgresql.ENUM(name='rule_type_enum'), nullable=False),
+        sa.Column('rule_type', postgresql.ENUM(name='rule_type_enum', create_type=False), nullable=False),
         sa.Column('product_category', sa.String(), nullable=True),
         sa.Column('quality_grade', sa.String(), nullable=True),
         sa.Column('region', sa.String(), nullable=True),
         sa.Column('min_distance_km', sa.Float(), nullable=True),
         sa.Column('max_distance_km', sa.Float(), nullable=True),
-        sa.Column('fee_type', postgresql.ENUM(name='fee_type_enum'), nullable=False),
+        sa.Column('fee_type', postgresql.ENUM(name='fee_type_enum', create_type=False), nullable=False),
         sa.Column('fee_value', sa.Float(), nullable=False),
         sa.Column('priority', sa.Integer(), nullable=False),
         sa.Column('active', sa.Boolean(), nullable=False, default=True),

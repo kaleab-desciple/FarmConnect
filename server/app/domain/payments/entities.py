@@ -15,7 +15,6 @@ class Escrow:
     order_id: Optional[str] = None
     state: Optional[EscrowState] = None
     amount: Optional[Decimal] = None
-    penalty_applied: Optional[bool] = False
     provider: Optional[Provider] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

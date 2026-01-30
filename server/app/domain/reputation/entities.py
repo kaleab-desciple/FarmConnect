@@ -9,7 +9,6 @@ class Reputation:
     completed_orders: int = 0
     successful_orders: int = 0
     disputes_lost: int = 0
-    penalties_total: Decimal = Decimal(0)
     avg_delivery_delay: Optional[int] = None  # days
     reputation_score: int = 50  # 0-100
 
@@ -22,9 +21,6 @@ class Reputation:
 
         # Disputes lost: -10 each
         score -= self.disputes_lost * 10
-
-        # Penalties: -5 per penalty (assuming penalties_total is count)
-        score -= int(self.penalties_total) * 5
 
         # Late delivery: -1 per day average
         if self.avg_delivery_delay:
@@ -42,9 +38,7 @@ class Reputation:
         self.disputes_lost += 1
         self.update_score()
 
-    def record_penalty(self, amount: Decimal) -> None:
-        self.penalties_total += amount
-        self.update_score()
+
 
     def record_dispute_won(self) -> None:
         # Dispute won: +3

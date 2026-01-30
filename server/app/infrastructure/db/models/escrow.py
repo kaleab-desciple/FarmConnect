@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy import Column, String, DateTime, Boolean, Numeric
 from sqlalchemy.dialects import postgresql
@@ -12,7 +13,6 @@ EscrowStateEnum = postgresql.ENUM(
     "DISPUTED",
     "REFUNDED",
     "SETTLED",
-    "PENALIZED",
     "REVERSED",
     name="escrow_state_enum",
     create_type=False,
@@ -39,10 +39,10 @@ class EscrowORM(Base):
     order_id = Column(String, nullable=False)
     state = Column(EscrowStateEnum, nullable=False)
     amount = Column(Numeric(12, 2), nullable=False)
-    penalty_applied = Column(Boolean, nullable=False, default=False, server_default="false")
+
     provider = Column(ProviderEnum, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False)
-    updated_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=True, onupdate=lambda: datetime.now(timezone.utc))
     funded_at = Column(DateTime(timezone=True), nullable=True)
     released_at = Column(DateTime(timezone=True), nullable=True)
     provider_reference = Column(String, nullable=True)

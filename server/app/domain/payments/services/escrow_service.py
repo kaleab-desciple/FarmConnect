@@ -76,9 +76,16 @@ class EscrowDomainService:
                 f"Cannot release escrow in state {escrow.state}, must be FUNDED"
             )
 
-        # Accounting: Release to farmer
-        # Debit: Escrow Liability (reduce liability)
-        # Credit: Farmer Payable (increase payable)
+        # Calculate platform fee (assuming 5% for now, ideally passed in or from configuration)
+        # Note: in a real system, the fee might be stored on the escrow or order entity from creation
+        fee_percent = Decimal('0.05')
+        platform_fee = (escrow.amount * fee_percent).quantize(Decimal('0.01'))
+        farmer_amount = escrow.amount - platform_fee
+
+        # Accounting: Release to farmer and platform fee
+        # Debit: Escrow Holding (Full Amount)
+        # Credit: Farmer Payable (Amount - Fee)
+        # Credit: Platform Revenue (Fee)
         instructions = [
             AccountingInstruction(
                 account_type="LIABILITY",
@@ -88,7 +95,12 @@ class EscrowDomainService:
             AccountingInstruction(
                 account_type="LIABILITY",
                 account_owner=f"USER_{farmer_id}_LIABILITY_Farmer_Payable",
-                credit=escrow.amount
+                credit=farmer_amount
+            ),
+            AccountingInstruction(
+                account_type="REVENUE",
+                account_owner="SYSTEM_platform_REVENUE_Platform_Revenue",
+                credit=platform_fee
             )
         ]
 
@@ -123,33 +135,3 @@ class EscrowDomainService:
         ]
 
         return EscrowTransitionResult(EscrowState.REFUNDED, instructions)
-
-    @staticmethod
-    def penalize_escrow(escrow: Escrow, provider_reference: str) -> EscrowTransitionResult:
-        """
-        Validate and prepare penalize transition.
-
-        FUNDED → PENALIZED
-        """
-        if escrow.state != EscrowState.FUNDED:
-            raise InvalidEscrowTransitionError(
-                f"Cannot penalize escrow in state {escrow.state}, must be FUNDED"
-            )
-
-        # Accounting: Penalty to platform
-        # Debit: Escrow Liability (reduce liability)
-        # Credit: Platform Revenue (increase revenue)
-        instructions = [
-            AccountingInstruction(
-                account_type="LIABILITY",
-                account_owner=f"ESCROW_{escrow.id}_LIABILITY_Escrow_Holding",
-                debit=escrow.amount
-            ),
-            AccountingInstruction(
-                account_type="REVENUE",
-                account_owner="SYSTEM_platform_REVENUE_Platform_Revenue",
-                credit=escrow.amount
-            )
-        ]
-
-        return EscrowTransitionResult(EscrowState.PENALIZED, instructions)

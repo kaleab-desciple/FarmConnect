@@ -24,7 +24,6 @@ class EscrowState(str, Enum):
     REFUNDED = "REFUNDED"
     DISPUTED = "DISPUTED"
     SETTLED = "SETTLED"
-    PENALIZED = "PENALIZED"
     REVERSED = "REVERSED"
 
 

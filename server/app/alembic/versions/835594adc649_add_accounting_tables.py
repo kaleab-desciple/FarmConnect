@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -42,9 +43,9 @@ def upgrade() -> None:
         op.create_table(
             'accounts',
             sa.Column('id', sa.String(), primary_key=True),
-            sa.Column('owner_type', sa.Enum('USER', 'ESCROW', 'SYSTEM', name='owner_type_enum'), nullable=False),
+            sa.Column('owner_type', postgresql.ENUM('USER', 'ESCROW', 'SYSTEM', name='owner_type_enum', create_type=False), nullable=False),
             sa.Column('owner_id', sa.String(), nullable=False),
-            sa.Column('account_type', sa.Enum('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE', name='account_type_enum'), nullable=False),
+            sa.Column('account_type', postgresql.ENUM('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE', name='account_type_enum', create_type=False), nullable=False),
             sa.Column('name', sa.String(), nullable=False),
             sa.Column('currency', sa.String(), nullable=False, default="ETB"),
             sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()"))

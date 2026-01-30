@@ -21,7 +21,6 @@ class EscrowState(Enum):
     DISPUTED = "DISPUTED"
     REFUNDED = "REFUNDED"
     SETTLED = "SETTLED"
-    PENALIZED = "PENALIZED"
     REVERSED = "REVERSED"
 
 
@@ -115,7 +114,6 @@ class LedgerEventType(Enum):
     ESCROW_RELEASED = "ESCROW_RELEASED"
     ESCROW_REFUNDED = "ESCROW_REFUNDED"
     PLATFORM_FEE_COLLECTED = "PLATFORM_FEE_COLLECTED"
-    PENALTY_APPLIED = "PENALTY_APPLIED"
     LOAN_DISBURSED = "LOAN_DISBURSED"
     LOAN_REPAID = "LOAN_REPAID"
 
@@ -152,7 +150,6 @@ class Escrow(BaseModel):
     order_id: str | None = None
     state: EscrowState | None = None
     amount: PositiveFloat | None = None
-    penalty_applied: bool | None = False
     provider: Provider | None = None
     created_at: AwareDatetime | None = None
     updated_at: AwareDatetime | None = None

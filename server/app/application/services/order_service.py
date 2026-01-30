@@ -6,12 +6,14 @@ pricing → order → escrow → accounting entries
 """
 
 from typing import Tuple, Optional
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from decimal import Decimal
 
-from app.domain.pricing.calculator import PricingCalculator
+from app.domain.pricing.pricing_engine import PricingEngine
 from app.domain.pricing.value_objects import PricingInput
+from app.infrastructure.repositories.pricing_repo import PricingRuleRepository
 from app.domain.orders.entities import Order as DomainOrder
 from app.domain.payments.entities import Escrow as DomainEscrow, EscrowState
 from app.domain.ledger.entities import LedgerEvent, AggregateType, LedgerEventType, Direction, ReferenceType
@@ -69,9 +71,9 @@ class OrderApplicationService:
         self.ledger_repo = LedgerRepository(session)
         self.account_repo = AccountRepository(session)
         self.journal_repo = JournalRepository(session)
+        self.pricing_repo = PricingRuleRepository(session)
 
         # Domain services
-        self.pricing_calculator = PricingCalculator()
         self.journal_mapper = LedgerToJournalMapper(self.account_repo)
         self.post_journal_uc = PostJournalEntry(self.journal_repo, self.account_repo)
 
@@ -101,20 +103,29 @@ class OrderApplicationService:
                     distance_km=request.distance_km,
                     product_type=request.product_type
                 )
-                pricing_result = self.pricing_calculator.calculate(pricing_input)
+                
+                # Use database rules
+                active_rules = self.pricing_repo.get_active_rules()
+                engine = PricingEngine(active_rules)
+                pricing_result = engine.calculate(pricing_input)
 
                 # 2. Create and persist order
+                now = datetime.now(timezone.utc)
                 domain_order = DomainOrder(
                     farmer_id=request.farmer_id,
                     merchant_id=request.merchant_id,
                     product_id=request.product_id,
                     quantity=Decimal(request.quantity),
                     unit_price=request.unit_price,
-                    subtotal=pricing_result.base_price,  # Mapped from base_price
-                    delivery_cost=pricing_result.delivery_cost,
+                    subtotal=pricing_result.subtotal,
+                    delivery_fee=pricing_result.delivery_fee if pricing_result.delivery_fee > 0 else None,
+                    delivery_margin=pricing_result.delivery_margin if pricing_result.delivery_margin > 0 else None,
+                    delivery_cost=pricing_result.delivery_fee + pricing_result.delivery_margin,
                     platform_fee=pricing_result.platform_fee,
+                    quality_fee=pricing_result.quality_fee if pricing_result.quality_fee > 0 else None,
                     total_price=pricing_result.total_price,
-                    status="CREATED"
+                    status="CREATED",
+                    created_at=now
                 )
                 saved_order = self.order_repo.save(domain_order)
 
@@ -123,7 +134,8 @@ class OrderApplicationService:
                     order_id=saved_order.id,
                     state=EscrowState.CREATED,
                     amount=pricing_result.total_price,  # Must equal pricing.total_price
-                    provider=Provider.BANK
+                    provider=Provider.BANK,
+                    created_at=now
                 )
                 saved_escrow = self.escrow_repo.save(domain_escrow)
 

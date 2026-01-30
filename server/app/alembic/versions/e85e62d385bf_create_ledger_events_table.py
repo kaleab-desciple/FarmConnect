@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -56,13 +57,13 @@ def upgrade() -> None:
         op.create_table(
             'ledger_events',
             sa.Column('id', sa.String(), primary_key=True),
-            sa.Column('aggregate_type', sa.Enum('USER', 'ESCROW', 'SYSTEM', name='aggregate_type_enum'), nullable=False),
+            sa.Column('aggregate_type', postgresql.ENUM('USER', 'ESCROW', 'SYSTEM', name='aggregate_type_enum', create_type=False), nullable=False),
             sa.Column('aggregate_id', sa.String(), nullable=False),
-            sa.Column('event_type', sa.Enum('ESCROW_FUNDED', 'ESCROW_RELEASED', 'ESCROW_REFUNDED', 'PLATFORM_FEE_COLLECTED', 'PENALTY_APPLIED', 'LOAN_DISBURSED', 'LOAN_REPAID', name='ledger_event_type_enum'), nullable=False),
+            sa.Column('event_type', postgresql.ENUM('ESCROW_FUNDED', 'ESCROW_RELEASED', 'ESCROW_REFUNDED', 'PLATFORM_FEE_COLLECTED', 'PENALTY_APPLIED', 'LOAN_DISBURSED', 'LOAN_REPAID', name='ledger_event_type_enum', create_type=False), nullable=False),
             sa.Column('amount', sa.Float(), nullable=False),
             sa.Column('currency', sa.String(), nullable=False, default="ETB"),
-            sa.Column('direction', sa.Enum('DEBIT', 'CREDIT', name='direction_enum'), nullable=False),
-            sa.Column('reference_type', sa.Enum('ORDER', 'ESCROW', 'DISPUTE', 'LOAN', name='reference_type_enum'), nullable=False),
+            sa.Column('direction', postgresql.ENUM('DEBIT', 'CREDIT', name='direction_enum', create_type=False), nullable=False),
+            sa.Column('reference_type', postgresql.ENUM('ORDER', 'ESCROW', 'DISPUTE', 'LOAN', name='reference_type_enum', create_type=False), nullable=False),
             sa.Column('reference_id', sa.String(), nullable=False),
             sa.Column('event_metadata', sa.dialects.postgresql.JSONB(), nullable=True),
             sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()"))

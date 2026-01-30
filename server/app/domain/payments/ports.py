@@ -40,5 +40,3 @@ class PaymentProvider(ABC):
         Partial release funds from escrow to farmer with penalty, returns transaction reference
         Raises PaymentFailed on failure
         """
-
-PaymentPort = PaymentProvider

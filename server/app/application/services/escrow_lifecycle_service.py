@@ -86,18 +86,7 @@ class EscrowLifecycleService:
             f"Escrow refunded with reference {provider_reference}"
         )
 
-    def penalize_escrow(self, escrow_id: str, provider_reference: str) -> Escrow:
-        """
-        Penalize an escrow - FUNDED → PENALIZED
 
-        Creates accounting entries for platform penalty revenue.
-        """
-        return self._execute_transition(
-            escrow_id,
-            lambda escrow: self.domain_service.penalize_escrow(escrow, provider_reference),
-            LedgerEventType.PENALTY_APPLIED,
-            f"Escrow penalized with reference {provider_reference}"
-        )
 
     def _release_escrow_with_order(self, escrow: Escrow, provider_reference: str) -> EscrowTransitionResult:
         """Helper to get order and call domain service."""
@@ -180,9 +169,28 @@ class EscrowLifecycleService:
             else:
                 continue
 
+            # Parse account_owner to determine aggregate
+            # Format: OWNERTYPE_OWNERID_ACCOUNTTYPE_ACCOUNTNAME
+            # Example: USER_MER-00001_ASSET_Merchant_Cash
+            parts = instruction.account_owner.split('_', 2)
+            if len(parts) >= 2:
+                owner_type_str = parts[0]
+                owner_id = parts[1]
+                # Map OwnerType to AggregateType
+                try:
+                    aggregate_type = AggregateType(owner_type_str)
+                    aggregate_id = owner_id
+                except ValueError:
+                    # Fallback if mapping fails
+                    aggregate_type = AggregateType.ESCROW
+                    aggregate_id = escrow.id
+            else:
+                aggregate_type = AggregateType.ESCROW
+                aggregate_id = escrow.id
+
             ledger_event = LedgerEvent(
-                aggregate_type=AggregateType.ESCROW,
-                aggregate_id=escrow.id,
+                aggregate_type=aggregate_type,
+                aggregate_id=aggregate_id,
                 event_type=event_type,
                 amount=amount,
                 direction=direction,

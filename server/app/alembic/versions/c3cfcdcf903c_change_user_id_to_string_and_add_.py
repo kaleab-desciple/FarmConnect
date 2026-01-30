@@ -57,25 +57,31 @@ def downgrade() -> None:
                existing_type=sa.String(),
                type_=sa.UUID(),
                existing_nullable=False,
-               existing_server_default=sa.text('gen_random_uuid()'))
+               existing_server_default=sa.text('gen_random_uuid()'),
+               postgresql_using='id::uuid')
     op.alter_column('products', 'farmer_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='farmer_id::uuid')
     op.alter_column('orders', 'merchant_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='merchant_id::uuid')
     op.alter_column('orders', 'farmer_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='farmer_id::uuid')
     op.alter_column('loans', 'farmer_id',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='farmer_id::uuid')
     op.alter_column('disputes', 'raised_by',
                existing_type=sa.String(),
                type_=sa.UUID(),
-               existing_nullable=True)
+               existing_nullable=True,
+               postgresql_using='raised_by::uuid')
     # ### end Alembic commands ###

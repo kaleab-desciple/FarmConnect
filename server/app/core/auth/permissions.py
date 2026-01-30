@@ -41,7 +41,7 @@ PERMISSIONS = {
     "escrow:fund": ["ADMIN", "escrow_service"], # Machine action primarily
     "escrow:release": ["ADMIN", "escrow_service"],
     "escrow:refund": ["ADMIN", "escrow_service"],
-    "escrow:penalize": ["ADMIN", "escrow_service"],
+
     
     # Loans Domain
     "loans:request": ["ADMIN", "FARMER"],

@@ -15,6 +15,6 @@ class Reputation(BaseModel):
     completed_orders: int | None = 0
     successful_orders: int | None = 0
     disputes_lost: int | None = 0
-    penalties_total: float | None = 0
+
     avg_delivery_delay: int | None = None
     reputation_score: conint(ge=0, le=100) | None = 50

@@ -1,15 +1,17 @@
 from typing import Tuple
+from datetime import datetime, timezone
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from shared_models import Order as OrderDTO, Escrow as EscrowDTO
 from app.domain.orders.entities import Order as DomainOrder
 from app.domain.payments.entities import Escrow as DomainEscrow, EscrowState
-from app.domain.pricing.calculator import PricingCalculator
-from app.domain.pricing.value_objects import PricingInput
 from app.infrastructure.repositories.user_repo import UserRepository
 from app.infrastructure.repositories.order_repo import OrderRepository
 from app.infrastructure.repositories.payment_repo import EscrowRepository
+from app.infrastructure.repositories.pricing_repo import PricingRuleRepository
+from app.domain.pricing.pricing_engine import PricingEngine
+from app.domain.pricing.value_objects import PricingInput
 from shared_models.escrow import Provider
 
 
@@ -19,6 +21,7 @@ class OrderService:
         self.user_repo = UserRepository(session)
         self.order_repo = OrderRepository(session)
         self.escrow_repo = EscrowRepository(session)
+        self.pricing_repo = PricingRuleRepository(session)
 
     def create_order(self, order_data: OrderDTO) -> Tuple[OrderDTO, EscrowDTO]:
         # Validate required fields
@@ -51,20 +54,29 @@ class OrderService:
             product_type=product_type
         )
 
-        calculator = PricingCalculator()
-        pricing_result = calculator.calculate(pricing_input)
+        # Get active rules from database
+        active_rules = self.pricing_repo.get_active_rules()
+        engine = PricingEngine(active_rules)
+        
+        # Calculate pricing
+        pricing_result = engine.calculate(pricing_input)
 
         # Create domain order with calculated pricing
+        now = datetime.now(timezone.utc)
         domain_order = DomainOrder(
             farmer_id=order_data.farmer_id,
             merchant_id=order_data.merchant_id,
             product_id=order_data.product_id,
             quantity=order_data.quantity,
             unit_price=order_data.unit_price,
-            delivery_cost=pricing_result.delivery_cost,
+            delivery_fee=pricing_result.delivery_fee if pricing_result.delivery_fee > 0 else None,
+            delivery_margin=pricing_result.delivery_margin if pricing_result.delivery_margin > 0 else None,
+            delivery_cost=pricing_result.delivery_fee + pricing_result.delivery_margin,
             platform_fee=pricing_result.platform_fee,
+            quality_fee=pricing_result.quality_fee if pricing_result.quality_fee > 0 else None,
             total_price=pricing_result.total_price,
-            status=order_data.status or "CREATED"
+            status=order_data.status or "CREATED",
+            created_at=now
         )
 
         # Save order
@@ -75,7 +87,8 @@ class OrderService:
             order_id=saved_order.id,
             state=EscrowState.CREATED,
             amount=saved_order.total_price,
-            provider=Provider.BANK  # default
+            provider=Provider.BANK,  # default
+            created_at=now
         )
 
         # Save escrow

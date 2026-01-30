@@ -11,6 +11,6 @@ class ReputationORM(Base):
     completed_orders: Mapped[int] = mapped_column(Integer, default=0)
     successful_orders: Mapped[int] = mapped_column(Integer, default=0)
     disputes_lost: Mapped[int] = mapped_column(Integer, default=0)
-    penalties_total: Mapped[float] = mapped_column(Float, default=0.0)
+
     avg_delivery_delay: Mapped[int] = mapped_column(Integer, nullable=True)
     reputation_score: Mapped[int] = mapped_column(Integer, default=50)

@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.execute("ALTER TYPE escrow_state_enum ADD VALUE 'PENALIZED';")
+    op.execute("DO $$ BEGIN ALTER TYPE escrow_state_enum ADD VALUE 'PENALIZED'; EXCEPTION WHEN duplicate_object THEN null; END $$;")
 
 
 def downgrade() -> None:

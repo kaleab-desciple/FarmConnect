@@ -42,15 +42,26 @@ class LedgerToJournalMapper:
         elif event.event_type == LedgerEventType.ESCROW_RELEASED:
             # Debit: Escrow Holding (LIABILITY)
             # Credit: Farmer Payable (LIABILITY)
+            # Credit: Platform Revenue (REVENUE)
             escrow_holding_id = self._get_or_create_account(
                 OwnerType.ESCROW, event.reference_id, AccountType.LIABILITY, "Escrow Holding"
             )
+            # aggregate_id is expected to be the Farmer ID for this event
             farmer_payable_id = self._get_or_create_account(
                 OwnerType.USER, event.aggregate_id, AccountType.LIABILITY, "Farmer Payable"
             )
+            platform_revenue_id = self._get_or_create_account(
+                OwnerType.SYSTEM, "platform", AccountType.REVENUE, "Platform Revenue"
+            )
+
+            # 5% platform fee
+            fee_amount = (amount * Decimal('0.05')).quantize(Decimal('0.01'))
+            farmer_amount = amount - fee_amount
+
             return [
                 {"account_id": str(escrow_holding_id), "debit_amount": str(amount), "credit_amount": "0"},
-                {"account_id": str(farmer_payable_id), "debit_amount": "0", "credit_amount": str(amount)}
+                {"account_id": str(farmer_payable_id), "debit_amount": "0", "credit_amount": str(farmer_amount)},
+                {"account_id": str(platform_revenue_id), "debit_amount": "0", "credit_amount": str(fee_amount)}
             ]
 
         elif event.event_type == LedgerEventType.PLATFORM_FEE_COLLECTED:
