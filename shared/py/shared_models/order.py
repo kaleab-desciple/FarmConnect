@@ -2,12 +2,12 @@
 #   filename:  order.schema.json
 #   timestamp: 2026-01-23T13:57:55+00:00
 
-from __future__ import annotations
-
+from datetime import datetime
 from enum import Enum
+from typing import Optional, List
+from uuid import UUID
 
 from pydantic import (
-    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
@@ -149,25 +149,46 @@ class FeeType(Enum):
     FIXED = "FIXED"
 
 
-class Order(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    id: str | None = None
-    farmer_id: str | None = None
-    merchant_id: str | None = None
-    product_id: str | None = None
-    quantity: PositiveFloat | None = None
-    unit_price: PositiveFloat | None = None
-    delivery_cost: confloat(ge=0.0) | None = None
-    platform_fee: confloat(ge=0.0) | None = None
-    total_price: PositiveFloat | None = Field(
+class OrderBase(BaseModel):
+    farmer_id: str
+    merchant_id: str
+    product_id: str
+    quantity: PositiveFloat
+    unit_price: PositiveFloat
+    delivery_cost: Optional[confloat(ge=0.0)] = None
+    platform_fee: Optional[confloat(ge=0.0)] = None
+    status: OrderStatus = OrderStatus.CREATED
+    escrow_id: Optional[str] = None
+    subtotal: Optional[PositiveFloat] = None
+    delivery_fee: Optional[PositiveFloat] = None
+    delivery_margin: Optional[PositiveFloat] = None
+    quality_fee: Optional[PositiveFloat] = None
+    
+    total_price: Optional[PositiveFloat] = Field(
         None, description="Final price paid by merchant (includes all costs)"
     )
-    status: OrderStatus | None = None
-    escrow_id: str | None = None
-    created_at: AwareDatetime | None = None
-    subtotal: PositiveFloat | None = None
-    delivery_fee: PositiveFloat | None = None
-    delivery_margin: PositiveFloat | None = None
-    quality_fee: PositiveFloat | None = None
+
+class OrderCreate(OrderBase):
+    pass
+
+class OrderUpdate(BaseModel):
+    farmer_id: Optional[str] = None
+    merchant_id: Optional[str] = None
+    product_id: Optional[str] = None
+    quantity: Optional[PositiveFloat] = None
+    unit_price: Optional[PositiveFloat] = None
+    delivery_cost: Optional[confloat(ge=0.0)] = None
+    platform_fee: Optional[confloat(ge=0.0)] = None
+    status: Optional[OrderStatus] = None
+    escrow_id: Optional[str] = None
+    subtotal: Optional[PositiveFloat] = None
+    delivery_fee: Optional[PositiveFloat] = None
+    delivery_margin: Optional[PositiveFloat] = None
+    quality_fee: Optional[PositiveFloat] = None
+    total_price: Optional[PositiveFloat] = None
+
+class Order(OrderBase):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: UUID
+    created_at: datetime

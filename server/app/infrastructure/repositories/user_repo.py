@@ -33,7 +33,7 @@ class UserRepository:
         orm = dto_to_orm(user)
         self.session.add(orm)
         self.session.commit()
-
+     # 'Optional[DomainUser]' : means it can return a DomainUser object or None
     def get_by_id(self, user_id: str) -> Optional[DomainUser]:
         orm = (
             self.session.query(UserORM)

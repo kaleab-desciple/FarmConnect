@@ -2,7 +2,7 @@ from uuid import uuid4
 from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column # used for mapping database columns to python classes
 from app.domain.common.enums import UserRole
 from app.infrastructure.db.base import Base
 

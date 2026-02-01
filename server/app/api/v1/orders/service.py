@@ -1,9 +1,16 @@
-from typing import Tuple
+from __future__ import annotations
+from typing import Optional
+from app.core.auth.dependencies import TokenPayload
 from datetime import datetime, timezone
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from shared_models import Order as OrderDTO, Escrow as EscrowDTO
+from shared_models import (
+    Order as OrderDTO, 
+    OrderCreate, 
+    OrderUpdate, 
+    Escrow as EscrowDTO
+)
 from app.domain.orders.entities import Order as DomainOrder
 from app.domain.payments.entities import Escrow as DomainEscrow, EscrowState
 from app.infrastructure.repositories.user_repo import UserRepository
@@ -23,7 +30,7 @@ class OrderService:
         self.escrow_repo = EscrowRepository(session)
         self.pricing_repo = PricingRuleRepository(session)
 
-    def create_order(self, order_data: OrderDTO) -> Tuple[OrderDTO, EscrowDTO]:
+    def create_order(self, order_data: OrderCreate) -> tuple[OrderDTO, EscrowDTO]:
         # Validate required fields
         if not order_data.unit_price or order_data.unit_price <= 0:
             raise HTTPException(status_code=400, detail="Unit price must be greater than 0")
@@ -71,11 +78,10 @@ class OrderService:
             unit_price=order_data.unit_price,
             delivery_fee=pricing_result.delivery_fee if pricing_result.delivery_fee > 0 else None,
             delivery_margin=pricing_result.delivery_margin if pricing_result.delivery_margin > 0 else None,
-            delivery_cost=pricing_result.delivery_fee + pricing_result.delivery_margin,
             platform_fee=pricing_result.platform_fee,
             quality_fee=pricing_result.quality_fee if pricing_result.quality_fee > 0 else None,
             total_price=pricing_result.total_price,
-            status=order_data.status or "CREATED",
+            status=order_data.status,
             created_at=now
         )
 
@@ -106,3 +112,32 @@ class OrderService:
         self.session.commit()
 
         return order_dto, escrow_dto
+
+    def list_orders(self, current_user: TokenPayload) -> list[OrderDTO]:
+        """
+        List orders with row-level authorization.
+        - Farmers see their own orders.
+        - Merchants see their own orders.
+        - Agents see orders in their region.
+        - Managers/Admins see all orders.
+        """
+        # Get orders with proper authorization
+        orders = self.order_repo.list_all(current_user)
+        
+        # Convert to DTOs
+        from app.infrastructure.db.mappers import domain_to_dto
+        return [domain_to_dto(order) for order in orders]
+
+    def get_order(self, order_id: str, current_user: TokenPayload) -> Optional[OrderDTO]:
+        """
+        Get order with row-level authorization.
+        """
+        # Get order with proper authorization
+        order = self.order_repo.get_by_id(order_id, current_user)
+        
+        if not order:
+            return None
+            
+        # Convert to DTO
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(order)

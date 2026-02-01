@@ -13,7 +13,6 @@ class Order:
     quantity: Optional[Decimal] = None
     unit_price: Optional[Decimal] = None
     subtotal: Optional[Decimal] = None
-    delivery_cost: Optional[Decimal] = None
     delivery_fee: Optional[Decimal] = None
     delivery_margin: Optional[Decimal] = None
     quality_fee: Optional[Decimal] = None

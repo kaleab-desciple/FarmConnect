@@ -10,6 +10,11 @@ from .account import AccountORM
 from .pricing import PricingRuleORM
 from .escrow import EscrowORM
 from .journal_entry import JournalEntryORM, JournalLineORM
+from .farm import FarmORM, FieldORM
+from .crop import CropCycleORM
+from .alert import AlertORM
+
+# Export for use in mappers
 
 __all__ = [
     "UserORM",
@@ -23,5 +28,10 @@ __all__ = [
     "AccountORM",
     "JournalEntryORM",
     "JournalLineORM",
-    "PricingRuleORM"
+    "PricingRuleORM",
+    "FarmORM",
+    "FieldORM",
+    "CropCycleORM",
+    "AlertORM"
 ]
+

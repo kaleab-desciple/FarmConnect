@@ -50,6 +50,12 @@ class TokenPayload:
     def all_roles(self) -> List[str]:
         return list(set(self.realm_roles + self.client_roles))
 
+    def __getitem__(self, item):
+        return self.raw_payload[item]
+
+    def get(self, item, default=None):
+        return self.raw_payload.get(item, default)
+
 
 def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
@@ -127,6 +133,21 @@ def require_client_role(*allowed_roles: str):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Insufficient client roles. Required one of: {allowed_roles}"
+            )
+        return current_user
+    return dependency
+
+
+def require_roles(allowed_roles: List[str]):
+    """
+    Enforce that the user has at least one of the specified realm roles.
+    Compatible with list input format.
+    """
+    def dependency(current_user: TokenPayload = Depends(get_current_user)) -> TokenPayload:
+        if not any(role in current_user.realm_roles for role in allowed_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient realm roles. Required one of: {allowed_roles}"
             )
         return current_user
     return dependency

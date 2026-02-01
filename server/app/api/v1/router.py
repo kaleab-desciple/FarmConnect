@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from .users.routes import router as users_router
 from .products.routes import router as products_router
 from .orders.routes import router as orders_router
-from .payments.escrow import router as escrow_router
+from .payments.routes import router as escrow_router
 from .loans.routes import router as loans_router
 from .disputes.routes import router as disputes_router
 from .ledger import router as ledger_router
@@ -12,6 +12,10 @@ from .reports.routes import router as reports_router
 from .auth.routes import router as auth_router
 from .auth.provisioning_routes import router as provisioning_router
 from .examples.protected_routes import router as examples_router
+from .agriculture.farms.routes import router as farms_router
+from .agriculture.crops.routes import router as crops_router
+from .agriculture.alerts.routes import router as alerts_router
+from .agriculture.config_routes import router as agriculture_config_router
 
 api_router = APIRouter()
 
@@ -32,3 +36,9 @@ api_router.include_router(disputes_router, prefix="/disputes", tags=["Disputes"]
 api_router.include_router(ledger_router, prefix="/ledger", tags=["Ledger"])
 api_router.include_router(accounting_router, prefix="/accounting", tags=["Accounting"])
 api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])
+
+# Register agricultural intelligence routers
+api_router.include_router(farms_router, prefix="/agriculture/farms", tags=["Agriculture - Farms & Fields"])
+api_router.include_router(crops_router, prefix="/agriculture/crop-cycles", tags=["Agriculture - Crop Cycles"])
+api_router.include_router(alerts_router, prefix="/agriculture/alerts", tags=["Agriculture - Alerts"])
+api_router.include_router(agriculture_config_router, prefix="/agriculture", tags=["Agriculture - Configuration"])

@@ -1,3 +1,1 @@
-from .client import WeatherClient
-
-__all__ = ["WeatherClient"]
+"""Weather provider implementations"""

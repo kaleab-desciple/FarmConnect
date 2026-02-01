@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from shared_models.user import User
-from app.infrastructure.db.mappers import dto_to_orm, orm_to_domain
+from shared_models.user import User as UserDTO
+# from app.infrastructure.db.mappers import dto_to_orm, orm_to_domain
 from app.infrastructure.repositories.user_repo import UserRepository
 from app.infrastructure.repositories.reputation_repo import ReputationRepository
 from app.core.database import get_db
@@ -10,8 +10,8 @@ from app.core.auth import require_permission, TokenPayload
 
 router = APIRouter()
 
-@router.post("/", response_model=User, dependencies=[Depends(require_permission("users:write"))])
-def create_user(user: User, db: Session = Depends(get_db)):
+@router.post("/", response_model=UserDTO, dependencies=[Depends(require_permission("users:write"))])
+def create_user(user: UserDTO, db: Session = Depends(get_db)):
     repo = UserRepository(db)
     try:
         repo.save(user)
