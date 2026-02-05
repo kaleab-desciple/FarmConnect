@@ -10,7 +10,7 @@ from app.application.accounting.get_user_balance import GetUserBalance, GetUserB
 from app.application.accounting.get_escrow_balance import GetEscrowBalance, GetEscrowBalanceRequest
 from app.application.accounting.get_user_statement import GetUserStatement, GetUserStatementRequest
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 # Use the same tag casing as `api_router.include_router(..., tags=["Accounting"])`
@@ -139,10 +139,20 @@ def get_user_statement(
     journal_repo = JournalRepository(db)
     use_case = GetUserStatement(account_repo, journal_repo)
     
-    # Parse dates if provided
-    start_dt = datetime.fromisoformat(start_date) if start_date else None
-    end_dt = datetime.fromisoformat(end_date) if end_date else None
+    # Parse dates if provided - make them timezone-aware (UTC) to match database timestamps
+    start_dt = None
+    if start_date:
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
     
+    end_dt = None
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            # Set to end of day for inclusive date range
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            
     request = GetUserStatementRequest(user_id, start_dt, end_dt)
     
     try:
