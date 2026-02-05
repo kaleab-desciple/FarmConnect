@@ -2,7 +2,7 @@ from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 from decimal import Decimal
-from app.domain.accounting.entities import JournalEntry, JournalLine, AccountType
+from app.domain.accounting.entities import JournalEntry, JournalLine, AccountType, ReferenceType
 from app.infrastructure.db.models.journal_entry import JournalEntryORM, JournalLineORM
 from app.infrastructure.db.models.account import AccountORM
 
@@ -93,3 +93,79 @@ class JournalRepository:
                 created_at=orm.created_at
             ))
         return entries
+
+    def get_entries_for_account(self, account_id: str) -> List[JournalEntry]:
+        """Get all journal entries that affect a specific account."""
+        orms = self.session.query(JournalEntryORM).join(
+            JournalLineORM, JournalEntryORM.id == JournalLineORM.journal_entry_id
+        ).filter(
+            JournalLineORM.account_id == account_id
+        ).order_by(JournalEntryORM.created_at.asc()).all()
+        
+        entries = []
+        for orm in orms:
+            lines = [
+                JournalLine(
+                    account_id=line.account_id,
+                    debit_amount=line.debit_amount,
+                    credit_amount=line.credit_amount
+                )
+                for line in orm.lines
+            ]
+            entries.append(JournalEntry(
+                id=orm.id,
+                reference_type=ReferenceType(orm.reference_type),
+                reference_id=orm.reference_id,
+                description=orm.description,
+                lines=lines,
+                created_at=orm.created_at
+            ))
+        return entries
+
+    def get_statement(self, account_id: str) -> List[any]:
+        # 1. Get all lines for this account ordered by time
+        on_clause = AccountORM.id == JournalLineORM.account_id
+        
+        lines = (
+            self.session.query(
+                JournalLineORM,
+                JournalEntryORM.created_at,
+                JournalEntryORM.description,
+                JournalEntryORM.id.label('entry_id'),
+                AccountORM.account_type
+            )
+            .join(JournalEntryORM, JournalEntryORM.id == JournalLineORM.journal_entry_id)
+            .join(AccountORM, on_clause)
+            .filter(JournalLineORM.account_id == account_id)
+            .order_by(JournalEntryORM.created_at.asc())
+            .all()
+        )
+
+        statement_lines = []
+        running_balance = Decimal(0)
+        
+        from app.application.accounting.get_account_statement import AccountStatementLine
+
+        for line, created_at, description, entry_id, account_type in lines:
+            debit = Decimal(str(line.debit_amount))
+            credit = Decimal(str(line.credit_amount))
+            
+            # Update running balance
+            # account_type might be an Enum object, ensure we compare string value
+            type_str = str(account_type.value) if hasattr(account_type, 'value') else str(account_type)
+            
+            if type_str == 'ASSET' or type_str == 'EXPENSE':
+                running_balance += (debit - credit)
+            else:
+                running_balance += (credit - debit)
+                
+            statement_lines.append(AccountStatementLine(
+                journal_entry_id=entry_id,
+                created_at=created_at,
+                description=description,
+                debit=debit,
+                credit=credit,
+                balance_after=running_balance
+            ))
+            
+        return statement_lines

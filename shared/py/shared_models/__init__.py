@@ -4,7 +4,6 @@ from .product import ProductCreate, ProductUpdate, Product
 from .order import Order, OrderCreate, OrderUpdate
 from .escrow import Escrow
 from .dispute import Dispute
-from .loan import Loan
 from .reputation import Reputation
 from .account import Account
 from .journal_entry import JournalEntry

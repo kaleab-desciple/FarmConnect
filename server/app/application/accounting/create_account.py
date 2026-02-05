@@ -1,6 +1,6 @@
 from uuid import uuid4
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Protocol, Optional
 from app.domain.accounting.entities import Account, OwnerType, AccountType
 
 
@@ -9,6 +9,9 @@ class AccountRepository(Protocol):
         ...
 
     def get_by_id(self, account_id: str) -> Account | None:
+        ...
+
+    def get_by_owner_and_type(self, owner_type: OwnerType, owner_id: str, account_type: AccountType) -> Optional[Account]:
         ...
 
 

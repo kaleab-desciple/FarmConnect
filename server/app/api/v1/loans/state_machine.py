@@ -1,2 +1,0 @@
-class LoanStateMachine:
-    pass

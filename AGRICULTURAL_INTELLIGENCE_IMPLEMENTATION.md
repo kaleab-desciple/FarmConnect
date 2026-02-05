@@ -48,11 +48,11 @@ server/app/
 │   ├── provider.py                       ✅ Complete
 │   └── open_meteo.py                     ✅ Complete
 └── api/v1/agriculture/farms/             ✅ Complete
-|__ api/v1/agriculture/crops/
-|__ api/v1/agriculture/monitoring/
+|__ api/v1/agriculture/crops/             ✅ Complete
+|__ api/v1/agriculture/monitor-fields/
 |__ api/v1/agriculture/tasks/
-|__ api/v1/agriculture/weather/
-|__ api/v1/agriculture/alerts/
+|__ api/v1/agriculture/weather/           ✅ Complete
+|__ api/v1/agriculture/alerts/            ✅ Complete
 |__ api/v1/agriculture/risk/
 |__ api/v1/agriculture/advisory/
 ```
@@ -79,13 +79,13 @@ GET    /api/v1/agriculture/crop-cycles/active
 ```
 
 #### Monitoring (📝 To Implement)
-POST   /api/v1/agriculture/fields/{field_id}/ndvi-snapshots
-GET    /api/v1/agriculture/fields/{field_id}/ndvi-snapshots
-GET    /api/v1/agriculture/fields/{field_id}/ndvi-trend
-POST   /api/v1/agriculture/fields/{field_id}/soil-readings
-GET    /api/v1/agriculture/fields/{field_id}/soil-readings
-POST   /api/v1/agriculture/fields/{field_id}/pest-disease-reports
-GET    /api/v1/agriculture/fields/{field_id}/pest-disease-reports
+POST   /api/v1/agriculture/monitor-fields/{field_id}/ndvi-snapshots
+GET    /api/v1/agriculture/monitor-fields/{field_id}/ndvi-snapshots
+GET    /api/v1/agriculture/monitor-fields/{field_id}/ndvi-trend
+POST   /api/v1/agriculture/monitor-fields/{field_id}/soil-readings
+GET    /api/v1/agriculture/monitor-fields/{field_id}/soil-readings
+POST   /api/v1/agriculture/monitor-fields/{field_id}/pest-disease-reports
+GET    /api/v1/agriculture/monitor-fields/{field_id}/pest-disease-reports
 POST   /api/v1/agriculture/pest-disease-reports/{report_id}/treatments
 ```
 

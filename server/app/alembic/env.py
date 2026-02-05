@@ -22,7 +22,6 @@ from app.infrastructure.db.models import (
     ProductORM,
     OrderORM,
     EscrowORM,
-    LoanORM,
     DisputeORM,
     ReputationORM,
     AccountORM,

@@ -97,11 +97,18 @@ class LedgerToJournalMapper:
 
     def _get_or_create_account(self, owner_type: OwnerType, owner_id: str, account_type: AccountType, name: str) -> UUID:
         """Get existing account or create if not exists."""
+        # Ensure owner_id is string
+        owner_id = str(owner_id) if owner_id else owner_id
+        
+        # Try to find existing account
+        existing = self.account_repo.get_by_owner_and_type(owner_type, owner_id, account_type)
+        if existing:
+            return existing.id
+
+        # Create new if not found
         # For now, create a deterministic name for lookup
-        # In practice, you might have predefined accounts or a better way to identify them
         account_name = f"{owner_type.value}_{owner_id}_{account_type.value}_{name.replace(' ', '_')}"
-        # Try to find existing account - but since we don't have a way to query by name, we'll create new ones
-        # This is a simplification; in real implementation, you'd have a way to find accounts by criteria
+        
         request = CreateAccountRequest(owner_type, owner_id, account_type, account_name, "ETB")
         account = self.create_account_uc.execute(request)
         return account.id
