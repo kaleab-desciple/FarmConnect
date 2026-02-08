@@ -8,6 +8,7 @@ h11==0.16.0
 # Database
 SQLAlchemy==2.0.45
 psycopg2-binary==2.9.11
+asyncpg==0.29.0
 alembic==1.18.1
 
 # Config & utils
@@ -15,7 +16,7 @@ python-dotenv==1.2.1
 packaging==25.0
 
 # Pydantic
-pydantic==2.12.5
+pydantic[email]==2.12.5
 annotated-types==0.7.0
 typing-inspection==0.4.2
 

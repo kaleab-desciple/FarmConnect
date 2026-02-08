@@ -1,2 +1,0 @@
-class LoanScoringRules:
-    pass

@@ -33,6 +33,14 @@
             {
                 "name": "DELIVERY",
                 "description": "Delivery Personnel"
+            },
+            {
+                "name": "AGRONOMIST",
+                "description": "Agricultural Expert / Agronomist"
+            },
+            {
+                "name": "FIELD_ANALYST",
+                "description": "Field Data Analyst"
             }
         ],
         "client": {
@@ -87,6 +95,18 @@
             "name": "Delivery",
             "realmRoles": [
                 "DELIVERY"
+            ]
+        },
+        {
+            "name": "Agronomists",
+            "realmRoles": [
+                "AGRONOMIST"
+            ]
+        },
+        {
+            "name": "Field Analysts",
+            "realmRoles": [
+                "FIELD_ANALYST"
             ]
         }
     ],

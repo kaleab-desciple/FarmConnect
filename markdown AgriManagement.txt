@@ -1,0 +1,1006 @@
+```markdown
+# AgriManagement System: Design & Implementation Documentation
+## Simplified Precision Agriculture Platform
+
+---
+
+## Table of Contents
+1. [Executive Summary](#executive-summary)
+2. [System Architecture Overview](#system-architecture-overview)
+3. [Domain-Driven Design & Bounded Contexts](#domain-driven-design--bounded-contexts)
+4. [Database Architecture (Simplified)](#database-architecture-simplified)
+5. [Microservices Design](#microservices-design)
+6. [Implementation Guide](#implementation-guide)
+7. [Deployment & Operations](#deployment--operations)
+
+---
+
+## 1. Executive Summary
+
+This document provides a simplified blueprint for implementing a production-ready AgriManagement System using:
+- **FastAPI** microservices with async I/O
+- **Dual persistence**: PostgreSQL/PostGIS + MongoDB
+- **Kubernetes** with HPA for seasonal scaling
+- **Manual data entry** for soil and environmental readings (no IoT edge devices)
+
+**Key Change**: All real-time IoT sensor functionality has been removed. Soil readings, weather data, and irrigation scheduling are now based on manual entry, satellite imagery, and third-party weather APIs.
+
+---
+
+## 2. System Architecture Overview
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT LAYER                                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  Mobile App  │  │  Web Dashboard│  │ Manual Entry │  │   Drones     │    │
+│  │  (Farmers)   │  │  (Agronomists)│  │  (Tablet/PC) │  │  (Satellite) │    │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
+└─────────┼─────────────────┼─────────────────┼─────────────────┼────────────┘
+                                     │
+┌────────────────────────────────────┴───────────────────────────────────────┐
+│                      MICROSERVICES LAYER (Kubernetes)                      │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐       │
+│  │   Field Mgmt │ │   Weather    │ │  AI Diagnosis│ │   Advisory   │       │
+│  │   Service    │ │   Service    │ │   Service    │ │   Service    │       │
+│  │  (PostgreSQL)│ │  (External)  │ │  (MongoDB)   │ │  (MongoDB)   │       │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘       │
+│  ┌──────────────┐ ┌──────────────┐                                         │
+│  │   Manual     │ │  Analytics   │                                         │
+│  │   Data Entry │ │   Service    │                                         │
+│  │   Service    │ │ (PostgreSQL) │                                         │
+│  │  (PostgreSQL)│ │              │                                         │
+│  └──────────────┘ └──────────────┘                                         │
+└────────────────────────────────────────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────┴───────────────────────────────────────┐
+│                      DATA LAYER (Dual Persistence)                         │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐                  │
+│  │    PostgreSQL + PostGIS │  │       MongoDB           │                  │
+│  │    ───────────────────  │  │       ─────────         │                  │
+│  │    Farm boundaries      │  │  AI diagnosis results   │                  │
+│  │    Field geometries     │  │  Image metadata         │                  │
+│  │    Crop calendars       │  │  Forum content          │                  │
+│  │    User profiles        │  │  NDVI tile metadata     │                  │
+│  │    Manual soil readings │  │  Chat messages          │                  │
+│  │    Weather history      │  │  Treatment knowledge    │                  │
+│  │    Irrigation schedules │  │  base                   │                  │
+│  └─────────────────────────┘  └─────────────────────────┘                  │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Domain-Driven Design & Bounded Contexts
+
+### 3.1 Field Management Context
+- **Responsibility**: Farm boundaries, crop planning, GIS operations
+- **Database**: PostgreSQL + PostGIS
+- **Key Entities**: Farm, Field, CropCycle, SoilProfile
+
+### 3.2 Manual Data Entry Context (Replaces IoT)
+- **Responsibility**: Manual soil readings, weather observations, irrigation logging
+- **Database**: PostgreSQL
+- **Key Entities**: SoilReading (manual), WeatherObservation, IrrigationEvent, FieldVisitLog
+
+### 3.3 AI & Diagnosis Context
+- **Responsibility**: Pest/disease identification, image analysis, ML model management
+- **Database**: MongoDB
+- **Key Entities**: Diagnosis, ImageMetadata, MLModel(not for now), TreatmentRecommendation
+
+### 3.4 Advisory & Collaboration Context
+- **Responsibility**: Expert forums, chat, knowledge base
+- **Database**: MongoDB
+- **Key Entities**: ForumThread, Message, ExpertProfile, KnowledgeArticle
+
+### 3.5 Weather & Risk Context
+- **Responsibility**: Third-party weather APIs, risk alerts, manual observations
+- **External APIs**
+- **Cache**: Redis
+
+### 3.6 Analytics Context
+- **Responsibility**: NDVI analysis, yield prediction, manual data trends
+- **Database**: PostgreSQL (materialized views)
+- **Key Entities**: NDVITile, YieldReport, SoilTrendAnalysis
+
+---
+
+
+
+### 4.2 MongoDB (AI Diagnosis & Forum)
+
+#### Schema Design - AI Diagnosis
+
+```javascript
+// diagnoses collection
+{
+  "_id": ObjectId("..."),
+  "postgres_report_id": "uuid-from-pest_disease_reports",
+  "farm_id": "Farm01",
+  "field_id": "F123",
+  "crop_cycle_id": "CC456",
+  
+  "image_analysis": {
+    "original_image_url": "s3://agri-images/...",
+    "preprocessed_image_url": "s3://agri-images/processed/...",
+    "thumbnail_url": "s3://agri-images/thumbs/...",
+    "image_metadata": {
+      "width": 2048,
+      "height": 1536,
+      "format": "jpeg",
+      "exif": {...}
+    }
+  },
+  
+  "ai_models": [
+    {
+      "model_id": "pest_classifier_v2.4",
+      "model_version": "2.4.1",
+      "framework": "tensorflow",
+      "inference_time_ms": 245,
+      "predictions": [
+        {
+          "class_id": 42,
+          "class_name": "Aphidoidea",
+          "common_name": "Aphids",
+          "confidence": 0.94,
+          "bbox": [120, 200, 150, 280],  // x, y, w, h
+          "segmentation_mask_url": "s3://..."
+        }
+      ],
+      "ensemble_weight": 0.6
+    },
+    {
+      "model_id": "disease_classifier_v1.2",
+      // Secondary model for disease detection
+    }
+  ],
+  
+  "ensemble_result": {
+    "primary_diagnosis": "Aphidoidea",
+    "confidence": 0.91,
+    "severity": "high",
+    "affected_area_estimate_pct": 15.5,
+    "spread_risk": "rapid"
+  },
+  
+  "treatment_recommendations": [
+    {
+      "treatment_id": "TR001",
+      "type": "chemical",
+      "name": "Imidacloprid 200SL",
+      "active_ingredient": "Imidacloprid",
+      "confidence": 0.95,
+      "dosage": {
+        "amount": "1.0",
+        "unit": "ml/L",
+        "per_hectare": "500ml"
+      },
+      "application": {
+        "method": "foliar_spray",
+        "timing": "early_morning",
+        "frequency": "single_application",
+        "reentry_interval_hours": 12,
+        "pre_harvest_interval_days": 14
+      },
+      "safety": {
+        "ppe_required": ["gloves", "mask", "goggles"],
+        "environmental_warnings": ["toxic_to_bees", "avoid_water_bodies"],
+        "organic_compatible": false
+      },
+      "estimated_cost_per_ha_usd": 45.50,
+      "effectiveness_rating": 4.5,
+      "expected_results_days": 3
+    },
+    {
+      "type": "biological",
+      "name": "Ladybug release (Coccinellidae)",
+      // Organic alternative
+    }
+  ],
+  
+  "similar_cases": [
+    {
+      "case_id": "PC789",
+      "similarity_score": 0.87,
+      "outcome": "successful_treatment",
+      "farmer_feedback": {...}
+    }
+  ],
+  
+  "farmer_feedback": {
+    "validated": true,
+    "actual_issue": "Aphidoidea",
+    "treatment_efficacy": 4.5,
+    "would_recommend": true,
+    "comments": "Worked well, saw reduction in 2 days"
+  },
+  
+  "created_at": ISODate("2024-01-01T12:00:00Z"),
+  "processed_at": ISODate("2024-01-01T12:00:02Z"),
+  "processing_status": "completed"
+}
+
+// Indexes
+db.ai_diagnoses.createIndex({ "postgres_report_id": 1 }, { unique: true });
+db.ai_diagnoses.createIndex({ "field_id": 1, "created_at": -1 });
+db.ai_diagnoses.createIndex({ "ensemble_result.primary_diagnosis": 1, "created_at": -1 });
+db.ai_diagnoses.createIndex({ "ai_models.predictions.class_name": 1 });
+db.ai_diagnoses.createIndex({ "ensemble_result.confidence": 1 });
+```
+
+#### Schema Design - Forum Content
+
+```javascript
+// forum_threads collection
+{
+  "_id": ObjectId("..."),
+  "title": "Early blight in tomatoes - treatment advice needed",
+  "slug": "early-blight-tomatoes-treatment-advice",
+  
+  "author": {
+    "user_id": "user123",
+    "username": "JohnFarmer",
+    "reputation_score": 1250,
+    "expertise_badge": "experienced_farmer",
+    "location": { "country": "US", "state": "Iowa" }
+  },
+  
+  "category": "pest_disease",
+  "subcategory": "fungal_diseases",
+  "tags": ["tomato", "early_blight", "alternaria_solani", "fungicide"],
+  
+  "content": {
+    "body": "I'm seeing early blight symptoms on my Roma tomatoes...",
+    "format": "markdown",
+    "attachments": [
+      {
+        "type": "image",
+        "url": "s3://...",
+        "thumbnail": "s3://...",
+        "description": "Affected leaves"
+      }
+    ]
+  },
+  
+  "context": {
+    "related_field_id": "F123",
+    "related_crop_cycle_id": "CC456",
+    "crop_type": "tomato",
+    "growth_stage": "fruiting"
+  },
+  
+  "engagement": {
+    "views": 1250,
+    "upvotes": 45,
+    "downvotes": 2,
+    "bookmarks": 18,
+    "shares": 5
+  },
+  
+  "comments": [
+    {
+      "_id": ObjectId("..."),
+      "author": { "user_id": "expert456", "username": "DrAgronomist", "badge": "certified_expert" },
+      "content": "Apply copper-based fungicide...",
+      "parent_id": null,  // Top-level comment
+      "created_at": ISODate("..."),
+      "upvotes": 12,
+      "is_accepted_answer": true,
+      "replies": [
+        {
+          "_id": ObjectId("..."),
+          "author": { "user_id": "user789", "username": "NewFarmer" },
+          "content": "Thanks! How often should I apply?",
+          "parent_id": ObjectId("..."),  // References parent
+          "created_at": ISODate("..."),
+          "upvotes": 3
+        }
+      ]
+    }
+  ],
+  
+  "status": "resolved",  // 'open', 'resolved', 'closed'
+  "resolution": {
+    "accepted_answer_id": ObjectId("..."),
+    "helpful_count": 23,
+    "summary": "Copper fungicide every 7-10 days"
+  },
+  
+  "created_at": ISODate("..."),
+  "last_activity": ISODate("..."),
+  "bumped_at": ISODate("...")  // For sorting active threads
+}
+
+// Indexes
+db.forum_threads.createIndex({ "slug": 1 }, { unique: true });
+db.forum_threads.createIndex({ "category": 1, "created_at": -1 });
+db.forum_threads.createIndex({ "tags": 1 }, { background: true });
+db.forum_threads.createIndex({ "context.crop_type": 1, "created_at": -1 });
+db.forum_threads.createIndex({ "engagement.views": -1 });
+db.forum_threads.createIndex({ "last_activity": -1 });
+db.forum_threads.createIndex({ "status": 1, "created_at": -1 });
+```
+
+---
+
+## 5. Microservices Design
+
+### 5.1 Service Architecture
+
+| Service | Database | Port | Key Responsibilities |
+|---------|----------|------|---------------------|
+| `field-service` | PostgreSQL | 8001 | Farm/field CRUD, GIS queries |
+| `manual-data-service` | PostgreSQL | 8002 | Soil readings, irrigation, weather logs |
+| `ai-service` | MongoDB | 8003 | Image upload, diagnosis, ML inference |
+| `advisory-service` | MongoDB | 8004 | Forums, chat, expert matching |
+| `weather-service` | Redis (cache) | 8005 | Third-party API integration |
+| `analytics-service` | PostgreSQL | 8006 | NDVI analysis, trend reports |
+| `gateway` | N/A | 80 | Routing, auth, rate limiting |
+
+### 5.2 Manual Data Entry Service Implementation (FastAPI)
+
+```python
+# manual_data_service/main.py
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
+from datetime import datetime, date
+from typing import Optional, List
+import aiokafka
+import json
+
+app = FastAPI(title="Manual Data Entry Service")
+
+# Database dependency
+async def get_db():
+    async with async_session() as session:
+        yield session
+
+# Pydantic models
+class ManualSoilReadingCreate(BaseModel):
+    field_id: str
+    moisture_percent: Optional[float] = None
+    temperature_celsius: Optional[float] = None
+    ph_level: Optional[float] = None
+    nitrogen_mg_kg: Optional[int] = None
+    phosphorus_mg_kg: Optional[int] = None
+    potassium_mg_kg: Optional[int] = None
+    notes: Optional[str] = None
+    gps_latitude: Optional[float] = None
+    gps_longitude: Optional[float] = None
+    weather_conditions: Optional[str] = None
+
+class IrrigationScheduleCreate(BaseModel):
+    field_id: str
+    scheduled_date: datetime
+    duration_minutes: int
+    water_volume_liters: float
+    notes: Optional[str] = None
+
+# Endpoints
+@app.post("/soil-readings", response_model=dict)
+async def create_soil_reading(
+    reading: ManualSoilReadingCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Record manual soil reading from field visit
+    """
+    query = """
+    INSERT INTO manual_soil_readings 
+    (field_id, recorded_by, moisture_percent, temperature_celsius, ph_level,
+     nitrogen_mg_kg, phosphorus_mg_kg, potassium_mg_kg, notes, 
+     gps_location, weather_conditions)
+    VALUES 
+    (:field_id, :user_id, :moisture, :temp, :ph, :n, :p, :k, :notes,
+     ST_SetSRID(ST_MakePoint(:lng, :lat), 4326), :weather)
+    RETURNING id
+    """
+    
+    result = await db.execute(query, {
+        "field_id": reading.field_id,
+        "user_id": current_user.id,
+        "moisture": reading.moisture_percent,
+        "temp": reading.temperature_celsius,
+        "ph": reading.ph_level,
+        "n": reading.nitrogen_mg_kg,
+        "p": reading.phosphorus_mg_kg,
+        "k": reading.potassium_mg_kg,
+        "notes": reading.notes,
+        "lng": reading.gps_longitude,
+        "lat": reading.gps_latitude,
+        "weather": reading.weather_conditions
+    })
+    await db.commit()
+    
+    reading_id = str(result.scalar())
+    
+    # Publish event for analytics service
+    await publish_event("soil_reading_created", {
+        "reading_id": reading_id,
+        "field_id": reading.field_id,
+        "moisture": reading.moisture_percent,
+        "timestamp": datetime.utcnow().isoformat()
+    })
+    
+    return {"id": reading_id, "status": "recorded"}
+
+@app.get("/soil-readings/field/{field_id}")
+async def get_field_soil_history(
+    field_id: str,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get historical soil readings for a field
+    """
+    query = """
+    SELECT 
+        id, reading_date, moisture_percent, temperature_celsius, ph_level,
+        nitrogen_mg_kg, phosphorus_mg_kg, potassium_mg_kg, notes,
+        ST_X(gps_location) as longitude, ST_Y(gps_location) as latitude,
+        weather_conditions
+    FROM manual_soil_readings
+    WHERE field_id = :field_id
+    """
+    params = {"field_id": field_id}
+    
+    if start_date:
+        query += " AND reading_date >= :start_date"
+        params["start_date"] = start_date
+    if end_date:
+        query += " AND reading_date <= :end_date"
+        params["end_date"] = end_date
+    
+    query += " ORDER BY reading_date DESC"
+    
+    result = await db.execute(query, params)
+    readings = result.mappings().all()
+    
+    return {"readings": [dict(r) for r in readings]}
+
+@app.post("/irrigation-schedules")
+async def create_irrigation_schedule(
+    schedule: IrrigationScheduleCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Manually schedule irrigation based on soil check or weather alert
+    """
+    query = """
+    INSERT INTO irrigation_schedules 
+    (field_id, scheduled_date, duration_minutes, water_volume_liters, 
+     triggered_by, status, notes)
+    VALUES 
+    (:field_id, :scheduled_date, :duration, :volume, 'manual', 'scheduled', :notes)
+    RETURNING id
+    """
+    
+    result = await db.execute(query, {
+        "field_id": schedule.field_id,
+        "scheduled_date": schedule.scheduled_date,
+        "duration": schedule.duration_minutes,
+        "volume": schedule.water_volume_liters,
+        "notes": schedule.notes
+    })
+    await db.commit()
+    
+    return {
+        "id": str(result.scalar()),
+        "status": "scheduled",
+        "message": "Irrigation scheduled successfully"
+    }
+
+@app.get("/irrigation-schedules/upcoming")
+async def get_upcoming_irrigation(
+    farm_id: str,
+    days: int = 7,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get upcoming irrigation schedules for a farm
+    """
+    query = """
+    SELECT i.*, f.name as field_name
+    FROM irrigation_schedules i
+    JOIN fields f ON i.field_id = f.id
+    WHERE f.farm_id = :farm_id
+    AND i.scheduled_date BETWEEN NOW() AND NOW() + INTERVAL ':days days'
+    AND i.status = 'scheduled'
+    ORDER BY i.scheduled_date
+    """
+    
+    result = await db.execute(query, {"farm_id": farm_id, "days": days})
+    schedules = result.mappings().all()
+    
+    return {"schedules": [dict(s) for s in schedules]}
+```
+
+---
+
+### 5.3 Field Service Implementation (FastAPI)
+
+```python
+# field_service/main.py
+from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from geoalchemy2.functions import ST_Contains, ST_Distance, ST_AsGeoJSON
+from pydantic import BaseModel
+import json
+
+app = FastAPI(title="Field Management Service")
+
+# Pydantic models
+class FarmCreate(BaseModel):
+    name: str
+    boundary: dict  # GeoJSON
+    total_area_hectares: float
+
+class FieldResponse(BaseModel):
+    id: str
+    name: str
+    boundary: dict
+    current_crop: str
+    soil_type: str
+
+# Endpoints
+@app.post("/farms", response_model=dict)
+async def create_farm(farm: FarmCreate, db: AsyncSession = Depends(get_db)):
+    """Create farm with geographic boundary"""
+    query = """
+    INSERT INTO farms (name, boundary, total_area_hectares)
+    VALUES (:name, ST_GeomFromGeoJSON(:boundary), :area)
+    RETURNING id
+    """
+    result = await db.execute(query, {
+        "name": farm.name,
+        "boundary": json.dumps(farm.boundary),
+        "area": farm.total_area_hectares
+    })
+    await db.commit()
+    return {"id": str(result.scalar())}
+
+@app.get("/fields/nearby")
+async def get_nearby_fields(
+    lat: float, 
+    lng: float, 
+    radius_meters: float = 5000,
+    db: AsyncSession = Depends(get_db)
+):
+    """Find fields within radius using PostGIS"""
+    query = """
+    SELECT f.id, f.name, ST_AsGeoJSON(f.boundary) as boundary, 
+           c.name as crop_name, f.soil_type
+    FROM fields f
+    LEFT JOIN crop_cycles c ON f.current_crop_id = c.id
+    WHERE ST_DWithin(
+        f.boundary::geography,
+        ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+        :radius
+    )
+    """
+    result = await db.execute(query, {"lat": lat, "lng": lng, "radius": radius_meters})
+    fields = result.mappings().all()
+    return {"fields": [dict(f) for f in fields]}
+
+@app.get("/fields/{field_id}/dashboard")
+async def get_field_dashboard(field_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Aggregate field data: boundaries, latest soil reading, upcoming irrigation
+    """
+    # Get field details
+    field_query = """
+    SELECT f.*, ST_AsGeoJSON(f.boundary) as boundary_geojson,
+           c.crop_type, c.planting_date, c.expected_harvest
+    FROM fields f
+    LEFT JOIN crop_cycles c ON f.current_crop_id = c.id
+    WHERE f.id = :field_id
+    """
+    field = await db.execute(field_query, {"field_id": field_id})
+    field_data = field.mappings().first()
+    
+    # Get latest soil reading
+    soil_query = """
+    SELECT * FROM manual_soil_readings
+    WHERE field_id = :field_id
+    ORDER BY reading_date DESC
+    LIMIT 1
+    """
+    soil = await db.execute(soil_query, {"field_id": field_id})
+    latest_soil = soil.mappings().first()
+    
+    # Get upcoming irrigation
+    irrigation_query = """
+    SELECT * FROM irrigation_schedules
+    WHERE field_id = :field_id AND status = 'scheduled'
+    ORDER BY scheduled_date
+    LIMIT 1
+    """
+    irrigation = await db.execute(irrigation_query, {"field_id": field_id})
+    next_irrigation = irrigation.mappings().first()
+    
+    return {
+        "field": dict(field_data),
+        "latest_soil_reading": dict(latest_soil) if latest_soil else None,
+        "next_irrigation": dict(next_irrigation) if next_irrigation else None
+    }
+```
+
+---
+
+### 5.4 AI Service Implementation (FastAPI + MongoDB + Motor)
+
+```python
+# ai_service/main.py
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks
+from motor.motor_asyncio import AsyncIOMotorClient
+import tensorflow as tf
+from PIL import Image
+import io
+import hashlib
+from datetime import datetime
+
+app = FastAPI(title="AI Diagnosis Service")
+
+# MongoDB async client
+client = AsyncIOMotorClient("mongodb://mongodb:27017")
+db = client.agri_db
+
+# Load ML model
+model = tf.keras.models.load_model("models/pest_classifier_v2.h5")
+
+@app.post("/diagnose")
+async def diagnose_image(
+    file: UploadFile = File(...),
+    farm_id: str = None,
+    field_id: str = None,
+    background_tasks: BackgroundTasks = None
+):
+    """
+    Async image processing with background ML inference
+    """
+    # Read and hash image
+    contents = await file.read()
+    image_hash = hashlib.sha256(contents).hexdigest()
+    
+    # Check cache first
+    cached = await db.diagnoses.find_one({"image_hash": image_hash})
+    if cached:
+        return {"diagnosis_id": str(cached["_id"]), "cached": True}
+    
+    # Store metadata immediately
+    doc = {
+        "image_hash": image_hash,
+        "farm_id": farm_id,
+        "field_id": field_id,
+        "status": "processing",
+        "created_at": datetime.utcnow()
+    }
+    result = await db.diagnoses.insert_one(doc)
+    diagnosis_id = result.inserted_id
+    
+    # Trigger background ML processing
+    background_tasks.add_task(
+        process_image_ml, 
+        contents, 
+        diagnosis_id,
+        image_hash,
+        farm_id
+    )
+    
+    return {"diagnosis_id": str(diagnosis_id), "status": "processing"}
+
+async def process_image_ml(image_bytes: bytes, diagnosis_id, image_hash, farm_id):
+    """Background task: ML inference and result storage"""
+    # Preprocess
+    image = Image.open(io.BytesIO(image_bytes))
+    image = image.resize((224, 224))
+    img_array = tf.keras.preprocessing.image.img_to_array(image)
+    img_array = tf.expand_dims(img_array, 0)
+    
+    # Inference
+    predictions = model.predict(img_array)
+    class_idx = tf.argmax(predictions[0]).numpy()
+    confidence = float(tf.reduce_max(predictions[0]).numpy())
+    
+    pest_name = PEST_CLASS_NAMES[class_idx]
+    
+    # Update MongoDB with results
+    await db.diagnoses.update_one(
+        {"_id": diagnosis_id},
+        {"$set": {
+            "status": "completed",
+            "diagnosis.pest_identified": pest_name,
+            "diagnosis.confidence": confidence,
+            "diagnosis.affected_area_percent": float(predictions[0][class_idx] * 100),
+            "updated_at": datetime.utcnow()
+        }}
+    )
+    
+    # Publish event for notification service
+    await publish_event("diagnosis_completed", {
+        "diagnosis_id": str(diagnosis_id),
+        "farm_id": farm_id,
+        "pest_identified": pest_name,
+        "confidence": confidence
+    })
+```
+
+---
+
+## 6. Implementation Guide
+
+### 6.1 Project Structure
+
+```
+agri-management-system/
+├── docker-compose.yml
+├── k8s/
+│   ├── namespaces/
+│   ├── deployments/
+│   ├── services/
+│   ├── hpas/
+│   └── configmaps/
+├── services/
+│   ├── field-service/
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   ├── app/
+│   │   │   ├── __init__.py
+│   │   │   ├── main.py
+│   │   │   ├── models.py
+│   │   │   ├── schemas.py
+│   │   │   ├── database.py
+│   │   │   └── routers/
+│   │   └── tests/
+│   ├── manual-data-service/
+│   ├── ai-service/
+│   ├── advisory-service/
+│   ├── weather-service/
+│   └── analytics-service/
+├── shared/
+│   ├── kafka-topics/
+│   └── monitoring/
+└── docs/
+```
+
+### 6.2 Docker Compose (Development)
+
+```yaml
+version: '3.8'
+
+services:
+  # API Gateway
+  gateway:
+    image: kong:3.5
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+    ports:
+      - "80:8000"
+      - "8443:8443"
+    volumes:
+      - ./kong:/kong/declarative
+
+  # Field Service
+  field-service:
+    build: ./services/field-service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/agri_db
+    depends_on:
+      - postgres
+
+  # Manual Data Entry Service
+  manual-data-service:
+    build: ./services/manual-data-service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/agri_db
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - postgres
+      - kafka
+
+  # AI Service
+  ai-service:
+    build: ./services/ai-service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      MONGODB_URL: mongodb://mongodb:27017/agri_db
+      MODEL_PATH: /models
+    volumes:
+      - ./models:/models
+    depends_on:
+      - mongodb
+
+  # PostgreSQL + PostGIS
+  postgres:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: agri_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  # MongoDB
+  mongodb:
+    image: mongo:6.0
+    command: --wiredTigerCacheSizeGB 1.5 --bind_ip_all
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+
+  # Kafka (for async events)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # Redis (caching)
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+```
+
+---
+
+## 7. Deployment & Operations
+
+### 7.1 Kubernetes Deployment with HPA
+
+```yaml
+# k8s/hpas/manual-data-service-hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: manual-data-service-hpa
+  namespace: agri-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: manual-data-service
+  minReplicas: 2
+  maxReplicas: 20  # Scale during peak field visit seasons
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+
+---
+# AI Service HPA - Scale for image processing demands
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-service-hpa
+  namespace: agri-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-service
+  minReplicas: 2
+  maxReplicas: 30
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+### 7.2 Database Connection Pooling
+
+**PostgreSQL (Asyncpg)**:
+```python
+from sqlalchemy.ext.asyncio import create_async_engine
+
+engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=20,
+    max_overflow=40,
+    pool_timeout=30,
+    pool_recycle=1800,
+    echo=False
+)
+```
+
+**MongoDB (Motor)**:
+```python
+client = AsyncIOMotorClient(
+    MONGODB_URL,
+    maxPoolSize=50,
+    minPoolSize=10,
+    maxIdleTimeMS=60000
+)
+```
+
+---
+
+## Appendix A: API Endpoints Summary
+
+| Service | Endpoint | Method | Description |
+|---------|----------|--------|-------------|
+| Field | `/farms` | POST | Create farm with GeoJSON boundary |
+| Field | `/fields/nearby` | GET | Spatial query for nearby fields |
+| Field | `/fields/{id}/dashboard` | GET | Field overview with latest readings |
+| Manual Data | `/soil-readings` | POST | Record manual soil reading |
+| Manual Data | `/soil-readings/field/{id}` | GET | Historical soil data |
+| Manual Data | `/irrigation-schedules` | POST | Schedule irrigation |
+| Manual Data | `/irrigation-schedules/upcoming` | GET | Upcoming irrigation tasks |
+| AI | `/diagnose` | POST | Upload image for diagnosis |
+| AI | `/diagnoses/{id}` | GET | Fetch diagnosis results |
+| Advisory | `/forums` | POST | Create forum thread |
+| Advisory | `/forums/{id}/comments` | POST | Add comment/reply |
+
+---
+
+## Appendix B: Data Entry Workflows
+
+### Manual Soil Reading Workflow
+1. Farmer visits field with tablet/mobile device
+2. Takes soil sample and measures (or sends to lab)
+3. Enters data via mobile app: moisture, pH, NPK values
+4. System stores in PostgreSQL with GPS coordinates
+5. Analytics service calculates trends and recommendations
+6. Irrigation schedule suggested based on manual thresholds
+
+### Irrigation Scheduling Workflow
+1. System checks latest manual soil reading
+2. If moisture < 30%, suggests irrigation
+3. Farmer reviews weather forecast (integrated API)
+4. Farmer schedules irrigation via app
+5. System logs scheduled event
+6. Farmer confirms completion after irrigation
+
+### AI Diagnosis Workflow
+1. Farmer spots potential pest/disease in field
+2. Takes photo with smartphone
+3. Uploads to AI service via app
+4. Background ML processing identifies pest
+5. Treatment recommendations provided
+6. Farmer validates accuracy (feedback loop)
+```
+
+This is the complete simplified AgriManagement System documentation with IoT functionality removed, focusing on manual data entry, PostgreSQL/PostGIS for relational and spatial data, and MongoDB for AI and forum content.

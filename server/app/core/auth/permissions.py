@@ -7,7 +7,7 @@ Permissions describe WHAT you can do.
 """
 
 # Realm Roles (Human Users)
-REALM_ROLES = ["ADMIN", "MANAGER", "AGENT", "FARMER", "MERCHANT", "DELIVERY"]
+REALM_ROLES = ["ADMIN", "MANAGER", "AGENT", "FARMER", "MERCHANT", "DELIVERY", "AGRONOMIST", "FIELD_ANALYST"]
 
 # Client Roles (Service Accounts)
 CLIENT_ROLES = ["system_internal", "escrow_service", "reporting_service"]
@@ -65,4 +65,57 @@ PERMISSIONS = {
     # Internal / System Domain
     "system:maintenance": ["ADMIN", "system_internal"],
     "system:analytics": ["ADMIN", "reporting_service"],
+    
+    # Agricultural Intelligence Domain
+    # Farms - FARMER: Own CRUD, AGRONOMIST: Assigned R, FIELD_ANALYST: All R, ADMIN: All CRUD
+    "farms:create": ["ADMIN", "FARMER"],
+    "farms:read:own": ["FARMER"],
+    "farms:read:assigned": ["AGRONOMIST"],
+    "farms:read:all": ["ADMIN", "FIELD_ANALYST"],
+    "farms:update:own": ["FARMER"],
+    "farms:update:all": ["ADMIN"],
+    "farms:delete:own": ["FARMER"],
+    "farms:delete:all": ["ADMIN"],
+    
+    # Fields - FARMER: Own CRUD, AGRONOMIST: Assigned R, FIELD_ANALYST: All R, ADMIN: All CRUD
+    "fields:create": ["ADMIN", "FARMER"],
+    "fields:read:own": ["FARMER"],
+    "fields:read:assigned": ["AGRONOMIST"],
+    "fields:read:all": ["ADMIN", "FIELD_ANALYST"],
+    "fields:update:own": ["FARMER"],
+    "fields:update:all": ["ADMIN"],
+    "fields:delete:own": ["FARMER"],
+    "fields:delete:all": ["ADMIN"],
+    
+    # Crop Cycles - FARMER: Own CRUD, AGRONOMIST: Assigned RU, FIELD_ANALYST: All R, ADMIN: All CRUD
+    "crop_cycles:create": ["ADMIN", "FARMER"],
+    "crop_cycles:read:own": ["FARMER"],
+    "crop_cycles:read:assigned": ["AGRONOMIST"],
+    "crop_cycles:read:all": ["ADMIN", "FIELD_ANALYST"],
+    "crop_cycles:update:own": ["FARMER"],
+    "crop_cycles:update:assigned": ["AGRONOMIST"],
+    "crop_cycles:update:all": ["ADMIN"],
+    "crop_cycles:delete:own": ["FARMER"],
+    "crop_cycles:delete:all": ["ADMIN"],
+    
+    # NDVI Data - FARMER: Own R, AGRONOMIST: Assigned R, FIELD_ANALYST: All CRUD, ADMIN: All CRUD
+    "ndvi:create": ["ADMIN", "FIELD_ANALYST"],
+    "ndvi:read:own": ["FARMER"],
+    "ndvi:read:assigned": ["AGRONOMIST"],
+    "ndvi:read:all": ["ADMIN", "FIELD_ANALYST"],
+    "ndvi:update": ["ADMIN", "FIELD_ANALYST"],
+    "ndvi:delete": ["ADMIN", "FIELD_ANALYST"],
+    
+    # Weather - FARMER: Own R, AGRONOMIST: Assigned R, FIELD_ANALYST: All R, ADMIN: All R
+    "weather:read:own": ["FARMER"],
+    "weather:read:assigned": ["AGRONOMIST"],
+    "weather:read:all": ["ADMIN", "FIELD_ANALYST"],
+    
+    # Alerts - FARMER: Own RU, AGRONOMIST: Own RU, FIELD_ANALYST: Own RU, ADMIN: All CRUD
+    "alerts:create": ["ADMIN"],
+    "alerts:read:own": ["FARMER", "AGRONOMIST", "FIELD_ANALYST"],
+    "alerts:read:all": ["ADMIN"],
+    "alerts:update:own": ["FARMER", "AGRONOMIST", "FIELD_ANALYST"],
+    "alerts:update:all": ["ADMIN"],
+    "alerts:delete": ["ADMIN"],
 }

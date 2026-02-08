@@ -1,7 +1,6 @@
 import os
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, pool
 from alembic import context
 from dotenv import load_dotenv
 
@@ -22,7 +21,6 @@ from app.infrastructure.db.models import (
     ProductORM,
     OrderORM,
     EscrowORM,
-    LoanORM,
     DisputeORM,
     ReputationORM,
     AccountORM,

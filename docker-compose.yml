@@ -1,11 +1,135 @@
 version: '3.8'
 
 services:
+  # Keycloak for authentication
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:26.0.0
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
     command: start-dev
+    networks:
+      - agri-network
+
+  # PostgreSQL 17 + PostGIS 3.5
+  postgres:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: agri_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - agri-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d agri_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB 8.2.2
+  mongodb:
+    image: mongo:8.2.2
+    command: --wiredTigerCacheSizeGB 1.5 --bind_ip_all
+    environment:
+      MONGO_INITDB_DATABASE: agri_db
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - agri-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - agri-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - agri-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - agri-network
+
+  # API Server
+  api:
+    build: ./server
+    entrypoint: ["sh", "-c", "alembic -c app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:password@postgres:5432/agri_db
+      MONGODB_URL: mongodb://mongodb:27017/agri_db
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKER: kafka:9092
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: farm-connect
+      KEYCLOAK_CLIENT_ID: farm-connect-backend
+      PYTHONPATH: /app/shared/py
+      AUTH_ENABLED: "false"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    volumes:
+      - ./server:/app
+      - ./shared:/app/shared
+    networks:
+      - agri-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  keycloak_data:
+
+
+networks:
+  agri-network:
+    driver: bridge

@@ -2,7 +2,7 @@ from typing import Type, Any, Dict
 from enum import Enum
 
 # Shared models (Pydantic DTOs)
-from shared_models import User, Product, Order, Escrow, Loan, Dispute, Reputation
+from shared_models import User, Product, Order, Escrow, Dispute, Reputation
 from shared_models.enums import DisputeResolution
 from app.domain.ledger.entities import LedgerEvent
 
@@ -11,7 +11,6 @@ from app.infrastructure.db.models.user import UserORM
 from app.infrastructure.db.models.product import ProductORM
 from app.infrastructure.db.models.order import OrderORM
 from app.infrastructure.db.models.escrow import EscrowORM
-from app.infrastructure.db.models.loan import LoanORM
 from app.infrastructure.db.models.dispute import DisputeORM
 from app.infrastructure.db.models.reputation import ReputationORM
 from app.infrastructure.db.models.ledger import LedgerEventORM
@@ -28,7 +27,6 @@ TYPE_MAP: dict[Type[Any], Type[Any]] = {
     Product: ProductORM,
     Order: OrderORM,
     Escrow: EscrowORM,
-    Loan: LoanORM,
     Dispute: DisputeORM,
     Reputation: ReputationORM,
     LedgerEvent: LedgerEventORM,
@@ -96,7 +94,6 @@ def orm_to_domain(orm: Any) -> Any:
     from app.domain.products.entities import Product as DomainProduct
     from app.domain.orders.entities import Order as DomainOrder
     from app.domain.payments.entities import Escrow as DomainEscrow
-    from app.domain.loans.entities import Loan as DomainLoan
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
     from app.domain.pricing.entities import PricingRule
@@ -106,7 +103,6 @@ def orm_to_domain(orm: Any) -> Any:
         ProductORM: DomainProduct,
         OrderORM: DomainOrder,
         EscrowORM: DomainEscrow,
-        LoanORM: DomainLoan,
         DisputeORM: DomainDispute,
         ReputationORM: DomainReputation,
         LedgerEventORM: LedgerEvent,
@@ -134,7 +130,6 @@ def domain_to_orm(domain_obj: Any) -> Any:
     from app.domain.products.entities import Product as DomainProduct
     from app.domain.orders.entities import Order as DomainOrder
     from app.domain.payments.entities import Escrow as DomainEscrow
-    from app.domain.loans.entities import Loan as DomainLoan
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
     from app.domain.pricing.entities import PricingRule
@@ -144,7 +139,6 @@ def domain_to_orm(domain_obj: Any) -> Any:
         DomainProduct: ProductORM,
         DomainOrder: OrderORM,
         DomainEscrow: EscrowORM,
-        DomainLoan: LoanORM,
         DomainDispute: DisputeORM,
         DomainReputation: ReputationORM,
         LedgerEvent: LedgerEventORM,
@@ -171,7 +165,6 @@ def domain_to_dto(domain_obj: Any) -> Any:
     from app.domain.products.entities import Product as DomainProduct
     from app.domain.orders.entities import Order as DomainOrder
     from app.domain.payments.entities import Escrow as DomainEscrow
-    from app.domain.loans.entities import Loan as DomainLoan
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
 
@@ -180,7 +173,6 @@ def domain_to_dto(domain_obj: Any) -> Any:
         DomainProduct: Product,
         DomainOrder: Order,
         DomainEscrow: Escrow,
-        DomainLoan: Loan,
         DomainDispute: Dispute,
         DomainReputation: Reputation,
     }

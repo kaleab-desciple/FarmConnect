@@ -4,7 +4,6 @@ from .product import Product
 from .order import Order
 from .escrow import Escrow
 from .dispute import Dispute
-from .loan import Loan
 from .reputation import Reputation
 from .account import Account
 from .journal_entry import JournalEntry
@@ -19,7 +18,6 @@ __all__ = [
     "Order",
     "Escrow",
     "Dispute",
-    "Loan",
     "Reputation",
     "PricingRule",
     "JournalEntry",
@@ -38,7 +36,6 @@ __all__ = [
     "OrderStatus",
     "EscrowState",
     "DisputeState",
-    "LoanState",
     "DisputeResolution",
     "RuleType",
     "FeeType",

@@ -4,7 +4,6 @@ from .users.routes import router as users_router
 from .products.routes import router as products_router
 from .orders.routes import router as orders_router
 from .payments.escrow import router as escrow_router
-from .loans.routes import router as loans_router
 from .disputes.routes import router as disputes_router
 from .ledger import router as ledger_router
 from .accounting.routes import router as accounting_router
@@ -12,6 +11,7 @@ from .reports.routes import router as reports_router
 from .auth.routes import router as auth_router
 from .auth.provisioning_routes import router as provisioning_router
 from .examples.protected_routes import router as examples_router
+from .farms.routes import router as farms_router
 
 api_router = APIRouter()
 
@@ -27,8 +27,10 @@ api_router.include_router(users_router, prefix="/users", tags=["Users"])
 api_router.include_router(products_router, prefix="/products", tags=["Products"])
 api_router.include_router(orders_router, prefix="/orders", tags=["Orders"])
 api_router.include_router(escrow_router, prefix="/escrows", tags=["Escrow"])
-api_router.include_router(loans_router, prefix="/loans", tags=["Loans"])
 api_router.include_router(disputes_router, prefix="/disputes", tags=["Disputes"])
 api_router.include_router(ledger_router, prefix="/ledger", tags=["Ledger"])
 api_router.include_router(accounting_router, prefix="/accounting", tags=["Accounting"])
 api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])
+
+# Register agricultural management routers
+api_router.include_router(farms_router, prefix="/agri", tags=["Agricultural Management"])
