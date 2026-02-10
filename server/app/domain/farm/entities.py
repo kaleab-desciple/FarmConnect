@@ -13,7 +13,7 @@ class FarmBase(BaseModel):
     location_lat: Decimal = PydanticField(..., ge=-90, le=90)
     location_lng: Decimal = PydanticField(..., ge=-180, le=180)
     location_address: Optional[str] = None
-    total_area_ha: Optional[Decimal] = PydanticField(None, ge=0)
+    total_area_ha: Optional[Decimal] = PydanticField(None, gt=0)
     boundary_geojson: Optional[dict] = None
     centroid_geojson: Optional[dict] = None
     metadata: Optional[dict] = None
@@ -33,7 +33,7 @@ class FarmUpdate(BaseModel):
     location_lat: Optional[Decimal] = PydanticField(None, ge=-90, le=90)
     location_lng: Optional[Decimal] = PydanticField(None, ge=-180, le=180)
     location_address: Optional[str] = None
-    total_area_ha: Optional[Decimal] = PydanticField(None, ge=0)
+    total_area_ha: Optional[Decimal] = PydanticField(None, gt=0)
     boundary_geojson: Optional[dict] = None
     centroid_geojson: Optional[dict] = None
     metadata: Optional[dict] = None

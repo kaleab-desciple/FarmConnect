@@ -15,21 +15,29 @@ class FarmRepository:
 
     def create(self, farm_data: FarmCreate) -> Farm:
         """Create a new farm."""
-        orm = FarmORM(
-            farmer_id=farm_data.farmer_id,
-            name=farm_data.name,
-            location_lat=farm_data.location_lat,
-            location_lng=farm_data.location_lng,
-            location_address=farm_data.location_address,
-            total_area_ha=farm_data.total_area_ha,
-            boundary_geojson=farm_data.boundary_geojson,
-            centroid_geojson=farm_data.centroid_geojson,
-            metadata_=farm_data.metadata,
-        )
-        self.session.add(orm)
-        self.session.flush()
-        self.session.refresh(orm)
-        return self._to_domain(orm)
+        try:
+            orm = FarmORM(
+                farmer_id=farm_data.farmer_id,
+                name=farm_data.name,
+                location_lat=farm_data.location_lat,
+                location_lng=farm_data.location_lng,
+                location_address=farm_data.location_address,
+                total_area_ha=farm_data.total_area_ha,
+                boundary_geojson=farm_data.boundary_geojson,
+                centroid_geojson=farm_data.centroid_geojson,
+                metadata_=farm_data.metadata,
+            )
+            self.session.add(orm)
+            self.session.flush()
+            self.session.commit()
+            self.session.refresh(orm)
+            return self._to_domain(orm)
+        except Exception as e:
+            from sqlalchemy import exc
+            if isinstance(e, exc.DBAPIError):
+                self.session.rollback()
+                raise Exception(f"Database error creating farm: {e.orig.detail if hasattr(e.orig, 'detail') else str(e)}")
+            raise
 
     def get_by_id(self, farm_id: str) -> Optional[Farm]:
         """Get farm by ID."""
@@ -113,6 +121,7 @@ class FieldRepository:
         )
         self.session.add(orm)
         self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -206,6 +215,7 @@ class CropCycleRepository:
         )
         self.session.add(orm)
         self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -319,6 +329,7 @@ class FarmTaskRepository:
         )
         self.session.add(orm)
         self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 

@@ -12,6 +12,8 @@ from .auth.routes import router as auth_router
 from .auth.provisioning_routes import router as provisioning_router
 from .examples.protected_routes import router as examples_router
 from .farms.routes import router as farms_router
+from .monitoring.routes import router as monitoring_router
+from .ai.routes import router as ai_router
 
 api_router = APIRouter()
 
@@ -34,3 +36,5 @@ api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])
 
 # Register agricultural management routers
 api_router.include_router(farms_router, prefix="/agri", tags=["Agricultural Management"])
+api_router.include_router(monitoring_router, prefix="/agri", tags=["Monitoring & Data Entry"])
+api_router.include_router(ai_router, prefix="/agri", tags=["AI Diagnosis"])

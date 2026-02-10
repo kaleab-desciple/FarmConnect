@@ -1,0 +1,1 @@
+"""AI Diagnosis API package."""

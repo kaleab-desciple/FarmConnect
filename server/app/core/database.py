@@ -2,15 +2,42 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.infrastructure.db.base import Base
 import os
+from datetime import datetime
+from typing import Optional
 
 # PostgreSQL connection - use sync driver for compatibility
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg2://user:password@localhost/farm_connect"
+    "postgresql+psycopg2://postgres:password@postgres:5432/agri_db"
+)
+
+# MongoDB connection
+MONGODB_URL = os.getenv(
+    "MONGODB_URL",
+    "mongodb://localhost:27017/agri_db"
 )
 
 # Sync engine for database operations
 engine = create_engine(DATABASE_URL, echo=True, future=True)
+
+# Session factory
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False
+)
+
+# MongoDB client (lazy initialization)
+_mongo_client = None
+
+def get_mongo_db():
+    """Get MongoDB database instance."""
+    global _mongo_client
+    if _mongo_client is None:
+        from pymongo import MongoClient
+        _mongo_client = MongoClient(MONGODB_URL)
+    return _mongo_client["agri_db"]
 
 # Session factory
 SessionLocal = sessionmaker(

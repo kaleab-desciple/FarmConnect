@@ -5,6 +5,7 @@ Handles state transitions with accounting entries in atomic transactions.
 """
 
 from typing import Optional
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from app.domain.payments.services.escrow_service import (
     EscrowDomainService,
@@ -58,7 +59,14 @@ class EscrowLifecycleService:
         order = self.order_repo.get_by_id(escrow.order_id)
         if not order or not order.merchant_id:
             raise ValueError("Order or merchant not found")
-        return self.domain_service.fund_escrow(escrow, order.merchant_id, provider_reference)
+        
+        result = self.domain_service.fund_escrow(escrow, order.merchant_id, provider_reference)
+        
+        # Apply side effects
+        escrow.funded_at = datetime.now(timezone.utc)
+        escrow.provider_reference = provider_reference
+        
+        return result
 
     def release_escrow(self, escrow_id: str, provider_reference: str) -> Escrow:
         """
@@ -86,21 +94,33 @@ class EscrowLifecycleService:
             f"Escrow refunded with reference {provider_reference}"
         )
 
-
-
     def _release_escrow_with_order(self, escrow: Escrow, provider_reference: str) -> EscrowTransitionResult:
         """Helper to get order and call domain service."""
         order = self.order_repo.get_by_id(escrow.order_id)
         if not order or not order.farmer_id:
             raise ValueError("Order or farmer not found")
-        return self.domain_service.release_escrow(escrow, order.farmer_id, provider_reference)
+            
+        result = self.domain_service.release_escrow(escrow, order.farmer_id, provider_reference)
+        
+        # Apply side effects
+        escrow.released_at = datetime.now(timezone.utc)
+        escrow.provider_reference = provider_reference
+        
+        return result
 
     def _refund_escrow_with_order(self, escrow: Escrow, provider_reference: str) -> EscrowTransitionResult:
         """Helper to get order and call domain service."""
         order = self.order_repo.get_by_id(escrow.order_id)
         if not order or not order.merchant_id:
             raise ValueError("Order or merchant not found")
-        return self.domain_service.refund_escrow(escrow, order.merchant_id, provider_reference)
+            
+        result = self.domain_service.refund_escrow(escrow, order.merchant_id, provider_reference)
+        
+        # Apply side effects
+        escrow.provider_reference = provider_reference
+        # Note: REFUNDED state typically doesn't set released_at, but we set strictly strictly provider_reference here
+        
+        return result
 
     def _execute_transition(self, escrow_id: str, domain_transition_func, ledger_event_type: LedgerEventType, description: str) -> Escrow:
         """

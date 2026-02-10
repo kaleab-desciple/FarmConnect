@@ -2,8 +2,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from shared_models import Order
-from app.infrastructure.db.mappers import dto_to_orm, orm_to_domain, domain_to_dto
+from app.infrastructure.db.mappers import domain_to_orm, orm_to_domain #, domain_to_dto
 from app.infrastructure.db.models import OrderORM, UserORM
 from app.domain.orders.entities import Order as DomainOrder
 from app.core.auth import TokenPayload
@@ -56,11 +55,21 @@ class OrderRepository:
         return query.filter(False)
 
     def save(self, order: DomainOrder) -> DomainOrder:
-        dto = domain_to_dto(order)
-        orm = dto_to_orm(dto)
-        merged_orm = self.session.merge(orm)
+        orm = self.session.query(OrderORM).filter(OrderORM.id == order.id).one_or_none() if order.id else None
+        
+        if orm:
+            # Update existing order
+            updated_orm = domain_to_orm(order)
+            for key, value in updated_orm.__dict__.items():
+                if not key.startswith('_') and key != 'id':
+                    setattr(orm, key, value)
+        else:
+            # Create new order
+            orm = domain_to_orm(order)
+            self.session.add(orm)
+            
         self.session.flush()  # to get id
-        return orm_to_domain(merged_orm)
+        return orm_to_domain(orm)
 
     def get_by_id(self, order_id: str, current_user: Optional[TokenPayload] = None) -> Optional[DomainOrder]:
         query = self.session.query(OrderORM).filter(OrderORM.id == order_id)

@@ -19,6 +19,7 @@ packaging==25.0
 pydantic[email]==2.12.5
 annotated-types==0.7.0
 typing-inspection==0.4.2
+pymongo==4.2.0
 
 # Auth / Keycloak
 python-keycloak==7.0.2

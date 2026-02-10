@@ -2,6 +2,7 @@ from typing import Type, Any, Dict
 from enum import Enum
 
 # Shared models (Pydantic DTOs)
+#Farm, Field, CropCycle, Alert
 from shared_models import User, Product, Order, Escrow, Dispute, Reputation
 from shared_models.enums import DisputeResolution
 from app.domain.ledger.entities import LedgerEvent
@@ -15,6 +16,9 @@ from app.infrastructure.db.models.dispute import DisputeORM
 from app.infrastructure.db.models.reputation import ReputationORM
 from app.infrastructure.db.models.ledger import LedgerEventORM
 from app.infrastructure.db.models.pricing import PricingRuleORM
+#from app.infrastructure.db.models.farm import FarmORM, FieldORM
+#from app.infrastructure.db.models.crop import CropCycleORM
+#from app.infrastructure.db.models.alert import AlertORM
 
 # Domain entity imports are done lazily inside conversion functions to avoid
 # import-time errors during Alembic env import (domain modules may be
@@ -30,6 +34,10 @@ TYPE_MAP: dict[Type[Any], Type[Any]] = {
     Dispute: DisputeORM,
     Reputation: ReputationORM,
     LedgerEvent: LedgerEventORM,
+#    Farm: FarmORM,
+#    Field: FieldORM,
+#    CropCycle: CropCycleORM,
+#    Alert: AlertORM,
 }
 
 
@@ -47,6 +55,9 @@ def _json_safe(obj: Any) -> Any:
         return str(obj)
     if isinstance(obj, Enum):
         return obj.value
+    # Handle Pydantic models (like Location)
+    if hasattr(obj, 'model_dump'):
+        return _json_safe(obj.model_dump())
     return obj
 
 
@@ -75,9 +86,12 @@ def dto_to_orm(dto: Any) -> Any:
         if data.get('delivery_fee') is None and data.get('delivery_cost') is not None:
             data['delivery_fee'] = data['delivery_cost']
 
-    # Filter data to only include keys that are columns in the ORM model
-    orm_columns = {c.name for c in orm_cls.__table__.columns}
-    filtered_data = {k: v for k, v in data.items() if k in orm_columns}
+    # Filter data to only include keys that are valid ORM attributes
+    # We use column attributes to avoid including relationships in basic mapping
+    from sqlalchemy import inspect
+    mapper = inspect(orm_cls)
+    orm_column_keys = {a.key for a in mapper.column_attrs}
+    filtered_data = {k: v for k, v in data.items() if k in orm_column_keys}
 
     return orm_cls(**filtered_data)
 
@@ -97,6 +111,7 @@ def orm_to_domain(orm: Any) -> Any:
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
     from app.domain.pricing.entities import PricingRule
+#    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField, CropCycle as DomainCropCycle, Alert as DomainAlert
 
     orm_type_map = {
         UserORM: DomainUser,
@@ -107,6 +122,10 @@ def orm_to_domain(orm: Any) -> Any:
         ReputationORM: DomainReputation,
         LedgerEventORM: LedgerEvent,
         PricingRuleORM: PricingRule,
+#        FarmORM: DomainFarm,
+#        FieldORM: DomainField,
+#        CropCycleORM: DomainCropCycle,
+#        AlertORM: DomainAlert,
     }
 
     domain_cls = orm_type_map.get(type(orm))
@@ -116,6 +135,22 @@ def orm_to_domain(orm: Any) -> Any:
     data: Dict[str, Any] = {
         k: v for k, v in orm.__dict__.items() if not k.startswith("_")
     }
+    
+    # Handle SQLAlchemy reserved attribute names
+    # Some ORMs use 'metadata_' to avoid conflict with Base.metadata
+    # Check if domain class expects 'metadata' or 'metadata_'
+    if 'metadata_' in data:
+        # Check if the domain class has a 'metadata_' field or 'metadata' field
+        import inspect
+        if hasattr(domain_cls, '__dataclass_fields__'):
+            # For dataclasses
+            if 'metadata' in domain_cls.__dataclass_fields__ and 'metadata_' not in domain_cls.__dataclass_fields__:
+                data['metadata'] = data.pop('metadata_')
+        elif hasattr(domain_cls, 'model_fields'):
+            # For Pydantic models
+            if 'metadata' in domain_cls.model_fields and 'metadata_' not in domain_cls.model_fields:
+                data['metadata'] = data.pop('metadata_')
+    
 #     return domain_cls(**_json_safe(data))
     return domain_cls(**data)
 
@@ -133,6 +168,8 @@ def domain_to_orm(domain_obj: Any) -> Any:
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
     from app.domain.pricing.entities import PricingRule
+#    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField, CropCycle as DomainCropCycle
+#    from app.domain.agriculture.entities import Alert as DomainAlert
 
     domain_type_map = {
         DomainUser: UserORM,
@@ -143,6 +180,10 @@ def domain_to_orm(domain_obj: Any) -> Any:
         DomainReputation: ReputationORM,
         LedgerEvent: LedgerEventORM,
         PricingRule: PricingRuleORM,
+#       DomainFarm: FarmORM,
+#       DomainField: FieldORM,
+#        DomainCropCycle: CropCycleORM,
+#        DomainAlert: AlertORM,
     }
 
     orm_cls = domain_type_map.get(type(domain_obj))
@@ -152,7 +193,23 @@ def domain_to_orm(domain_obj: Any) -> Any:
     data: Dict[str, Any] = {
         k: v for k, v in domain_obj.__dict__.items() if not k.startswith("_")
     }
-    return orm_cls(**_json_safe(data))
+    
+    # Handle SQLAlchemy reserved attribute names
+    # Some ORMs use 'metadata_' to avoid conflict with Base.metadata
+    # Check if we need to convert 'metadata' to 'metadata_'
+    if 'metadata' in data:
+        orm_columns = {c.name for c in orm_cls.__table__.columns}
+        # If ORM has a 'metadata' column but the Python attribute is 'metadata_'
+        if 'metadata' in orm_columns and hasattr(orm_cls, 'metadata_'):
+            data['metadata_'] = data.pop('metadata')
+    
+    # Filter data to only include keys that are valid ORM attributes
+    from sqlalchemy import inspect
+    mapper = inspect(orm_cls)
+    orm_column_keys = {a.key for a in mapper.column_attrs}
+    filtered_data = {k: v for k, v in data.items() if k in orm_column_keys}
+    
+    return orm_cls(**_json_safe(filtered_data))
 
 
 # === DOMAIN ENTITY -> DTO (Optional, if needed) ===
@@ -167,6 +224,8 @@ def domain_to_dto(domain_obj: Any) -> Any:
     from app.domain.payments.entities import Escrow as DomainEscrow
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
+#    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField
+#    from app.domain.agriculture.entities import CropCycle as DomainCropCycle, Alert as DomainAlert
 
     domain_type_map = {
         DomainUser: User,
@@ -175,8 +234,14 @@ def domain_to_dto(domain_obj: Any) -> Any:
         DomainEscrow: Escrow,
         DomainDispute: Dispute,
         DomainReputation: Reputation,
+#        DomainFarm: Farm,
+#        DomainField: Field,
+#        DomainCropCycle: CropCycle,
+#        DomainAlert: Alert,
     }
     dto_cls = domain_type_map.get(type(domain_obj))
     if dto_cls is None:
         raise ValueError(f"No DTO mapping defined for domain type {type(domain_obj)}")
     return dto_cls(**_json_safe(domain_obj.__dict__))
+
+    

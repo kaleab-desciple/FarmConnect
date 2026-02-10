@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Optional, List
+from uuid import UUID
 
 from pydantic import (
     AnyUrl,
-    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
@@ -51,36 +51,57 @@ class Location(BaseModel):
     longitude: confloat(ge=-180.0, le=180.0) | None = None
 
 
-class Product(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    id: str | None = Field(None, description="Unique product identifier")
-    farmer_id: str | None = Field(None, description="Owner farmer ID")
-    name: constr(min_length=2, max_length=100) | None = None
-    description: constr(max_length=1000) | None = None
-    category: Category | None = None
-    unit: Unit | None = Field(None, description="Measurement unit")
-    base_price: PositiveFloat | None = Field(
-        None,
+class ProductBase(BaseModel):
+    farmer_id: str = Field(..., description="Owner farmer ID")
+    name: constr(min_length=2, max_length=100)
+    description: Optional[constr(max_length=1000)] = None
+    category: Category
+    unit: Unit = Field(..., description="Measurement unit")
+    base_price: PositiveFloat = Field(
+        ...,
         description="Farmer-set price per unit (before delivery & platform margin)",
     )
-    currency: constr(pattern=r"^[A-Z]{3}$") | None = "USD"
-    quantity_available: confloat(ge=0.0) | None = None
-    quality_grade: QualityGrade | None = Field(
+    currency: constr(pattern=r"^[A-Z]{3}$") = "USD"
+    quantity_available: confloat(ge=0.0)
+    quality_grade: Optional[QualityGrade] = Field(
         None, description="Optional quality grading"
     )
-    harvest_date: date | None = None
-    expiry_date: date | None = None
-    location: Location | None = Field(
+    harvest_date: Optional[date] = None
+    expiry_date: Optional[date] = None
+    location: Optional[Location] = Field(
         None, description="Farm location for geo-clustering & logistics"
     )
-    images: list[AnyUrl] | None = None
-    is_active: bool | None = Field(
-        None, description="Whether the product is currently sellable"
+    images: Optional[list[AnyUrl]] = None
+    is_active: bool = Field(
+        True, description="Whether the product is currently sellable"
     )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Future-proof extension field (certifications, tags, etc.)"
+    metadata: Optional[dict[str, Any]] = Field(
+        default=None, description="Future-proof extension field (certifications, tags, etc.)"
     )
-    created_at: AwareDatetime | None = None
-    updated_at: AwareDatetime | None = None
+
+class ProductCreate(ProductBase):
+    pass
+
+class ProductUpdate(BaseModel):
+    farmer_id: Optional[str] = None
+    name: Optional[constr(min_length=2, max_length=100)] = None
+    description: Optional[constr(max_length=1000)] = None
+    category: Optional[Category] = None
+    unit: Optional[Unit] = None
+    base_price: Optional[PositiveFloat] = None
+    currency: Optional[constr(pattern=r"^[A-Z]{3}$")] = None
+    quantity_available: Optional[confloat(ge=0.0)] = None
+    quality_grade: Optional[QualityGrade] = None
+    harvest_date: Optional[date] = None
+    expiry_date: Optional[date] = None
+    location: Optional[Location] = None
+    images: Optional[list[AnyUrl]] = None
+    is_active: Optional[bool] = None
+    metadata: Optional[dict[str, Any]] = None
+
+class Product(ProductBase):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: UUID = Field(..., description="Unique product identifier")
+    created_at: datetime
+    updated_at: datetime

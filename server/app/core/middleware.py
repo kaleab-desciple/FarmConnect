@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 import logging
+import traceback
 
 def setup_middleware(app: FastAPI):
     """
@@ -20,6 +22,13 @@ def setup_middleware(app: FastAPI):
     async def log_requests(request: Request, call_next):
         logger = logging.getLogger("app.requests")
         logger.info(f"Incoming request: {request.method} {request.url}")
-        response = await call_next(request)
-        logger.info(f"Response status: {response.status_code}")
-        return response
+        try:
+            response = await call_next(request)
+            logger.info(f"Response status: {response.status_code}")
+            return response
+        except Exception as e:
+            logger.error(f"Exception in request: {e}\n{traceback.format_exc()}")
+            return JSONResponse(
+                status_code=500,
+                content={"detail": str(e)}
+            )

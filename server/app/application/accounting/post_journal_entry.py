@@ -1,8 +1,8 @@
 from uuid import uuid4
 from datetime import datetime, timezone
-from typing import Protocol, List
+from typing import Protocol, List, Optional
 from decimal import Decimal
-from app.domain.accounting.entities import JournalEntry, JournalLine, ReferenceType, Account
+from app.domain.accounting.entities import JournalEntry, JournalLine, ReferenceType, Account, OwnerType, AccountType
 from app.domain.accounting.policies import AccountingPolicy
 
 
@@ -12,6 +12,9 @@ class JournalRepository(Protocol):
 
 class AccountRepository(Protocol):
     def get_by_id(self, account_id: str) -> Account | None:
+        ...
+
+    def get_by_owner_and_type(self, owner_type: OwnerType, owner_id: str, account_type: AccountType) -> Optional[Account]:
         ...
 
 

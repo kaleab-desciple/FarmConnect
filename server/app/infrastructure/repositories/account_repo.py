@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from app.domain.accounting.entities import Account
+from app.domain.accounting.entities import Account, OwnerType, AccountType
 from app.infrastructure.db.models.account import AccountORM
 
 
@@ -35,15 +35,30 @@ class AccountRepository:
             created_at=orm.created_at
         )
 
-    def find_by_owner_and_type(self, owner_type, owner_id: str, account_type) -> Optional[Account]:
-        """Find an account by owner and account type."""
+    def get_by_owner_and_type(self, owner_type: any, owner_id: str, account_type: any) -> Optional[Account]:
+        # Normalize types for query: AccountORM expects Enum objects
+        
+        if isinstance(owner_type, str):
+            try:
+                owner_type = OwnerType(owner_type)
+            except ValueError:
+                pass # let it fail or pass string if that's what caller intended
+                
+        if isinstance(account_type, str):
+            try:
+                account_type = AccountType(account_type)
+            except ValueError:
+                pass
+
         orm = self.session.query(AccountORM).filter(
             AccountORM.owner_type == owner_type,
-            AccountORM.owner_id == owner_id,
+            AccountORM.owner_id == str(owner_id),
             AccountORM.account_type == account_type
         ).first()
+        
         if not orm:
             return None
+            
         return Account(
             id=orm.id,
             owner_type=orm.owner_type,
@@ -53,3 +68,25 @@ class AccountRepository:
             currency=orm.currency,
             created_at=orm.created_at
         )
+    
+    def get_all_by_owner(self, owner_type: any, owner_id: str) -> List[Account]:
+        if isinstance(owner_type, str):
+            owner_type = OwnerType(owner_type)
+    
+        orms = self.session.query(AccountORM).filter(
+            AccountORM.owner_type == owner_type,
+            AccountORM.owner_id == str(owner_id)
+        ).all()
+    
+        return [
+            Account(
+                id=orm.id,
+                owner_type=orm.owner_type,
+                owner_id=orm.owner_id,
+                account_type=orm.account_type,
+                name=orm.name,
+                currency=orm.currency,
+                created_at=orm.created_at
+            )
+            for orm in orms
+        ]
