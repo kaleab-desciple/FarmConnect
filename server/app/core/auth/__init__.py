@@ -20,6 +20,7 @@ from app.core.auth.dependencies import (
     require_permission,
     block_service_accounts,
     require_service_account,
+    require_admin
 )
 
 from app.core.auth.service_account import (
@@ -43,6 +44,10 @@ __all__ = [
     "get_current_user",
     "get_optional_user",
     "require_roles",
+    "require_realm_role",
+    "require_client_role",
+    "require_admin",
+    "require_moderator",
     "require_any_role",
     "require_permission",
     "block_service_accounts",

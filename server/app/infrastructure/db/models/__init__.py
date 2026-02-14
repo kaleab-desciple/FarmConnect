@@ -13,8 +13,14 @@ from .farm import FarmORM, FieldORM, CropCycleORM, FarmTaskORM
 from .soil import SoilReadingORM, NDVISnapshotORM, PestDiseaseReportORM, TreatmentRecommendationORM
 from .weather import (
     WeatherForecastORM, WeatherSnapshotORM, AdvisorySessionORM,
-    AdvisoryMessageORM, KnowledgeArticleORM, AlertORM, FieldRiskScoreORM
+    AdvisoryMessageORM, AlertORM, FieldRiskScoreORM
 )
+from .forums import ForumThreadORM, ForumCommentORM, ForumVoteORM, ForumBookmarkORM, ForumReportORM
+from .knowledge import (
+    KnowledgeArticleORM, KnowledgeArticleVersionORM, KnowledgeArticleRatingORM,
+    KnowledgeCategoryORM, ArticleSearchQueryORM
+) 
+from .notifications import NotificationORM, NotificationPreferenceORM
 
 __all__ = [
     "UserORM",
@@ -41,7 +47,21 @@ __all__ = [
     "WeatherSnapshotORM",
     "AdvisorySessionORM",
     "AdvisoryMessageORM",
-    "KnowledgeArticleORM",
     "AlertORM",
-    "FieldRiskScoreORM"
+    "FieldRiskScoreORM",
+    # Forum models
+    "ForumThreadORM",
+    "ForumCommentORM",
+    "ForumVoteORM",
+    "ForumBookmarkORM",
+    "ForumReportORM",
+    # Knowledge Models
+    "KnowledgeArticleORM",
+    "KnowledgeArticleVersionORM",
+    "KnowledgeArticleRatingORM",
+    "KnowledgeCategoryORM",
+    "ArticleSearchQueryORM",
+    # Notification Models
+    "NotificationORM",
+    "NotificationPreferenceORM",
 ]

@@ -16,19 +16,8 @@ fileConfig(config.config_file_name)
 
 # Import your ORM models and Base
 from app.infrastructure.db.base import Base
-from app.infrastructure.db.models import (
-    UserORM,
-    ProductORM,
-    OrderORM,
-    EscrowORM,
-    DisputeORM,
-    ReputationORM,
-    AccountORM,
-    JournalEntryORM,
-    JournalLineORM,
-    LedgerEventORM,
-    PricingRuleORM
-)
+# Import all models to ensure Alembic can detect schema changes
+import app.infrastructure.db.models  # noqa: F401
 target_metadata = Base.metadata
 
 # Get DATABASE_URL from .env

@@ -19,7 +19,7 @@ from app.core.auth.jwt import (
     get_email,
     JWTValidationError
 )
-from app.core.auth.permissions import PERMISSIONS
+from app.core.auth.permissions import PERMISSIONS, REALM_ROLES
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +106,46 @@ def get_optional_user(
         return TokenPayload(payload)
     except JWTValidationError:
         return None
+
+
+def require_auth(
+    current_user: TokenPayload = Depends(get_current_user)
+) -> TokenPayload:
+    """
+    Dependency to require authentication.
+    Ensures the user is logged in.
+    """
+    return current_user
+
+
+def require_moderator(
+    current_user: TokenPayload = Depends(get_current_user)
+) -> TokenPayload:
+    """
+    Dependency to require moderator role.
+    User must have MODERATOR realm role.
+    """
+    if "MODERATOR" not in current_user.realm_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Moderator role required"
+        )
+    return current_user
+
+
+def require_admin(
+    current_user: TokenPayload = Depends(get_current_user)
+) -> TokenPayload:
+    """
+    Dependency to require admin role.
+    User must have ADMIN realm role.
+    """
+    if "ADMIN" not in current_user.realm_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required"
+        )
+    return current_user
 
 
 def require_realm_role(*allowed_roles: str):

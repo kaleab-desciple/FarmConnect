@@ -150,8 +150,8 @@ class AdvisoryMessageORM(Base):
     session: Mapped["AdvisorySessionORM"] = relationship("AdvisorySessionORM", back_populates="messages")
 
 
-class KnowledgeArticleORM(Base):
-    """Knowledge article for agricultural best practices."""
+"""class KnowledgeArticleORM(Base):
+    # Knowledge article for agricultural best practices
     __tablename__ = "knowledge_articles"
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
@@ -170,8 +170,7 @@ class KnowledgeArticleORM(Base):
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     metadata_: Mapped[Optional[dict]] = mapped_column(JSONB, name="metadata", default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-
+"""
 class AlertORM(Base):
     """Alert entity for notifications to users."""
     __tablename__ = "alerts"

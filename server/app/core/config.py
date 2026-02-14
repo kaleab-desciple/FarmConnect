@@ -22,6 +22,12 @@ class Settings:
     
     @property
     def KEYCLOAK_ISSUER(self) -> str:
+        # Allow overriding the issuer URL for validation
+        # This is useful when running in Docker where internal URL (keycloak:8080)
+        # differs from public URL (localhost:8080) in the token
+        issuer_url = os.getenv("KEYCLOAK_ISSUER_URL")
+        if issuer_url:
+            return issuer_url
         return f"{self.KEYCLOAK_URL}/realms/{self.KEYCLOAK_REALM}"
     
     @property

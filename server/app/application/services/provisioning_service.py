@@ -172,7 +172,10 @@ class UserProvisioningService:
             UserRole.DELIVERY: "Delivery",
             UserRole.AGENT: "Agents",
             UserRole.MANAGER: "Managers",
-            UserRole.ADMIN: "Admins"
+            UserRole.ADMIN: "Admins",
+            UserRole.MODERATOR: "Moderators",
+            UserRole.AGRONOMIST: "Agronomists",
+            UserRole.FIELD_ANALYST: "FieldAnalysts"
         }
         
         group = role_to_group.get(role)

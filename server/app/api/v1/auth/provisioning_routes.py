@@ -156,3 +156,123 @@ def provision_delivery(
     **Required Roles:** AGENT, MANAGER, or ADMIN
     """
     return _provision_user_handler(request, UserRole.DELIVERY, db, current_user)
+
+
+@router.post(
+    "/provision/agent",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new agent",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_agent(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new agent user.
+    
+    **Required Roles:** ADMIN or MANAGER
+    """
+    return _provision_user_handler(request, UserRole.AGENT, db, current_user)
+
+
+@router.post(
+    "/provision/manager",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new manager",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_manager(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new manager user.
+    
+    **Required Roles:** ADMIN
+    """
+    return _provision_user_handler(request, UserRole.MANAGER, db, current_user)
+
+
+@router.post(
+    "/provision/admin",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new admin",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_admin(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new admin user.
+    
+    **Required Roles:** ADMIN
+    """
+    return _provision_user_handler(request, UserRole.ADMIN, db, current_user)
+
+
+@router.post(
+    "/provision/moderator",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new moderator",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_moderator(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new moderator user.
+    
+    **Required Roles:** ADMIN
+    """
+    return _provision_user_handler(request, UserRole.MODERATOR, db, current_user)
+
+
+@router.post(
+    "/provision/agronomist",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new agronomist",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_agronomist(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new agronomist user.
+    
+    **Required Roles:** ADMIN, MANAGER, or AGENT
+    """
+    return _provision_user_handler(request, UserRole.AGRONOMIST, db, current_user)
+
+
+@router.post(
+    "/provision/field-analyst",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new field analyst",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_field_analyst(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new field analyst user.
+    
+    **Required Roles:** ADMIN, MANAGER, or AGENT
+    """
+    return _provision_user_handler(request, UserRole.FIELD_ANALYST, db, current_user)

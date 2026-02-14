@@ -8,8 +8,9 @@ class UserRole(str, Enum):
     AGENT = "AGENT"
     MANAGER = "MANAGER"
     ADMIN = "ADMIN"
-    AGRONOMIST = "AGRONOMIST"      # Agricultural experts
-    FIELD_ANALYST = "FIELD_ANALYST" # Data analysts for field 
+    MODERATOR = "MODERATOR"
+    AGRONOMIST = "AGRONOMIST"
+    FIELD_ANALYST = "FIELD_ANALYST"
 
 class OrderStatus(str, Enum):
     CREATED = "CREATED"

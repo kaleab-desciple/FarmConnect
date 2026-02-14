@@ -7,7 +7,7 @@ Permissions describe WHAT you can do.
 """
 
 # Realm Roles (Human Users)
-REALM_ROLES = ["ADMIN", "MANAGER", "AGENT", "FARMER", "MERCHANT", "DELIVERY", "AGRONOMIST", "FIELD_ANALYST"]
+REALM_ROLES = ["ADMIN", "MODERATOR", "MANAGER", "AGENT", "FARMER", "MERCHANT", "DELIVERY", "AGRONOMIST", "FIELD_ANALYST"]
 
 # Client Roles (Service Accounts)
 CLIENT_ROLES = ["system_internal", "escrow_service", "reporting_service"]
@@ -118,4 +118,19 @@ PERMISSIONS = {
     "alerts:update:own": ["FARMER", "AGRONOMIST", "FIELD_ANALYST"],
     "alerts:update:all": ["ADMIN"],
     "alerts:delete": ["ADMIN"],
+    
+    # Advisory/Forums Domain
+    "forums:create": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST"],
+    "forums:read": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER"],
+    "forums:comment:create": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER"],
+    "forums:comment:accept": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER"],
+    "forums:vote": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER"],
+    "forums:bookmark": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER"],
+    "forums:moderate": ["ADMIN", "MODERATOR"],
+    "forums:admin": ["ADMIN"],
+    
+    # Knowledge Base Domain
+    "knowledge:read": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER", "FIELD_ANALYST"],
+    "knowledge:create": ["ADMIN", "AGRONOMIST"],
+    "knowledge:publish": ["ADMIN", "AGRONOMIST"]
 }

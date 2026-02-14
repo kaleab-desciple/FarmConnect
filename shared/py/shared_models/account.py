@@ -22,6 +22,9 @@ class UserRole(Enum):
     AGENT = "AGENT"
     MANAGER = "MANAGER"
     ADMIN = "ADMIN"
+    MODERATOR = "MODERATOR"
+    AGRONOMIST = "AGRONOMIST"
+    FIELD_ANALYST = "FIELD_ANALYST"
 
 
 class OrderStatus(Enum):

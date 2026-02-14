@@ -1,0 +1,31 @@
+curl -X 'POST' \
+  'http://127.0.0.1:8000/api/v1/advisory/knowledge/articles' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJWbnF6Y01YOEU2N0NEMkdEV1daNUxWUmw4b3BmRV84QmRuZkFkR3o4LUtFIn0.eyJleHAiOjE3NzEwNjUyMDUsImlhdCI6MTc3MTA2NDkwNSwianRpIjoiNmQxZjUyM2EtZTUyZC00Y2UwLTg5ZGYtM2ExNjI2ZGZjOTA4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9mYXJtLWNvbm5lY3QiLCJhdWQiOiJhY2NvdW50IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZmFybS1jb25uZWN0LWJhY2tlbmQiLCJzaWQiOiJhMWYwNDJhNS1kNDJiLTRlNWQtYWQxZS1jMjUwMWJkYjM5ZTciLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1mYXJtLWNvbm5lY3QiLCJvZmZsaW5lX2FjY2VzcyIsIkFETUlOIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJyZWFsbV9yb2xlcyI6WyJkZWZhdWx0LXJvbGVzLWZhcm0tY29ubmVjdCIsIm9mZmxpbmVfYWNjZXNzIiwiQURNSU4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IlN5c3RlbSBBZG1pbiIsInByZWZlcnJlZF91c2VybmFtZSI6ImFkbWluIiwiZ2l2ZW5fbmFtZSI6IlN5c3RlbSIsImZhbWlseV9uYW1lIjoiQWRtaW4iLCJlbWFpbCI6ImFkbWluQGZhcm1jb25uZWN0LmxvY2FsIn0.PSLN9dNYS5WJsTehd-HF6E4hRus3gesRaZeb0twqu0sacFQOVcTZKRivT7Ex2wOriGfnJxHBU-F_Ve_Di1X_m9xZGlLHhQT5iAmiR9F_LGeKaDGXK8-V62X_qByA4qQ33-TC7bN-_Q8fprBTyVSJMsb7BHVih6r59eDhsqRuHAqRY1xXBWaboWs2DNLo2vqYUdnRxBQXX_6iHpog96J2oGOzdCHiC0ZhlTf_TzZ16Dko-5poaOZxQ_Xp7XhdV1DWG4cU7l9oqRJfYigvOJGQmQkq1a3mGNxzXylbOxAcZb720agUKvZi7Y0AsuwMRTb1S5he5cACgP8QUDwc3OmdgQ' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "title": "Comprehensive Guide to Pest Management in Coffee",
+  "summary": "This guide provides detailed protocols for identifying and managing common coffee pests using sustainable integrated pest management techniques suitable for East African regions.",
+  "content": "Coffee pests such as the Coffee Berry Borer (Hypothenemus hampei) can significantly impact yield and quality. Integrated Pest Management (IPM) strategies include cultural practices like proper pruning, sanitation, and the use of biological controls. This article explores the life cycle of common pests and provides a step-by-step treatment protocol for organic and conventional farms. Field monitoring is crucial for early detection and intervention.",
+  "article_type": "pest_guide",
+  "category": "pest_management",
+  "subcategory": "Coffee Pests",
+  "tags": [
+    "coffee",
+    "pest-control",
+    "sustainable-farming"
+  ],
+  "keywords": [
+    "berry borer",
+    "ipm",
+    "agronomy"
+  ],
+  "related_crop_types": [
+    "Coffee"
+  ],
+  "related_regions": [
+    "East Africa"
+  ],
+  "linked_treatments": []
+}
+'

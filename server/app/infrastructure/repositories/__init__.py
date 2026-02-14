@@ -8,6 +8,7 @@ from .journal_repo import JournalRepository
 from .report_repo import ReportRepository
 from .farm_repo import FarmRepository, FieldRepository, CropCycleRepository, FarmTaskRepository
 from .monitoring_repo import SoilReadingRepository, NDVIRepository, PestDiseaseReportRepository, TreatmentRecommendationRepository
+from .forums_repo import ForumRepository
 
 __all__ = [
     "UserRepository",
@@ -26,4 +27,5 @@ __all__ = [
     "NDVIRepository",
     "PestDiseaseReportRepository",
     "TreatmentRecommendationRepository",
+    "ForumRepository"
 ]

@@ -93,7 +93,7 @@ services:
   # API Server
   api:
     build: ./server
-    entrypoint: ["sh", "-c", "alembic -c app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+    entrypoint: [ "sh", "-c", "alembic -c app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload" ]
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:password@postgres:5432/agri_db
       MONGODB_URL: mongodb://mongodb:27017/agri_db
@@ -102,8 +102,9 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: farm-connect
       KEYCLOAK_CLIENT_ID: farm-connect-backend
+      KEYCLOAK_ISSUER_URL: http://localhost:8080/realms/farm-connect
       PYTHONPATH: /app/shared/py
-      AUTH_ENABLED: "false"
+      AUTH_ENABLED: "true"
     ports:
       - "8000:8000"
     depends_on:
