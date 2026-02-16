@@ -1,0 +1,13 @@
+
+--- Test 1: Custom String ID (FAR-00001) ---
+Status Code: 200
+Response: {
+  "id": "7e519278-8dcb-4e79-a8d6-32efeca06182",
+  "status": "created"
+}
+
+--- Test 2: Non-existent UUID (00000000...) ---
+Status Code: 400
+Response: {
+  "detail": "Invalid reference: Key (recorded_by)=(00000000-0000-0000-0000-000000000000) is not present in table \"users\"."
+}

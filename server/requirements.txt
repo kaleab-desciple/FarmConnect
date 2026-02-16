@@ -10,6 +10,7 @@ SQLAlchemy==2.0.45
 psycopg2-binary==2.9.11
 asyncpg==0.29.0
 alembic==1.18.1
+pymongo==4.2.0
 
 # Config & utils
 python-dotenv==1.2.1

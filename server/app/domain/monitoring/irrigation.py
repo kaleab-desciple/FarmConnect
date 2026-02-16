@@ -2,13 +2,14 @@
 from datetime import datetime, date, timezone
 from decimal import Decimal
 from typing import Optional, List
+from uuid import UUID
 from pydantic import BaseModel, Field
 
 
 class IrrigationEventBase(BaseModel):
     """Base Irrigation Event entity."""
-    field_id: str
-    crop_cycle_id: Optional[str] = None
+    field_id: UUID
+    crop_cycle_id: Optional[UUID] = None
     scheduled_date: datetime
     duration_minutes: int
     water_volume_liters: Decimal = Field(..., gt=0)
@@ -50,7 +51,7 @@ class IrrigationEventUpdate(BaseModel):
 
 class IrrigationEvent(IrrigationEventBase):
     """Irrigation Event domain entity with full fields."""
-    id: str
+    id: UUID
     created_at: datetime
 
     class Config:
@@ -59,8 +60,8 @@ class IrrigationEvent(IrrigationEventBase):
 
 class FieldVisitLogBase(BaseModel):
     """Base Field Visit Log entity."""
-    field_id: str
-    crop_cycle_id: Optional[str] = None
+    field_id: UUID
+    crop_cycle_id: Optional[UUID] = None
     visit_date: date
     visit_type: str
     purpose: Optional[str] = None
@@ -88,7 +89,7 @@ class FieldVisitLogCreate(FieldVisitLogBase):
 
 class FieldVisitLog(FieldVisitLogBase):
     """Field Visit Log domain entity with full fields."""
-    id: str
+    id: UUID
     created_at: datetime
 
     class Config:

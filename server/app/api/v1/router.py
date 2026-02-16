@@ -14,6 +14,7 @@ from .examples.protected_routes import router as examples_router
 from .farms.routes import router as farms_router
 from .monitoring.routes import router as monitoring_router
 from .ai.routes import router as ai_router
+from .weather.routes import router as weather_router
 from .advisory.forums.routes import router as forums_router
 from .advisory.knowledge.routes import router as knowledge_router
 from .advisory.notifications import router as notifications_router
@@ -41,6 +42,7 @@ api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])
 api_router.include_router(farms_router, prefix="/agri", tags=["Agricultural Management"])
 api_router.include_router(monitoring_router, prefix="/agri", tags=["Monitoring & Data Entry"])
 api_router.include_router(ai_router, prefix="/agri", tags=["AI Diagnosis"])
+api_router.include_router(weather_router, prefix="/agri", tags=["Weather Service"])
 
 
 # Advisory Routes

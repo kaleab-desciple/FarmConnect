@@ -46,7 +46,7 @@ class SoilReadingRepository:
             metadata_=reading_data.metadata,
         )
         self.session.add(orm)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -84,7 +84,7 @@ class SoilReadingRepository:
                 setattr(orm, "metadata_", value)
             else:
                 setattr(orm, key, value)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -144,7 +144,7 @@ class NDVIRepository:
             metadata_=snapshot_data.metadata,
         )
         self.session.add(orm)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -224,7 +224,7 @@ class PestDiseaseReportRepository:
             metadata_=report_data.metadata,
         )
         self.session.add(orm)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -251,7 +251,7 @@ class PestDiseaseReportRepository:
                 setattr(orm, "metadata_", value)
             else:
                 setattr(orm, key, value)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -324,7 +324,7 @@ class TreatmentRecommendationRepository:
             metadata_=recommendation_data.metadata,
         )
         self.session.add(orm)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 
@@ -351,7 +351,7 @@ class TreatmentRecommendationRepository:
                 setattr(orm, "metadata_", value)
             else:
                 setattr(orm, key, value)
-        self.session.flush()
+        self.session.commit()
         self.session.refresh(orm)
         return self._to_domain(orm)
 

@@ -15,9 +15,14 @@ from .forums import ForumComment, ForumCommentCreate, ForumCommentUpdate
 from .forums import VoteRequest, VoteResponse, CategoryResponse, TagResponse
 from .knowledge import KnowledgeArticle, KnowledgeArticleCreate, KnowledgeArticleUpdate
 from .knowledge import ArticleSearchQuery
-#from .farm import Farm, Field, FarmCreate, FarmUpdate, FieldCreate, FieldUpdate
-#from .crop import CropCycle, CropCycleCreate, CropCycleUpdate, HarvestRecord
-#from .alert import Alert, AlertCreate, AlertUpdate
+from .farm import Farm, FarmCreate, FarmUpdate
+from .farm import Field, FieldCreate, FieldUpdate
+from .farm import CropCycle, CropCycleCreate, CropCycleUpdate
+from .farm import FarmTask, FarmTaskCreate, FarmTaskUpdate
+from .monitoring import SoilReading, SoilReadingCreate, SoilReadingUpdate
+from .monitoring import NDVISnapshot, NDVISnapshotCreate, NDVISnapshotUpdate
+from .monitoring import PestDiseaseReport, PestDiseaseReportCreate, PestDiseaseReportUpdate
+from .monitoring import TreatmentRecommendation, TreatmentRecommendationCreate, TreatmentRecommendationUpdate
 
 
 __all__ = [
@@ -52,16 +57,32 @@ __all__ = [
     "KnowledgeArticleCreate",
     "KnowledgeArticleUpdate",
     "ArticleSearchQuery",
-#    "Farm",
-#    "Field",
-#    "FarmCreate",
-#    "FarmUpdate",
-#    "FieldCreate",
-#    "FieldUpdate",
-#    "CropCycle",
-#    "CropCycleCreate",
-#    "CropCycleUpdate",
-#    "HarvestRecord",
+    # Farm DTOs
+    "Farm",
+    "FarmCreate",
+    "FarmUpdate",
+    "Field",
+    "FieldCreate",
+    "FieldUpdate",
+    "CropCycle",
+    "CropCycleCreate",
+    "CropCycleUpdate",
+    "FarmTask",
+    "FarmTaskCreate",
+    "FarmTaskUpdate",
+    # Monitoring DTOs
+    "SoilReading",
+    "SoilReadingCreate",
+    "SoilReadingUpdate",
+    "NDVISnapshot",
+    "NDVISnapshotCreate",
+    "NDVISnapshotUpdate",
+    "PestDiseaseReport",
+    "PestDiseaseReportCreate",
+    "PestDiseaseReportUpdate",
+    "TreatmentRecommendation",
+    "TreatmentRecommendationCreate",
+    "TreatmentRecommendationUpdate",
 #    "Alert",
 #    "AlertCreate",
 #    "AlertUpdate",

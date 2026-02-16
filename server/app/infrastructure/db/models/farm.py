@@ -1,6 +1,6 @@
 """Farm and Field ORM models for agricultural management."""
 from uuid import uuid4
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, time
 from decimal import Decimal
 from typing import Optional, List
 from sqlalchemy import String, DateTime, Date, Time, Numeric, Integer, Boolean, Text, ForeignKey, ARRAY
@@ -120,12 +120,12 @@ class FarmTaskORM(Base):
         default='MEDIUM'
     )
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
-    scheduled_time: Mapped[Optional[datetime]] = mapped_column(Time, nullable=True)
+    scheduled_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
     duration_estimate_hours: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
     window_start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     window_end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     completed_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    completed_time: Mapped[Optional[datetime]] = mapped_column(Time, nullable=True)
+    completed_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
     completed_by: Mapped[Optional[str]] = mapped_column(String, ForeignKey("users.id"), nullable=True)
     duration_actual_hours: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
     assigned_to: Mapped[Optional[str]] = mapped_column(String, ForeignKey("users.id"), nullable=True)
