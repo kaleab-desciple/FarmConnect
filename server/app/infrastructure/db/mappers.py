@@ -4,6 +4,7 @@ from enum import Enum
 # Shared models (Pydantic DTOs)
 #Farm, Field, CropCycle, Alert
 from shared_models import User, Product, Order, Escrow, Dispute, Reputation
+from app.domain.farm.entities import Harvest
 from shared_models import ForumThread, ForumComment
 from shared_models import KnowledgeArticle
 from shared_models.enums import DisputeResolution
@@ -26,6 +27,7 @@ from app.infrastructure.db.models.knowledge import (
     KnowledgeCategoryORM, ArticleSearchQueryORM
 )
 from app.infrastructure.db.models.notifications import NotificationORM, NotificationPreferenceORM
+from app.infrastructure.db.models.harvest import HarvestORM
 #from app.infrastructure.db.models.farm import FarmORM, FieldORM
 #from app.infrastructure.db.models.crop import CropCycleORM
 #from app.infrastructure.db.models.alert import AlertORM
@@ -50,11 +52,7 @@ TYPE_MAP: dict[Type[Any], Type[Any]] = {
     ForumComment: ForumCommentORM,
     # Knowledge DTOs
     KnowledgeArticle: KnowledgeArticleORM,
-    # Notification DTOs (if any, matching domain entities)
-#    Farm: FarmORM,
-#    Field: FieldORM,
-#    CropCycle: CropCycleORM,
-#    Alert: AlertORM,
+    Harvest: HarvestORM,
 }
 
 
@@ -156,10 +154,7 @@ def orm_to_domain(orm: Any) -> Any:
         # Notification ORM models
         NotificationORM: Notification,
         NotificationPreferenceORM: UserNotificationPreference,
-#        FarmORM: DomainFarm,
-#        FieldORM: DomainField,
-#        CropCycleORM: DomainCropCycle,
-#        AlertORM: DomainAlert,
+        HarvestORM: Harvest,
     }
 
     domain_cls = orm_type_map.get(type(orm))
@@ -270,10 +265,7 @@ def domain_to_orm(domain_obj: Any) -> Any:
         # Notification domain entities
         Notification: NotificationORM,
         UserNotificationPreference: NotificationPreferenceORM,
-#       DomainFarm: FarmORM,
-#       DomainField: FieldORM,
-#        DomainCropCycle: CropCycleORM,
-#        DomainAlert: AlertORM,
+        Harvest: HarvestORM,
     }
 
     orm_cls = domain_type_map.get(type(domain_obj))

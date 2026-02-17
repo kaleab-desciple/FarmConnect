@@ -18,6 +18,8 @@ class Product:
     currency: Optional[str] = "USD"
     quantity_available: Optional[Decimal] = None
     quality_grade: Optional[QualityGrade] = None
+    harvest_id: Optional[str] = None  # Traceability
+    crop_cycle_id: Optional[str] = None  # Traceability
     harvest_date: Optional[date] = None
     expiry_date: Optional[date] = None
     location: Optional[Dict[str, Any]] = None

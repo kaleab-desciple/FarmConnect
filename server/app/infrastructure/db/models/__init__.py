@@ -21,6 +21,7 @@ from .knowledge import (
     KnowledgeCategoryORM, ArticleSearchQueryORM
 ) 
 from .notifications import NotificationORM, NotificationPreferenceORM
+from .harvest import HarvestORM
 
 __all__ = [
     "UserORM",
@@ -64,4 +65,5 @@ __all__ = [
     # Notification Models
     "NotificationORM",
     "NotificationPreferenceORM",
+    "HarvestORM",
 ]

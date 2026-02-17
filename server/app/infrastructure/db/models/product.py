@@ -1,8 +1,10 @@
 from uuid import uuid4
 from datetime import datetime, date, timezone
-from sqlalchemy import String, Float, Date, DateTime, Boolean, Enum as SAEnum
+from typing import Optional
+import sqlalchemy as sa
+from sqlalchemy import String, Float, Date, DateTime, Boolean, Enum as SAEnum, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.db.base import Base
 from app.domain.common.enums import Category, Unit, QualityGrade
 
@@ -21,8 +23,13 @@ class ProductORM(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     quantity_available: Mapped[float] = mapped_column(Float, nullable=True)
     quality_grade: Mapped[QualityGrade] = mapped_column(SAEnum(QualityGrade, name='quality_grade_enum'), nullable=True)
+    harvest_id: Mapped[Optional[str]] = mapped_column(String, sa.ForeignKey("harvests.id", ondelete="SET NULL"), nullable=True)
+    crop_cycle_id: Mapped[Optional[str]] = mapped_column(String, sa.ForeignKey("crop_cycles.id", ondelete="SET NULL"), nullable=True)
     harvest_date: Mapped[date] = mapped_column(Date, nullable=True)
     expiry_date: Mapped[date] = mapped_column(Date, nullable=True)
+
+    # Relationships
+    harvest: Mapped[Optional["HarvestORM"]] = relationship("HarvestORM", back_populates="products")
     # Optional location as JSON
     location: Mapped[dict] = mapped_column(JSONB, nullable=True)
     # Images URLs list as JSON

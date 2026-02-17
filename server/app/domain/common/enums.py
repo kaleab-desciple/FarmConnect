@@ -63,12 +63,20 @@ class Unit(str, Enum):
     KG = "KG"
     TON = "TON"
     LITER = "LITER"
+    UNIT = "UNIT"
+    CRATE = "CRATE"
+    BAG = "BAG"
 
 
 class QualityGrade(str, Enum):
-    A = "A"
-    B = "B"
-    C = "C"
+    GRADE_A = "GRADE_A"
+    GRADE_B = "GRADE_B"
+    GRADE_C = "GRADE_C"
+    PREMIUM = "PREMIUM"
+    STANDARD = "STANDARD"
+    A = "A"  # Legacy
+    B = "B"  # Legacy
+    C = "C"  # Legacy
 
 
 class Provider(str, Enum):
@@ -95,6 +103,7 @@ class CropCycleStatus(str, Enum):
     PLANTED = "PLANTED"
     GROWING = "GROWING"
     HARVESTED = "HARVESTED"
+    PARTIALLY_HARVESTED = "PARTIALLY_HARVESTED"
     FAILED = "FAILED"
     ABANDONED = "ABANDONED"
 

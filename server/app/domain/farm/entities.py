@@ -267,3 +267,42 @@ class FarmTask(FarmTaskBase):
 
     class Config:
         from_attributes = True
+class HarvestBase(BaseModel):
+    """Base Harvest entity."""
+    farmer_id: str
+    crop_cycle_id: Optional[UUID] = None
+    field_id: UUID
+    harvest_date: date
+    quantity_harvested: Decimal = PydanticField(..., gt=0)
+    unit: Optional[str] = None
+    quality_grade: Optional[str] = None
+    notes: Optional[str] = None
+    metadata: Optional[dict] = None
+
+    class Config:
+        from_attributes = True
+
+
+class HarvestCreate(HarvestBase):
+    """Harvest creation entity."""
+    pass
+
+
+class HarvestUpdate(BaseModel):
+    """Harvest update entity."""
+    harvest_date: Optional[date] = None
+    quantity_harvested: Optional[Decimal] = PydanticField(None, gt=0)
+    unit: Optional[str] = None
+    quality_grade: Optional[str] = None
+    notes: Optional[str] = None
+    metadata: Optional[dict] = None
+
+
+class Harvest(HarvestBase):
+    """Harvest domain entity with full fields."""
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -18,6 +18,7 @@ from .weather.routes import router as weather_router
 from .advisory.forums.routes import router as forums_router
 from .advisory.knowledge.routes import router as knowledge_router
 from .advisory.notifications import router as notifications_router
+from .harvest.harvest_routes import router as harvest_router
 
 api_router = APIRouter()
 
@@ -43,6 +44,7 @@ api_router.include_router(farms_router, prefix="/agri", tags=["Agricultural Mana
 api_router.include_router(monitoring_router, prefix="/agri", tags=["Monitoring & Data Entry"])
 api_router.include_router(ai_router, prefix="/agri", tags=["AI Diagnosis"])
 api_router.include_router(weather_router, prefix="/agri", tags=["Weather Service"])
+api_router.include_router(harvest_router, prefix="/agri", tags=["Harvest Management"])
 
 
 # Advisory Routes

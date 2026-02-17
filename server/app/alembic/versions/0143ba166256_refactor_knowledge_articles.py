@@ -30,7 +30,7 @@ def upgrade() -> None:
     op.add_column('knowledge_articles', sa.Column('category', sa.String(50), nullable=False, server_default='general'))
     op.add_column('knowledge_articles', sa.Column('subcategory', sa.String(50), nullable=True))
     op.add_column('knowledge_articles', sa.Column('tags', postgresql.ARRAY(sa.String(50)), server_default='{}'))
-    op.add_column('knowledge_articles', sa.Column('author_id', sa.String(), nullable=False, server_default='unknown'))
+    # author_id already exists from a8391ae9c1a3
     op.add_column('knowledge_articles', sa.Column('author_username', sa.String(100), nullable=False, server_default='unknown'))
     op.add_column('knowledge_articles', sa.Column('author_badge', sa.String(50), nullable=True))
     op.add_column('knowledge_articles', sa.Column('contributors', postgresql.ARRAY(sa.String()), server_default='{}'))
@@ -153,7 +153,7 @@ def downgrade() -> None:
     op.drop_column('knowledge_articles', 'linked_treatments')
     op.drop_column('knowledge_articles', 'related_articles')
     op.drop_column('knowledge_articles', 'related_regions')
-    op.drop_column('knowledge_articles', 'author_id')
+    # author_id should not be dropped as it existed before this migration
     op.drop_column('knowledge_articles', 'related_crop_types')
     op.drop_column('knowledge_articles', 'change_summary')
     op.drop_column('knowledge_articles', 'previous_versions')
