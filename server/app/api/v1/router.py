@@ -15,9 +15,6 @@ from .farms.routes import router as farms_router
 from .monitoring.routes import router as monitoring_router
 from .ai.routes import router as ai_router
 from .weather.routes import router as weather_router
-from .advisory.forums.routes import router as forums_router
-from .advisory.knowledge.routes import router as knowledge_router
-from .advisory.notifications import router as notifications_router
 from .harvest.harvest_routes import router as harvest_router
 
 api_router = APIRouter()
@@ -48,6 +45,4 @@ api_router.include_router(harvest_router, prefix="/agri", tags=["Harvest Managem
 
 
 # Advisory Routes
-api_router.include_router(forums_router, prefix="/advisory/forums", tags=["Forums"])
-api_router.include_router(knowledge_router, prefix="/advisory/knowledge", tags=["Knowledge Base"])
-api_router.include_router(notifications_router, prefix="/advisory/notifications", tags=["Notifications"])
+# api_router.include_router(notifications_router, prefix="/advisory/notifications", tags=["Notifications"])

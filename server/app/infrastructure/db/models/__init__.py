@@ -15,11 +15,6 @@ from .weather import (
     WeatherForecastORM, WeatherSnapshotORM, AdvisorySessionORM,
     AdvisoryMessageORM, AlertORM, FieldRiskScoreORM
 )
-from .forums import ForumThreadORM, ForumCommentORM, ForumVoteORM, ForumBookmarkORM, ForumReportORM
-from .knowledge import (
-    KnowledgeArticleORM, KnowledgeArticleVersionORM, KnowledgeArticleRatingORM,
-    KnowledgeCategoryORM, ArticleSearchQueryORM
-) 
 from .notifications import NotificationORM, NotificationPreferenceORM
 from .harvest import HarvestORM
 
@@ -50,18 +45,6 @@ __all__ = [
     "AdvisoryMessageORM",
     "AlertORM",
     "FieldRiskScoreORM",
-    # Forum models
-    "ForumThreadORM",
-    "ForumCommentORM",
-    "ForumVoteORM",
-    "ForumBookmarkORM",
-    "ForumReportORM",
-    # Knowledge Models
-    "KnowledgeArticleORM",
-    "KnowledgeArticleVersionORM",
-    "KnowledgeArticleRatingORM",
-    "KnowledgeCategoryORM",
-    "ArticleSearchQueryORM",
     # Notification Models
     "NotificationORM",
     "NotificationPreferenceORM",

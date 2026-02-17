@@ -9,7 +9,7 @@ from app.core.auth.dependencies import require_auth
 from app.domain.farm.entities import Harvest, HarvestCreate, HarvestUpdate
 from app.application.harvest.service import HarvestService
 
-router = APIRouter(prefix="/harvests", tags=["harvests"])
+router = APIRouter(prefix="/harvests")
 
 @router.post("/", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def record_harvest(

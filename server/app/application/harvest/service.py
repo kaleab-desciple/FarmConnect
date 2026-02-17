@@ -32,7 +32,7 @@ class HarvestService:
             raise HTTPException(status_code=404, detail="Field not found")
         
         # Simple farmer_id check
-        if str(data.farmer_id) != str(current_user.id) and current_user.role != "ADMIN":
+        if str(data.farmer_id) != str(current_user.user_id) and not current_user.has_realm_role("ADMIN"):
             raise HTTPException(status_code=403, detail="Not authorized")
 
         # 3. Validation logic
@@ -81,23 +81,54 @@ class HarvestService:
             raise HTTPException(status_code=404, detail="Harvest not found")
 
         # Authorization
-        if str(harvest.farmer_id) != str(current_user.id) and current_user.role != "ADMIN":
+        if str(harvest.farmer_id) != str(current_user.user_id) and not current_user.has_realm_role("ADMIN"):
             raise HTTPException(status_code=403, detail="Not authorized")
 
-        # Create product
         # Mapping harvest data to product
-        # product_data should contain price, category etc.
+        # 1. Get Crop Cycle for defaults
+        from app.infrastructure.repositories.farm_repo import CropCycleRepository
+        cycle_repo = CropCycleRepository(self.db)
+        cycle = cycle_repo.get_by_id(str(harvest.crop_cycle_id)) if harvest.crop_cycle_id else None
+        
+        # 2. Determine Category
+        category_input = product_data.get("category")
+        from app.domain.common.enums import Category
+        
+        if category_input:
+            category = category_input
+        elif cycle:
+            # Map CropCycle category to Product category
+            cycle_cat = cycle.product_category.upper()
+            mapping = {
+                "CEREALS": Category.GRAINS,
+                "GRAINS": Category.GRAINS,
+                "VEGETABLES": Category.VEGETABLES,
+                "FRUIT": Category.FRUITS,
+                "FRUITS": Category.FRUITS,
+                "LEGUMES": Category.OTHER,
+                "OILSEEDS": Category.OTHER
+            }
+            category = mapping.get(cycle_cat, Category.OTHER)
+        else:
+            category = Category.OTHER
+
+        # 3. Determine Name
+        name = product_data.get("name")
+        if not name:
+            crop_name = cycle.crop_name if cycle else "Crop"
+            name = f"Harvested {crop_name} - {harvest.harvest_date}"
+
+        # 4. Create Product ORM
         from app.infrastructure.db.models.product import ProductORM
-        from app.domain.products.entities import Product as DomainProduct
         
         product = ProductORM(
             id=str(uuid4()),
             farmer_id=harvest.farmer_id,
-            name=product_data.get("name") or f"Harvested Crop from {harvest.harvest_date}",
+            name=name,
             description=product_data.get("description"),
-            category=product_data.get("category"),
-            unit=harvest.unit,
-            base_price=product_data.get("base_price"),
+            category=category,
+            unit=harvest.unit or "KG",
+            base_price=float(product_data.get("base_price") or 0.01),
             currency=product_data.get("currency", "USD"),
             quantity_available=float(product_data.get("quantity") or harvest.quantity_harvested),
             quality_grade=harvest.quality_grade,

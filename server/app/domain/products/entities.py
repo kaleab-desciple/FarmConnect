@@ -8,13 +8,13 @@ from app.domain.common.enums import Category, Unit, QualityGrade
 
 @dataclass(frozen=True)
 class Product:
+    category: Category
+    unit: Unit
+    base_price: Decimal
     id: Optional[str] = None
     farmer_id: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
-    category: Optional[Category] = None
-    unit: Optional[Unit] = None
-    base_price: Optional[Decimal] = None
     currency: Optional[str] = "USD"
     quantity_available: Optional[Decimal] = None
     quality_grade: Optional[QualityGrade] = None

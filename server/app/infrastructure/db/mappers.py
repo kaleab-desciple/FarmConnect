@@ -5,8 +5,6 @@ from enum import Enum
 #Farm, Field, CropCycle, Alert
 from shared_models import User, Product, Order, Escrow, Dispute, Reputation
 from app.domain.farm.entities import Harvest
-from shared_models import ForumThread, ForumComment
-from shared_models import KnowledgeArticle
 from shared_models.enums import DisputeResolution
 from app.domain.ledger.entities import LedgerEvent
 
@@ -19,14 +17,6 @@ from app.infrastructure.db.models.dispute import DisputeORM
 from app.infrastructure.db.models.reputation import ReputationORM
 from app.infrastructure.db.models.ledger import LedgerEventORM
 from app.infrastructure.db.models.pricing import PricingRuleORM
-from app.infrastructure.db.models.forums import (
-    ForumThreadORM, ForumCommentORM, ForumVoteORM, ForumBookmarkORM
-)
-from app.infrastructure.db.models.knowledge import (
-    KnowledgeArticleORM, KnowledgeArticleVersionORM, KnowledgeArticleRatingORM,
-    KnowledgeCategoryORM, ArticleSearchQueryORM
-)
-from app.infrastructure.db.models.notifications import NotificationORM, NotificationPreferenceORM
 from app.infrastructure.db.models.harvest import HarvestORM
 #from app.infrastructure.db.models.farm import FarmORM, FieldORM
 #from app.infrastructure.db.models.crop import CropCycleORM
@@ -47,12 +37,6 @@ TYPE_MAP: dict[Type[Any], Type[Any]] = {
     Reputation: ReputationORM,
     LedgerEvent: LedgerEventORM,
     PricingRuleORM: PricingRuleORM,
-    # Forum DTOs
-    ForumThread: ForumThreadORM,
-    ForumComment: ForumCommentORM,
-    # Knowledge DTOs
-    KnowledgeArticle: KnowledgeArticleORM,
-    Harvest: HarvestORM,
 }
 
 
@@ -126,11 +110,6 @@ def orm_to_domain(orm: Any) -> Any:
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
     from app.domain.pricing.entities import PricingRule
-    from app.domain.advisory.forums_entities import (
-        ForumThread, ForumComment, ForumVote, ForumBookmark
-    )
-    from app.domain.advisory.knowledge import KnowledgeArticle, KnowledgeCategory, ArticleSearchQuery
-    from app.domain.advisory.notifications import Notification, UserNotificationPreference
 #    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField, CropCycle as DomainCropCycle, Alert as DomainAlert
 
     orm_type_map = {
@@ -142,18 +121,6 @@ def orm_to_domain(orm: Any) -> Any:
         ReputationORM: DomainReputation,
         LedgerEventORM: LedgerEvent,
         PricingRuleORM: PricingRule,
-        # Forum ORM models
-        ForumThreadORM: ForumThread,
-        ForumCommentORM: ForumComment,
-        # Knowledge ORM models
-        KnowledgeArticleORM: KnowledgeArticle,
-        KnowledgeCategoryORM: KnowledgeCategory,
-        ArticleSearchQueryORM: ArticleSearchQuery,
-        ForumVoteORM: ForumVote,
-        ForumBookmarkORM: ForumBookmark,
-        # Notification ORM models
-        NotificationORM: Notification,
-        NotificationPreferenceORM: UserNotificationPreference,
         HarvestORM: Harvest,
     }
 
@@ -184,22 +151,6 @@ def orm_to_domain(orm: Any) -> Any:
     for key in ['id', 'user_id', 'article_id', 'parent_id', 'product_id', 'order_id']:
         if key in data and isinstance(data[key], UUID):
             data[key] = str(data[key])
-    
-    # Handle Knowledge article specific JSON fields
-    if isinstance(orm, KnowledgeArticleORM):
-        if 'previous_versions' in data and data['previous_versions'] and isinstance(data['previous_versions'], str):
-            import json
-            try:
-                data['previous_versions'] = json.loads(data['previous_versions'])
-            except json.JSONDecodeError:
-                data['previous_versions'] = []
-        
-        # Ensure it's a list (sometimes empty JSON is '{}' which loads as dict)
-        if 'previous_versions' in data and isinstance(data['previous_versions'], dict):
-            data['previous_versions'] = []
-            
-        if 'previous_versions' not in data or data['previous_versions'] is None:
-            data['previous_versions'] = []
     
     # Handle JSON fields for forum models
     if hasattr(orm, 'attachments') and data.get('attachments') and isinstance(data['attachments'], str):
@@ -235,11 +186,6 @@ def domain_to_orm(domain_obj: Any) -> Any:
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
     from app.domain.pricing.entities import PricingRule
-    from app.domain.advisory.forums_entities import (
-        ForumThread, ForumComment, ForumVote, ForumBookmark
-    )
-    from app.domain.advisory.knowledge import KnowledgeArticle, KnowledgeCategory, ArticleSearchQuery
-    from app.domain.advisory.notifications import Notification, UserNotificationPreference
 #    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField, CropCycle as DomainCropCycle
 #    from app.domain.agriculture.entities import Alert as DomainAlert
 
@@ -252,19 +198,6 @@ def domain_to_orm(domain_obj: Any) -> Any:
         DomainReputation: ReputationORM,
         LedgerEvent: LedgerEventORM,
         PricingRule: PricingRuleORM,
-        # Forum domain entities
-        ForumThread: ForumThreadORM,
-        ForumComment: ForumCommentORM,
-        ForumVote: ForumVoteORM,
-        ForumBookmark: ForumBookmarkORM,
-        # Knowledge domain entities
-        KnowledgeArticle: KnowledgeArticleORM,
-        KnowledgeCategory: KnowledgeCategoryORM,
-        KnowledgeCategory: KnowledgeCategoryORM,
-        ArticleSearchQuery: ArticleSearchQueryORM,
-        # Notification domain entities
-        Notification: NotificationORM,
-        UserNotificationPreference: NotificationPreferenceORM,
         Harvest: HarvestORM,
     }
 
@@ -319,11 +252,6 @@ def domain_to_dto(domain_obj: Any) -> Any:
     from app.domain.payments.entities import Escrow as DomainEscrow
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
-    from app.domain.advisory.forums_entities import (
-        ForumThread, ForumComment, ForumVote, ForumBookmark
-    )
-    from app.domain.advisory.knowledge import KnowledgeArticle
-    from shared_models import KnowledgeArticle as KnowledgeArticleDTO
 #    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField
 #    from app.domain.agriculture.entities import CropCycle as DomainCropCycle, Alert as DomainAlert
 
@@ -334,11 +262,6 @@ def domain_to_dto(domain_obj: Any) -> Any:
         DomainEscrow: Escrow,
         DomainDispute: Dispute,
         DomainReputation: Reputation,
-        # Forum domain entities to DTOs
-        ForumThread: ForumThread,
-        ForumComment: ForumComment,
-        # Knowledge domain entities to DTOs
-        KnowledgeArticle: KnowledgeArticle,
 #        DomainFarm: Farm,
 #        DomainField: Field,
 #        DomainCropCycle: CropCycle,

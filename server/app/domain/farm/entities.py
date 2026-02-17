@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Optional, List
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field as PydanticField, field_validator
+from app.domain.common.enums import Unit, QualityGrade
 
 
 class FarmBase(BaseModel):
@@ -274,8 +275,8 @@ class HarvestBase(BaseModel):
     field_id: UUID
     harvest_date: date
     quantity_harvested: Decimal = PydanticField(..., gt=0)
-    unit: Optional[str] = None
-    quality_grade: Optional[str] = None
+    unit: Optional["Unit"] = None
+    quality_grade: Optional["QualityGrade"] = None
     notes: Optional[str] = None
     metadata: Optional[dict] = None
 
@@ -292,8 +293,8 @@ class HarvestUpdate(BaseModel):
     """Harvest update entity."""
     harvest_date: Optional[date] = None
     quantity_harvested: Optional[Decimal] = PydanticField(None, gt=0)
-    unit: Optional[str] = None
-    quality_grade: Optional[str] = None
+    unit: Optional[Unit] = None
+    quality_grade: Optional[QualityGrade] = None
     notes: Optional[str] = None
     metadata: Optional[dict] = None
 

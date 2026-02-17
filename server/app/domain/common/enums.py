@@ -53,10 +53,13 @@ class DisputeResolution(str, Enum):
 
 
 class Category(str, Enum):
-    # Assuming some categories
     VEGETABLES = "VEGETABLES"
     FRUITS = "FRUITS"
     GRAINS = "GRAINS"
+    DAIRY = "DAIRY"
+    MEAT = "MEAT"
+    SPICES = "SPICES"
+    OTHER = "OTHER"
 
 
 class Unit(str, Enum):

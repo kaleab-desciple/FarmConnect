@@ -10,11 +10,6 @@ from .journal_entry import JournalEntry
 from .journal_line import JournalLine
 from .ledger_event import LedgerEvent
 from .pricing_rule import PricingRule
-from .forums import ForumThread, ForumThreadCreate, ForumThreadUpdate
-from .forums import ForumComment, ForumCommentCreate, ForumCommentUpdate
-from .forums import VoteRequest, VoteResponse, CategoryResponse, TagResponse
-from .knowledge import KnowledgeArticle, KnowledgeArticleCreate, KnowledgeArticleUpdate
-from .knowledge import ArticleSearchQuery
 from .farm import Farm, FarmCreate, FarmUpdate
 from .farm import Field, FieldCreate, FieldUpdate
 from .farm import CropCycle, CropCycleCreate, CropCycleUpdate
@@ -41,22 +36,6 @@ __all__ = [
     "JournalLine",
     "LedgerEvent",
     "Account",
-    # Forum DTOs
-    "ForumThread",
-    "ForumThreadCreate",
-    "ForumThreadUpdate",
-    "ForumComment",
-    "ForumCommentCreate",
-    "ForumCommentUpdate",
-    "VoteRequest",
-    "VoteResponse",
-    "CategoryResponse",
-    "TagResponse",
-    # Knowledge DTOs
-    "KnowledgeArticle",
-    "KnowledgeArticleCreate",
-    "KnowledgeArticleUpdate",
-    "ArticleSearchQuery",
     # Farm DTOs
     "Farm",
     "FarmCreate",
