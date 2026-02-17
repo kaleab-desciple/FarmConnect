@@ -6,7 +6,7 @@ from .dispute_repo import DisputeRepository
 from .account_repo import AccountRepository
 from .journal_repo import JournalRepository
 from .report_repo import ReportRepository
-from .farm_repo import FarmRepository, FieldRepository, CropCycleRepository, FarmTaskRepository
+from .farm_repo import FarmRepository, FieldRepository, CropCycleRepository
 from .monitoring_repo import SoilReadingRepository, NDVIRepository, PestDiseaseReportRepository, TreatmentRecommendationRepository
 
 __all__ = [
@@ -21,7 +21,6 @@ __all__ = [
     "FarmRepository",
     "FieldRepository",
     "CropCycleRepository",
-    "FarmTaskRepository",
     "SoilReadingRepository",
     "NDVIRepository",
     "PestDiseaseReportRepository",

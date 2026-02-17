@@ -284,15 +284,15 @@ class CropCycleRepository:
             deleted_at=orm.deleted_at,
         )
 
-
+"""
 class FarmTaskRepository:
-    """Repository for FarmTask operations."""
+    #Repository for FarmTask operations.
 
     def __init__(self, session: Session):
         self.session = session
 
     def create(self, task_data: FarmTaskCreate) -> FarmTask:
-        """Create a new farm task."""
+        # Create a new farm task.
         orm = FarmTaskORM(
             field_id=task_data.field_id,
             crop_cycle_id=task_data.crop_cycle_id,
@@ -334,21 +334,21 @@ class FarmTaskRepository:
         return self._to_domain(orm)
 
     def get_by_id(self, task_id: str) -> Optional[FarmTask]:
-        """Get farm task by ID."""
+        # Get farm task by ID.
         orm = self.session.query(FarmTaskORM).filter(
             and_(FarmTaskORM.id == task_id, FarmTaskORM.deleted_at.is_(None))
         ).first()
         return self._to_domain(orm) if orm else None
 
     def get_by_field_id(self, field_id: str) -> List[FarmTask]:
-        """Get all tasks for a field."""
+        # Get all tasks for a field.
         orms = self.session.query(FarmTaskORM).filter(
             and_(FarmTaskORM.field_id == field_id, FarmTaskORM.deleted_at.is_(None))
         ).all()
         return [self._to_domain(orm) for orm in orms]
 
     def get_upcoming(self, field_id: str, days: int = 7) -> List[FarmTask]:
-        """Get upcoming tasks for a field."""
+        # Get upcoming tasks for a field.
         from datetime import date, timedelta
         end_date = date.today() + timedelta(days=days)
         orms = self.session.query(FarmTaskORM).filter(
@@ -363,7 +363,7 @@ class FarmTaskRepository:
         return [self._to_domain(orm) for orm in orms]
 
     def update(self, task_id: str, task_data: FarmTaskUpdate) -> Optional[FarmTask]:
-        """Update a farm task."""
+        #Update a farm task.
         orm = self.session.query(FarmTaskORM).filter(FarmTaskORM.id == task_id).first()
         if not orm:
             return None
@@ -378,7 +378,7 @@ class FarmTaskRepository:
         return self._to_domain(orm)
 
     def delete(self, task_id: str) -> bool:
-        """Soft delete a farm task."""
+        # Soft delete a farm task
         from datetime import datetime, timezone
         orm = self.session.query(FarmTaskORM).filter(FarmTaskORM.id == task_id).first()
         if not orm:
@@ -388,7 +388,7 @@ class FarmTaskRepository:
         return True
 
     def _to_domain(self, orm: FarmTaskORM) -> FarmTask:
-        """Convert ORM to domain entity."""
+        # Convert ORM to domain entity.
         return FarmTask(
             id=orm.id,
             field_id=orm.field_id,
@@ -427,3 +427,4 @@ class FarmTaskRepository:
             updated_at=orm.updated_at,
             deleted_at=orm.deleted_at,
         )
+"""

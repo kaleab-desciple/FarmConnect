@@ -40,8 +40,31 @@ async def create_farm(
     """
     Create a new farm.
     
-    Requires authentication. Users can create farms for themselves,
-    or agents/admins can create farms for farmers.
+    Creates a new farm entity with location, area, and ownership information.
+    Regular users can create farms for themselves, while agents and admins
+    can create farms on behalf of farmers.
+    
+    ## Request Body
+    - **farmer_id**: UUID of the farmer who owns this farm (required)
+    - **name**: Farm name (required)
+    - **location_lat**: Latitude coordinate (optional)
+    - **location_lng**: Longitude coordinate (optional)
+    - **location_address**: Human-readable address (optional)
+    - **total_area_ha**: Total farm area in hectares (optional)
+    - **boundary_geojson**: GeoJSON polygon defining farm boundaries (optional)
+    - **metadata**: Additional farm metadata as JSON (optional)
+    
+    ## Authentication
+    Requires authentication. Permission checks:
+    - Regular users can only create farms for themselves
+    - Agents/admins can create farms for any farmer
+    
+    ## Responses
+    - **201**: Farm created successfully
+    - **400**: Invalid request data
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (insufficient permissions)
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -76,11 +99,39 @@ async def list_farms(
     """
     List farms with filtering and pagination.
     
-    - **farmer_id**: Filter by farmer (admins/agents can query any farmer)
-    - **page**: Page number
-    - **page_size**: Items per page
+    Retrieves a paginated list of farms with optional filtering by farmer.
+    Results depend on user role and permissions.
     
-    Regular users can only see their own farms unless they have admin/agent role.
+    ## Query Parameters
+    - **farmer_id**: Filter farms by farmer UUID (optional)
+      - Regular users: automatically filtered to their own farms
+      - Agents/admins: can query any farmer's farms
+    - **page**: Page number for pagination (default: 1, min: 1)
+    - **page_size**: Number of items per page (default: 20, min: 1, max: 100)
+    
+    ## Authentication
+    Optional authentication. Without authentication, returns public farms only.
+    With authentication, applies row-level permissions:
+    - Regular users: see only their own farms
+    - Agents: see farms in their region
+    - Admins: see all farms
+    
+    ## Response Format
+    Returns paginated results with metadata:
+    ```json
+    {
+      "farms": [...],
+      "total": 42,
+      "page": 1,
+      "page_size": 20,
+      "total_pages": 3
+    }
+    ```
+    
+    ## Responses
+    - **200**: Successfully retrieved farms list
+    - **400**: Invalid query parameters
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -98,10 +149,39 @@ async def get_farm(
     current_user = Depends(require_auth)
 ):
     """
-    Get a farm by ID.
+    Get detailed information about a specific farm.
     
-    Requires authentication. Users can only access their own farms
-    unless they have admin/agent role.
+    Retrieves complete farm details including location, area, boundaries,
+    and metadata. Access is restricted based on ownership and user role.
+    
+    ## Path Parameters
+    - **farm_id**: UUID of the farm to retrieve (required)
+    
+    ## Authentication
+    Requires authentication. Authorization rules:
+    - Farm owner: full access to their own farm
+    - Agents: access to farms in their region
+    - Admins: access to all farms
+    - Other users: access denied
+    
+    ## Response Fields
+    - **id**: Farm UUID
+    - **farmer_id**: Owner's user UUID
+    - **name**: Farm name
+    - **location_lat/lng**: GPS coordinates
+    - **location_address**: Human-readable address
+    - **total_area_ha**: Total area in hectares
+    - **boundary_geojson**: Farm boundary polygon
+    - **centroid_geojson**: Farm center point
+    - **metadata**: Additional farm data
+    - **created_at/updated_at**: Timestamps
+    
+    ## Responses
+    - **200**: Farm details retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (insufficient permissions)
+    - **404**: Farm not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -135,9 +215,36 @@ async def update_farm(
     current_user = Depends(require_auth)
 ):
     """
-    Update a farm.
+    Update an existing farm's information.
     
-    Only the farm owner or admin can update.
+    Allows modification of farm details including name, location, area,
+    and boundaries. Only authorized users can perform updates.
+    
+    ## Path Parameters
+    - **farm_id**: UUID of the farm to update (required)
+    
+    ## Request Body
+    All fields are optional (partial update supported):
+    - **name**: New farm name
+    - **location_lat/lng**: Updated GPS coordinates
+    - **location_address**: Updated address
+    - **total_area_ha**: Updated total area
+    - **boundary_geojson**: Updated farm boundaries
+    - **metadata**: Updated metadata
+    
+    ## Authentication
+    Requires authentication. Authorization rules:
+    - Farm owner: can update their own farm
+    - Admins: can update any farm
+    - Other users: update denied
+    
+    ## Responses
+    - **200**: Farm updated successfully
+    - **400**: Invalid update data
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (insufficient permissions)
+    - **404**: Farm not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -170,7 +277,30 @@ async def delete_farm(
     """
     Delete a farm (soft delete).
     
-    Only the farm owner or admin can delete.
+    Performs a soft deletion of the farm, marking it as deleted without
+    removing it from the database. Associated fields and crop cycles are
+    also soft-deleted.
+    
+    ## Path Parameters
+    - **farm_id**: UUID of the farm to delete (required)
+    
+    ## Authentication
+    Requires authentication. Authorization rules:
+    - Farm owner: can delete their own farm
+    - Admins: can delete any farm
+    - Other users: delete denied
+    
+    ## Important Notes
+    - This is a soft delete; data is retained with a deleted flag
+    - Associated fields and crop cycles are also soft-deleted
+    - Deletion can potentially be reversed by an administrator
+    
+    ## Responses
+    - **204**: Farm deleted successfully (no content)
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (insufficient permissions)
+    - **404**: Farm not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -195,7 +325,34 @@ async def create_field(
     current_user = Depends(require_auth)
 ):
     """
-    Create a new field in a farm.
+    Create a new field within a farm.
+    
+    Fields are subdivisions of a farm used for different crops or purposes.
+    Each field tracks its own area, soil type, and geographic boundaries.
+    
+    ## Request Body
+    - **farm_id**: UUID of the parent farm (required)
+    - **name**: Field name (required)
+    - **area_ha**: Field area in hectares (required)
+    - **soil_type**: Soil type classification (optional)
+    - **soil_classification**: Detailed soil classification (optional)
+    - **boundary_geojson**: GeoJSON polygon for field boundaries (optional)
+    - **centroid_geojson**: GeoJSON point for field center (optional)
+    - **elevation_m**: Elevation in meters (optional)
+    - **slope_degree**: Slope in degrees (optional)
+    - **irrigation_type**: Type of irrigation system (optional)
+    - **drainage_type**: Type of drainage system (optional)
+    
+    ## Authentication
+    Requires authentication. Only the farm owner or admin can create fields.
+    
+    ## Responses
+    - **201**: Field created successfully
+    - **400**: Invalid field data
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not farm owner)
+    - **404**: Parent farm not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -224,7 +381,26 @@ async def list_fields(
     current_user = Depends(require_auth)
 ):
     """
-    List all fields for a farm.
+    List all fields belonging to a specific farm.
+    
+    Retrieves all fields for a farm, including their area, soil type,
+    and geographic information. Access restricted to farm owner and admins.
+    
+    ## Query Parameters
+    - **farm_id**: UUID of the farm whose fields to retrieve (required)
+    
+    ## Authentication
+    Requires authentication. Only farm owner or admin can view fields.
+    
+    ## Response
+    Returns an array of field objects with complete details.
+    
+    ## Responses
+    - **200**: Fields retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not farm owner)
+    - **404**: Farm not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -243,10 +419,42 @@ async def get_field(
     current_user = Depends(require_auth)
 ):
     """
-    Get a field by ID.
+    Get detailed information about a specific field.
     
-    If days parameter is provided (1-14), returns complete weather data for the field.
-    Otherwise returns field details.
+    Retrieves complete field details including boundaries, soil information,
+    and optionally weather forecast data if the days parameter is provided.
+    
+    ## Path Parameters
+    - **field_id**: UUID of the field to retrieve (required)
+    
+    ## Query Parameters
+    - **days**: Number of forecast days (1-14, optional)
+      - If provided: returns field info + weather forecast
+      - If omitted: returns field info only
+    
+    ## Authentication
+    Requires authentication. Only farm owner or admin can access field details.
+    
+    ## Response Variations
+    
+    **Without weather (days omitted):**
+    Returns field details only.
+    
+    **With weather (days=7):**
+    Returns combined object:
+    ```json
+    {
+      "field": { /* field details */ },
+      "weather": { /* current + forecast */ }
+    }
+    ```
+    
+    ## Responses
+    - **200**: Field details retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not farm owner)
+    - **404**: Field not found or no location for weather
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -318,7 +526,36 @@ async def update_field(
     current_user = Depends(require_auth)
 ):
     """
-    Update a field.
+    Update an existing field's information.
+    
+    Allows modification of field properties such as name, area, soil type,
+    and geographic boundaries. Partial updates are supported.
+    
+    ## Path Parameters
+    - **field_id**: UUID of the field to update (required)
+    
+    ## Request Body
+    All fields are optional (partial update):
+    - **name**: Updated field name
+    - **area_ha**: Updated area in hectares
+    - **soil_type**: Updated soil type
+    - **soil_classification**: Updated soil classification
+    - **boundary_geojson**: Updated boundaries
+    - **elevation_m**: Updated elevation
+    - **slope_degree**: Updated slope
+    - **irrigation_type**: Updated irrigation system
+    - **drainage_type**: Updated drainage system
+    
+    ## Authentication
+    Requires authentication. Only farm owner or admin can update fields.
+    
+    ## Responses
+    - **200**: Field updated successfully
+    - **400**: Invalid update data
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not farm owner)
+    - **404**: Field not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -344,6 +581,27 @@ async def delete_field(
 ):
     """
     Delete a field (soft delete).
+    
+    Performs a soft deletion of the field, retaining the data but marking
+    it as deleted. Associated crop cycles are also soft-deleted.
+    
+    ## Path Parameters
+    - **field_id**: UUID of the field to delete (required)
+    
+    ## Authentication
+    Requires authentication. Only farm owner or admin can delete fields.
+    
+    ## Important Notes
+    - Soft delete: data retained with deleted flag
+    - Associated crop cycles are also soft-deleted
+    - Can potentially be reversed by administrator
+    
+    ## Responses
+    - **204**: Field deleted successfully (no content)
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not farm owner)
+    - **404**: Field not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -368,7 +626,34 @@ async def create_crop_cycle(
     current_user = Depends(require_auth)
 ):
     """
-    Create a new crop cycle.
+    Create a new crop cycle for a field.
+    
+    A crop cycle represents a complete growing season for a specific crop,
+    from planting to harvest. Tracks crop variety, dates, expected and
+    actual yields.
+    
+    ## Request Body
+    - **field_id**: UUID of the field where crop is planted (required)
+    - **product_category**: Crop category (e.g., VEGETABLES, GRAINS) (required)
+    - **crop_name**: Name of the crop (required)
+    - **variety**: Crop variety (optional)
+    - **cultivar**: Specific cultivar (optional)
+    - **planting_date**: Date of planting (required)
+    - **expected_harvest_date**: Expected harvest date (optional)
+    - **expected_yield_kg**: Expected yield in kg (optional)
+    - **status**: Cycle status (PLANNED, GROWING, HARVESTED, FAILED)
+    - **notes**: Additional notes (optional)
+    
+    ## Authentication
+    Requires authentication. Only farm owner or admin can create crop cycles.
+    
+    ## Responses
+    - **201**: Crop cycle created successfully
+    - **400**: Invalid crop cycle data
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not field owner)
+    - **404**: Field not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -399,7 +684,26 @@ async def list_crop_cycles(
     current_user = Depends(require_auth)
 ):
     """
-    List all crop cycles for a field.
+    List all crop cycles for a specific field.
+    
+    Retrieves historical and current crop cycles for a field, showing
+    planting dates, harvest dates, yields, and status.
+    
+    ## Query Parameters
+    - **field_id**: UUID of the field whose crop cycles to retrieve (required)
+    
+    ## Authentication
+    Requires authentication. Only field owner or admin can view crop cycles.
+    
+    ## Response
+    Returns array of crop cycle objects ordered by planting date (most recent first).
+    
+    ## Responses
+    - **200**: Crop cycles retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not field owner)
+    - **404**: Field not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -417,7 +721,37 @@ async def get_crop_cycle(
     current_user = Depends(require_auth)
 ):
     """
-    Get a crop cycle by ID.
+    Get detailed information about a specific crop cycle.
+    
+    Retrieves complete crop cycle information including crop details,
+    planting and harvest dates, yield data, and quality grades.
+    
+    ## Path Parameters
+    - **cycle_id**: UUID of the crop cycle to retrieve (required)
+    
+    ## Authentication
+    Requires authentication. Only field owner or admin can access.
+    
+    ## Response Fields
+    - **id**: Crop cycle UUID
+    - **field_id**: Parent field UUID
+    - **crop_name**: Name of the crop
+    - **variety**: Crop variety
+    - **planting_date**: When planted
+    - **expected_harvest_date**: Expected harvest
+    - **actual_harvest_date**: Actual harvest (if completed)
+    - **status**: Current status
+    - **expected_yield_kg**: Expected yield
+    - **actual_yield_kg**: Actual yield (if harvested)
+    - **yield_quality_grade**: Quality grade
+    - **notes**: Additional notes
+    
+    ## Responses
+    - **200**: Crop cycle retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not field owner)
+    - **404**: Crop cycle not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -455,7 +789,35 @@ async def update_crop_cycle(
     current_user = Depends(require_auth)
 ):
     """
-    Update a crop cycle.
+    Update an existing crop cycle.
+    
+    Allows updating crop cycle information including dates, yields, status,
+    and quality grades. Commonly used to record harvest results.
+    
+    ## Path Parameters
+    - **cycle_id**: UUID of the crop cycle to update (required)
+    
+    ## Request Body
+    All fields are optional (partial update):
+    - **variety**: Updated crop variety
+    - **expected_harvest_date**: Updated expected harvest
+    - **actual_harvest_date**: Record actual harvest date
+    - **status**: Update status (PLANNED, GROWING, HARVESTED, FAILED)
+    - **expected_yield_kg**: Update expected yield
+    - **actual_yield_kg**: Record actual yield
+    - **yield_quality_grade**: Record quality grade
+    - **notes**: Additional notes
+    
+    ## Authentication
+    Requires authentication. Only field owner or admin can update.
+    
+    ## Responses
+    - **200**: Crop cycle updated successfully
+    - **400**: Invalid update data
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (not field owner)
+    - **404**: Crop cycle not found
+    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
@@ -471,146 +833,3 @@ async def update_crop_cycle(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ============ Farm Task Routes ============
-
-@router.post(
-    "/tasks",
-    response_model=Dict[str, Any],
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_task(
-    task: FarmTaskCreate,
-    db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
-):
-    """
-    Create a new farm task.
-    """
-    try:
-        service = FarmService(db)
-        created = service.create_task(task, current_user)
-        
-        return {
-            "id": str(created.id),
-            "field_id": str(created.field_id),
-            "task_type": created.task_type,
-            "title": created.title,
-            "status": created.status,
-            "priority": created.priority,
-            "scheduled_date": created.scheduled_date.isoformat() if created.scheduled_date else None,
-            "created_at": created.created_at.isoformat() if created.created_at else None,
-            "status": "created"
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/tasks", response_model=List[Dict[str, Any]])
-async def list_tasks(
-    field_id: str = Query(..., description="Field ID"),
-    db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
-):
-    """
-    List all tasks for a field.
-    """
-    try:
-        service = FarmService(db)
-        return service.list_tasks(field_id, current_user)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/tasks/upcoming", response_model=List[Dict[str, Any]])
-async def list_upcoming_tasks(
-    field_id: str = Query(..., description="Field ID"),
-    days: int = Query(default=7, ge=1, le=90, description="Number of days to look ahead"),
-    db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
-):
-    """
-    List upcoming tasks for a field.
-    """
-    try:
-        service = FarmService(db)
-        return service.list_upcoming_tasks(field_id, days, current_user)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/tasks/{task_id}", response_model=Dict[str, Any])
-async def get_task(
-    task_id: str,
-    db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
-):
-    """
-    Get a farm task by ID.
-    """
-    try:
-        service = FarmService(db)
-        task = service.get_task(task_id, current_user)
-        
-        return {
-            "id": str(task.id),
-            "field_id": str(task.field_id),
-            "crop_cycle_id": str(task.crop_cycle_id) if task.crop_cycle_id else None,
-            "task_type": task.task_type,
-            "title": task.title,
-            "description": task.description,
-            "status": task.status,
-            "priority": task.priority,
-            "scheduled_date": task.scheduled_date.isoformat() if task.scheduled_date else None,
-            "scheduled_time": task.scheduled_time.isoformat() if task.scheduled_time else None,
-            "duration_estimate_hours": str(task.duration_estimate_hours) if task.duration_estimate_hours else None,
-            "window_start_date": task.window_start_date.isoformat() if task.window_start_date else None,
-            "window_end_date": task.window_end_date.isoformat() if task.window_end_date else None,
-            "completed_date": task.completed_date.isoformat() if task.completed_date else None,
-            "completed_by": task.completed_by,
-            "duration_actual_hours": str(task.duration_actual_hours) if task.duration_actual_hours else None,
-            "assigned_to": task.assigned_to,
-            "estimated_cost_usd": str(task.estimated_cost_usd) if task.estimated_cost_usd else None,
-            "actual_cost_usd": str(task.actual_cost_usd) if task.actual_cost_usd else None,
-            "weather_dependent": task.weather_dependent,
-            "notes": task.notes,
-            "completion_notes": task.completion_notes,
-            "created_at": task.created_at.isoformat() if task.created_at else None,
-            "updated_at": task.updated_at.isoformat() if task.updated_at else None,
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.put("/tasks/{task_id}", response_model=Dict[str, Any])
-async def update_task(
-    task_id: str,
-    task: FarmTaskUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
-):
-    """
-    Update a farm task.
-    """
-    try:
-        service = FarmService(db)
-        updated = service.update_task(task_id, task, current_user)
-        
-        return {
-            "id": str(updated.id),
-            "status": "updated"
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))

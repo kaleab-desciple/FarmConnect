@@ -25,18 +25,14 @@ from shared_models import (
     CropCycle as CropCycleDTO,
     CropCycleCreate as CropCycleCreateDTO,
     CropCycleUpdate as CropCycleUpdateDTO,
-    FarmTask as FarmTaskDTO,
-    FarmTaskCreate as FarmTaskCreateDTO,
-    FarmTaskUpdate as FarmTaskUpdateDTO,
 )
 from app.domain.farm.entities import (
     Farm, FarmCreate, FarmUpdate,
     Field, FieldCreate, FieldUpdate,
     CropCycle, CropCycleCreate, CropCycleUpdate,
-    FarmTask, FarmTaskCreate, FarmTaskUpdate
 )
 from app.infrastructure.repositories.farm_repo import (
-    FarmRepository, FieldRepository, CropCycleRepository, FarmTaskRepository
+    FarmRepository, FieldRepository, CropCycleRepository
 )
 
 logger = logging.getLogger(__name__)
@@ -57,7 +53,6 @@ class FarmService:
         self.farm_repo = FarmRepository(session)
         self.field_repo = FieldRepository(session)
         self.crop_cycle_repo = CropCycleRepository(session)
-        self.task_repo = FarmTaskRepository(session)
         from app.infrastructure.repositories.user_repo import UserRepository
         self.user_repo = UserRepository(session)
 
@@ -581,14 +576,14 @@ class FarmService:
         
         return self.crop_cycle_repo.update(cycle_id, cycle_data)
     
-    # ============ Farm Task Operations ============
+"""    # ============ Farm Task Operations ============
     
     def create_task(
         self,
         task_data: FarmTaskCreate,
         current_user: TokenPayload
     ) -> FarmTask:
-        """Create a new farm task"""
+        # Create a new farm task
         # Verify field exists and user has access
         field = self.field_repo.get_by_id(str(task_data.field_id))
         if not field:
@@ -623,7 +618,7 @@ class FarmService:
         task_id: str,
         current_user: TokenPayload
     ) -> FarmTask:
-        """Get a farm task by ID"""
+        # Get a farm task by ID
         task = self.task_repo.get_by_id(task_id)
         
         if not task:
@@ -645,7 +640,7 @@ class FarmService:
         field_id: str,
         current_user: TokenPayload
     ) -> List[Dict[str, Any]]:
-        """List tasks for a field"""
+        # List tasks for a field
         field = self.field_repo.get_by_id(field_id)
         if not field:
             raise HTTPException(status_code=404, detail="Field not found")
@@ -675,7 +670,7 @@ class FarmService:
         current_user: TokenPayload,
         days: int = 7,
     ) -> List[Dict[str, Any]]:
-        """List upcoming tasks for a field"""
+        # List upcoming tasks for a field
         field = self.field_repo.get_by_id(field_id)
         if not field:
             raise HTTPException(status_code=404, detail="Field not found")
@@ -705,7 +700,7 @@ class FarmService:
         task_data: FarmTaskUpdate,
         current_user: TokenPayload
     ) -> FarmTask:
-        """Update a farm task"""
+        # Update a farm task
         task = self.task_repo.get_by_id(task_id)
         
         if not task:
@@ -728,3 +723,4 @@ class FarmService:
             )
         
         return self.task_repo.update(task_id, task_data)
+"""
