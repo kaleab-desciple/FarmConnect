@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from app.domain.farm.entities import Farm, FarmCreate, FarmUpdate, Field, FieldCreate, FieldUpdate, CropCycle, CropCycleCreate, CropCycleUpdate, FarmTask, FarmTaskCreate, FarmTaskUpdate
+from app.domain.farm.entities import Farm, FarmCreate, FarmUpdate, Field, FieldCreate, FieldUpdate, CropCycle, CropCycleCreate, CropCycleUpdate
 from app.infrastructure.db.models import FarmORM, FieldORM, CropCycleORM, FarmTaskORM
 
 

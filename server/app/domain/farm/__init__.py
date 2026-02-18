@@ -9,9 +9,6 @@ from .entities import (
     CropCycle,
     CropCycleCreate,
     CropCycleUpdate,
-    FarmTask,
-    FarmTaskCreate,
-    FarmTaskUpdate,
 )
 
 __all__ = [
@@ -24,7 +21,4 @@ __all__ = [
     "CropCycle",
     "CropCycleCreate",
     "CropCycleUpdate",
-    "FarmTask",
-    "FarmTaskCreate",
-    "FarmTaskUpdate",
 ]

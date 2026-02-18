@@ -73,7 +73,7 @@ class CropCycleORM(Base):
     expected_harvest_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     actual_harvest_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(
-        ENUM('PLANNED', 'PLANTED', 'GROWING', 'HARVESTED', 'FAILED', 'ABANDONED', name='crop_cycle_status', create_type=False),
+        ENUM('PLANNED', 'PLANTED', 'GROWING', 'HARVESTED', 'PARTIALLY_HARVESTED', 'FAILED', 'ABANDONED', name='crop_cycle_status', create_type=False),
         default='PLANNED'
     )
     expected_yield_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)

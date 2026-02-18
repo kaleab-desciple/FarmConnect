@@ -1,7 +1,7 @@
 """Weather Service Improvements: Pagination, Indexes, Error Handling
 
 Revision ID: weather_service_improvements
-Revises: 0143ba166256
+Revises: add_accounts_owner_index
 Create Date: 2026-02-16 13:35:00.000000
 
 This migration adds:
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'weather_service_improvements'
-down_revision: Union[str, Sequence[str], None] = '0143ba166256'
+down_revision: Union[str, Sequence[str], None] = 'add_accounts_owner_index'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

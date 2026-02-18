@@ -1,7 +1,7 @@
 """add accounts owner index
 
 Revision ID: add_accounts_owner_index
-Revises: a8391ae9c1a3
+Revises: dbaab859c21c
 Create Date: 2026-02-05 16:37:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add_accounts_owner_index'
-down_revision = 'a8391ae9c1a3'
+down_revision = 'dbaab859c21c'
 branch_labels = None
 depends_on = None
 

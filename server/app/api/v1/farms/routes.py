@@ -15,9 +15,8 @@ from app.core.auth.dependencies import get_current_user, get_optional_user, requ
 from app.domain.farm.entities import (
     Farm, FarmCreate, FarmUpdate,
     Field, FieldCreate, FieldUpdate,
-    CropCycle, CropCycleCreate, CropCycleUpdate,
-    FarmTask, FarmTaskCreate, FarmTaskUpdate
-)
+    CropCycle, CropCycleCreate, CropCycleUpdate
+    )
 
 from .service import FarmService
 

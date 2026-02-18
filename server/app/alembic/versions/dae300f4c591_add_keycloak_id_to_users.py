@@ -1,7 +1,7 @@
 """add keycloak_id to users
 
 Revision ID: dae300f4c591
-Revises: 5959689b4bca
+Revises: 835594adc649
 Create Date: 2026-01-25 02:54:39.401611
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'dae300f4c591'
-down_revision: Union[str, Sequence[str], None] = '5959689b4bca'
+down_revision: Union[str, Sequence[str], None] = '835594adc649'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

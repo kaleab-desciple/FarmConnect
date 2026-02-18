@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class FarmService:
     """Service layer for farm operations following clean architecture patterns"""
     
-    CROP_CYCLE_STATUSES = ['PLANNED', 'PLANTED', 'GROWING', 'HARVESTED', 'FAILED', 'ABANDONED']
+    CROP_CYCLE_STATUSES = ['PLANNED', 'PLANTED', 'GROWING', 'HARVESTED', 'PARTIALLY_HARVESTED', 'FAILED', 'ABANDONED']
     TASK_STATUSES = ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'SKIPPED', 'CANCELLED', 'OVERDUE']
     TASK_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
     TASK_TYPES = ['LAND_PREPARATION', 'SOWING', 'PLANTING', 'IRRIGATION', 'FERTILIZATION',

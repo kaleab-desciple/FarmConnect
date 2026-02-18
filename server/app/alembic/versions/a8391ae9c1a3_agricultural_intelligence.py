@@ -1,7 +1,7 @@
 """Agricultural Intelligence Extension
 
 Revision ID: 001_agricultural_intelligence
-Revises: 13c615f4297d
+Revises: dae300f4c591
 Create Date: 2026-01-30 15:45:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'a8391ae9c1a3'
-down_revision = '13c615f4297d'
+down_revision = 'dae300f4c591'
 branch_labels = None
 depends_on = None
 
@@ -205,60 +205,6 @@ def upgrade() -> None:
     CREATE INDEX idx_crop_cycles_field ON crop_cycles(field_id) WHERE deleted_at IS NULL;
     """)
 
-    
-    # 3. Operations and Tasks
-    op.execute("""
-    CREATE TABLE farm_tasks (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        field_id UUID NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
-        crop_cycle_id UUID REFERENCES crop_cycles(id) ON DELETE SET NULL,
-        task_type task_type NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        description TEXT,
-        status task_status DEFAULT 'PENDING',
-        priority task_priority DEFAULT 'MEDIUM',
-        scheduled_date DATE NOT NULL,
-        scheduled_time TIME,
-        duration_estimate_hours NUMERIC(6, 2),
-        window_start_date DATE,
-        window_end_date DATE,
-        completed_date DATE,
-        completed_time TIME,
-        completed_by VARCHAR REFERENCES users(id),
-        duration_actual_hours NUMERIC(6, 2),
-        assigned_to VARCHAR REFERENCES users(id),
-        labor_count INTEGER,
-        equipment_needed TEXT[],
-        materials_needed JSONB,
-        estimated_cost_usd NUMERIC(12, 2),
-        actual_cost_usd NUMERIC(12, 2),
-        parent_task_id UUID REFERENCES farm_tasks(id),
-        depends_on_tasks UUID[],
-        weather_dependent BOOLEAN DEFAULT FALSE,
-        soil_moisture_condition VARCHAR(50),
-        auto_generated BOOLEAN DEFAULT FALSE,
-        generation_reason TEXT,
-        notes TEXT,
-        completion_notes TEXT,
-        completion_photos TEXT[],
-        metadata JSONB DEFAULT '{}',
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW(),
-        deleted_at TIMESTAMPTZ,
-        CONSTRAINT valid_completion_date CHECK (completed_date IS NULL OR completed_date >= scheduled_date)
-    );
-    """)
-
-    op.execute("""
-    CREATE TABLE task_dependencies (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        task_id UUID NOT NULL REFERENCES farm_tasks(id) ON DELETE CASCADE,
-        depends_on_task_id UUID NOT NULL REFERENCES farm_tasks(id) ON DELETE CASCADE,
-        dependency_type VARCHAR(50) DEFAULT 'finish_to_start',
-        lag_hours INTEGER DEFAULT 0,
-        UNIQUE(task_id, depends_on_task_id)
-    );
-    """)
 
     # 4. Monitoring and Health (NDVI, Pest, Soil)
     op.execute("""
@@ -440,63 +386,6 @@ def upgrade() -> None:
     );
     """)
 
-    # 6. Advisory and Knowledge Base
-    op.execute("""
-    CREATE TABLE advisory_sessions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        farmer_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        agronomist_id VARCHAR REFERENCES users(id) ON DELETE SET NULL,
-        field_id UUID REFERENCES fields(id) ON DELETE SET NULL,
-        crop_cycle_id UUID REFERENCES crop_cycles(id) ON DELETE SET NULL,
-        topic advisory_topic NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        description TEXT,
-        status advisory_status DEFAULT 'REQUESTED',
-        priority task_priority DEFAULT 'MEDIUM',
-        requested_at TIMESTAMPTZ DEFAULT NOW(),
-        scheduled_at TIMESTAMPTZ,
-        started_at TIMESTAMPTZ,
-        closed_at TIMESTAMPTZ,
-        communication_method VARCHAR(50),
-        meeting_link TEXT,
-        resolution_summary TEXT,
-        recommendations_given TEXT[],
-        farmer_rating INTEGER CHECK (farmer_rating BETWEEN 1 AND 5),
-        metadata JSONB DEFAULT '{}',
-        created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    """)
-
-    op.execute("""
-    CREATE TABLE advisory_messages (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        session_id UUID NOT NULL REFERENCES advisory_sessions(id) ON DELETE CASCADE,
-        sender_id VARCHAR NOT NULL REFERENCES users(id),
-        message_type message_type DEFAULT 'TEXT',
-        message TEXT NOT NULL,
-        attachments JSONB,
-        sent_at TIMESTAMPTZ DEFAULT NOW(),
-        read_at TIMESTAMPTZ,
-        metadata JSONB DEFAULT '{}'
-    );
-    """)
-
-    op.execute("""
-    CREATE TABLE knowledge_articles (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        author_id VARCHAR NOT NULL REFERENCES users(id),
-        topic advisory_topic NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        slug VARCHAR(255) UNIQUE,
-        summary TEXT,
-        content TEXT NOT NULL,
-        status VARCHAR(20) DEFAULT 'draft',
-        published_at TIMESTAMPTZ,
-        metadata JSONB DEFAULT '{}',
-        created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    """)
-
     # 7. Financial and Supply Chain
     op.execute("""
     CREATE TABLE crop_cycle_products (
@@ -575,17 +464,12 @@ def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS escrow_field_conditions CASCADE;")
     op.execute("DROP TABLE IF EXISTS order_field_sources CASCADE;")
     op.execute("DROP TABLE IF EXISTS crop_cycle_products CASCADE;")
-    op.execute("DROP TABLE IF EXISTS knowledge_articles CASCADE;")
-    op.execute("DROP TABLE IF EXISTS advisory_messages CASCADE;")
-    op.execute("DROP TABLE IF EXISTS advisory_sessions CASCADE;")
     op.execute("DROP TABLE IF EXISTS weather_snapshots CASCADE;")
     op.execute("DROP TABLE IF EXISTS weather_forecasts CASCADE;")
     op.execute("DROP TABLE IF EXISTS soil_readings CASCADE;")
     op.execute("DROP TABLE IF EXISTS treatment_recommendations CASCADE;")
     op.execute("DROP TABLE IF EXISTS pest_disease_reports CASCADE;")
     op.execute("DROP TABLE IF EXISTS ndvi_snapshots CASCADE;")
-    op.execute("DROP TABLE IF EXISTS task_dependencies CASCADE;")
-    op.execute("DROP TABLE IF EXISTS farm_tasks CASCADE;")
     op.execute("DROP TABLE IF EXISTS crop_cycles CASCADE;")
     op.execute("DROP TABLE IF EXISTS fields CASCADE;")
     op.execute("DROP TABLE IF EXISTS farms CASCADE;")

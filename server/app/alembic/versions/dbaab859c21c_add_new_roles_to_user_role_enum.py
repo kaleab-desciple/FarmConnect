@@ -1,7 +1,7 @@
 """add_new_roles_to_user_role_enum
 
 Revision ID: dbaab859c21c
-Revises: advisory_002
+Revises: a8391ae9c1a3
 Create Date: 2026-02-14 11:27:44.928892
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'dbaab859c21c'
-down_revision: Union[str, Sequence[str], None] = 'advisory_002'
+down_revision: Union[str, Sequence[str], None] = 'a8391ae9c1a3'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

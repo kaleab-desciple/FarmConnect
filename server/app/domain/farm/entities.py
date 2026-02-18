@@ -161,8 +161,8 @@ class CropCycle(CropCycleBase):
         from_attributes = True
 
 
-class FarmTaskBase(BaseModel):
-    """Base Farm Task entity."""
+"""class FarmTaskBase(BaseModel):
+    # Base Farm Task entity.
     field_id: UUID
     crop_cycle_id: Optional[UUID] = None
     task_type: str
@@ -199,7 +199,7 @@ class FarmTaskBase(BaseModel):
     @field_validator("scheduled_time", "completed_time", mode="before")
     @classmethod
     def parse_time(cls, v):
-        """Allow parsing time from a full ISO datetime string."""
+        # Allow parsing time from a full ISO datetime string.
         if isinstance(v, str) and "T" in v:
             try:
                 # Handle ISO8601 strings like "2026-02-14T17:56:40.736Z"
@@ -214,12 +214,12 @@ class FarmTaskBase(BaseModel):
 
 
 class FarmTaskCreate(FarmTaskBase):
-    """Farm Task creation entity."""
+    # Farm Task creation entity.
     pass
 
 
 class FarmTaskUpdate(BaseModel):
-    """Farm Task update entity."""
+    # Farm Task update entity.
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
@@ -249,7 +249,7 @@ class FarmTaskUpdate(BaseModel):
     @field_validator("scheduled_time", "completed_time", mode="before")
     @classmethod
     def parse_time(cls, v):
-        """Allow parsing time from a full ISO datetime string."""
+        #Allow parsing time from a full ISO datetime string.
         if isinstance(v, str) and "T" in v:
             try:
                 dt_str = v.replace("Z", "+00:00")
@@ -260,14 +260,14 @@ class FarmTaskUpdate(BaseModel):
 
 
 class FarmTask(FarmTaskBase):
-    """Farm Task domain entity with full fields."""
+    #Farm Task domain entity with full fields.
     id: UUID
     created_at: datetime
     updated_at: datetime
     deleted_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        from_attributes = True"""
 class HarvestBase(BaseModel):
     """Base Harvest entity."""
     farmer_id: str
