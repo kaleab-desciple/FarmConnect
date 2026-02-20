@@ -16,7 +16,7 @@ from .weather import (
     AdvisoryMessageORM, AlertORM, FieldRiskScoreORM
 )
 from .notifications import NotificationORM, NotificationPreferenceORM
-from .harvest import HarvestORM
+from .harvest import HarvestORM, HarvestEventORM, HarvestBatchORM, HarvestBatchContributionORM, BatchQCReportORM, ProductBatchSourceORM, AuditEventORM
 from .inventory import InventoryMovementORM, ProductBatchORM
 
 __all__ = [
@@ -50,6 +50,12 @@ __all__ = [
     "NotificationORM",
     "NotificationPreferenceORM",
     "HarvestORM",
+    "HarvestEventORM",
+    "HarvestBatchORM",
+    "HarvestBatchContributionORM",
+    "BatchQCReportORM",
+    "ProductBatchSourceORM",
+    "AuditEventORM",
     # Inventory Management
     "InventoryMovementORM",
     "ProductBatchORM",

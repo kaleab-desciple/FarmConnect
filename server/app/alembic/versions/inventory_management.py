@@ -78,9 +78,7 @@ def downgrade() -> None:
     op.drop_table('inventory_movements')
     
     op.drop_index('idx_batches_product', table_name='product_batches')
-    op.drop_constraint('uq_product_batch_code', 'product_batches', type_='unique')
-    op.drop_table('product_batches')
-    
+    op.drop_constraint('uq_product_batch_code', 'product_batches', type_='unique')    
     # ========================================
     # Drop enum type
     # ========================================

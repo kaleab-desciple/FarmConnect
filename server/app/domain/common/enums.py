@@ -300,3 +300,4 @@ class MessageType(str, Enum):
     VIDEO = "VIDEO"
     LOCATION = "LOCATION"
     SYSTEM = "SYSTEM"
+

@@ -1,4 +1,5 @@
 from .user_repo import UserRepository
+from .harvest_batch_repo import HarvestBatchRepository
 from .product_repo import ProductRepository
 from .order_repo import OrderRepository
 from .payment_repo import EscrowRepository
@@ -11,6 +12,7 @@ from .monitoring_repo import SoilReadingRepository, NDVIRepository, PestDiseaseR
 
 __all__ = [
     "UserRepository",
+    "HarvestBatchRepository",
     "ProductRepository",
     "OrderRepository",
     "EscrowRepository",

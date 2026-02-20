@@ -17,6 +17,9 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
+    # 0. Ensure pgcrypto extension is enabled for gen_random_uuid()
+    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+    
     # 1. Create Sequences
     op.execute("CREATE SEQUENCE user_id_seq START 1")
 
