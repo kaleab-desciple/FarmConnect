@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from app.domain.common.enums import OrderStatus
 
-@dataclass(frozen=True)
+
+@dataclass
 class Order:
     id: Optional[str] = None
     farmer_id: Optional[str] = None
@@ -21,4 +22,9 @@ class Order:
     total_price: Optional[Decimal] = None
     status: Optional[OrderStatus] = None
     escrow_id: Optional[str] = None
+    batch_id: Optional[str] = None
+    cancelled_at: Optional[datetime] = None
+    cancelled_reason: Optional[str] = None
+    delivered_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None

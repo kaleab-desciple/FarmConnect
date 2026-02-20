@@ -8,6 +8,8 @@ from shared_models import Order as OrderDTO, OrderCreate
 from shared_models.order_escrow_pair import OrderEscrowPair
 
 from .service import OrderService
+from app.application.services.inventory_service import InventoryService
+from app.domain.common.enums import OrderStatus
 
 
 router = APIRouter()
@@ -211,4 +213,214 @@ def get_order(order_id: str, db: Session = Depends(get_db), current_user: TokenP
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+
+@router.post("/{order_id}/cancel", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:update"))])
+def cancel_order(
+    order_id: str,
+    reason: str,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user)
+):
+    """
+    Cancel an order and release inventory reservation.
+    
+    Can only cancel orders that are in PENDING_PAYMENT or CREATED status.
+    Releases the reserved inventory back to available stock.
+    
+    ## Request Body
+    - **reason**: Reason for cancellation
+    
+    ## Authentication
+    Requires `orders:update` permission.
+    """
+    from app.infrastructure.repositories.order_repo import OrderRepository
+    from app.domain.orders.state_machine import OrderStateMachine, InvalidStateTransitionError
+    from datetime import datetime, timezone
+    
+    order_repo = OrderRepository(db)
+    order = order_repo.get_by_id(order_id)
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization (only merchant or farmer can cancel)
+    if order.merchant_id != current_user.sub and order.farmer_id != current_user.sub:
+        # Check if admin
+        if not any(role in current_user.roles for role in ['ADMIN', 'MANAGER']):
+            raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
+    
+    # Validate transition
+    if order.status not in [OrderStatus.PENDING_PAYMENT, OrderStatus.CREATED]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot cancel order in {order.status.value} status"
+        )
+    
+    try:
+        # Release inventory reservation
+        inventory_service = InventoryService(db)
+        inventory_service.release_reservation(
+            product_id=order.product_id,
+            order_id=order_id,
+            qty=order.quantity,
+            reason=reason
+        )
+        
+        # Update order status
+        new_status = OrderStateMachine.transition(order.status, OrderStatus.CANCELLED)
+        order.status = new_status
+        order.cancelled_at = datetime.now(timezone.utc)
+        order.cancelled_reason = reason
+        order.updated_at = datetime.now(timezone.utc)
+        
+        order_repo.save(order)
+        db.commit()
+        
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(order)
+        
+    except InvalidStateTransitionError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{order_id}/confirm-delivery", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:update"))])
+def confirm_delivery(
+    order_id: str,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user)
+):
+    """
+    Confirm delivery - mark order as delivered.
+    
+    Transition: IN_DELIVERY → DELIVERED
+    
+    ## Authentication
+    Requires `orders:update` permission.
+    """
+    from app.infrastructure.repositories.order_repo import OrderRepository
+    from app.domain.orders.state_machine import OrderStateMachine, InvalidStateTransitionError
+    from datetime import datetime, timezone
+    
+    order_repo = OrderRepository(db)
+    order = order_repo.get_by_id(order_id)
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    try:
+        new_status = OrderStateMachine.transition(order.status, OrderStatus.DELIVERED)
+        order.status = new_status
+        order.delivered_at = datetime.now(timezone.utc)
+        order.updated_at = datetime.now(timezone.utc)
+        
+        order_repo.save(order)
+        db.commit()
+        
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(order)
+        
+    except InvalidStateTransitionError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{order_id}/report-delivery-failure", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:update"))])
+def report_delivery_failure(
+    order_id: str,
+    reason: str,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user)
+):
+    """
+    Report delivery failure.
+    
+    Transition: IN_DELIVERY → DELIVERY_FAILED
+    Triggers return flow if goods are returned.
+    
+    ## Request Body
+    - **reason**: Reason for delivery failure
+    
+    ## Authentication
+    Requires `orders:update` permission.
+    """
+    from app.infrastructure.repositories.order_repo import OrderRepository
+    from app.domain.orders.state_machine import OrderStateMachine, InvalidStateTransitionError
+    from datetime import datetime, timezone
+    
+    order_repo = OrderRepository(db)
+    order = order_repo.get_by_id(order_id)
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    try:
+        new_status = OrderStateMachine.transition(order.status, OrderStatus.DELIVERY_FAILED)
+        order.status = new_status
+        order.cancelled_reason = reason
+        order.updated_at = datetime.now(timezone.utc)
+        
+        order_repo.save(order)
+        db.commit()
+        
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(order)
+        
+    except InvalidStateTransitionError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{order_id}/complete", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:update"))])
+def complete_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user)
+):
+    """
+    Complete an order - release escrow to farmer.
+    
+    Transition: DELIVERED → COMPLETED
+    This also triggers the escrow release in the accounting system.
+    
+    ## Authentication
+    Requires `orders:update` permission.
+    """
+    from app.infrastructure.repositories.order_repo import OrderRepository
+    from app.domain.orders.state_machine import OrderStateMachine, InvalidStateTransitionError
+    from datetime import datetime, timezone
+    
+    order_repo = OrderRepository(db)
+    order = order_repo.get_by_id(order_id)
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    try:
+        new_status = OrderStateMachine.transition(order.status, OrderStatus.COMPLETED)
+        order.status = new_status
+        order.updated_at = datetime.now(timezone.utc)
+        
+        order_repo.save(order)
+        db.commit()
+        
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(order)
+        
+    except InvalidStateTransitionError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 

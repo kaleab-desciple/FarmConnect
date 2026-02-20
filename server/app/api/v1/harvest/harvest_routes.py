@@ -59,6 +59,6 @@ async def convert_to_product(
     return {
         "id": str(product.id),
         "name": product.name,
-        "quantity_available": str(product.quantity_available),
+        "total_quantity": str(product.total_quantity),
         "status": "converted"
     }

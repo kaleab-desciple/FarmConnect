@@ -130,7 +130,7 @@ class HarvestService:
             unit=harvest.unit or "KG",
             base_price=float(product_data.get("base_price") or 0.01),
             currency=product_data.get("currency", "USD"),
-            quantity_available=float(product_data.get("quantity") or harvest.quantity_harvested),
+            total_quantity=float(product_data.get("quantity") or harvest.quantity_harvested),
             quality_grade=harvest.quality_grade,
             harvest_id=str(harvest.id),
             crop_cycle_id=str(harvest.crop_cycle_id) if harvest.crop_cycle_id else None,

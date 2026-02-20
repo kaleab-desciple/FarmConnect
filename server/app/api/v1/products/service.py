@@ -36,7 +36,7 @@ class ProductService:
             unit=product_data.unit,
             base_price=product_data.base_price,
             currency=product_data.currency,
-            quantity_available=product_data.quantity_available,
+            total_quantity=product_data.quantity_available if hasattr(product_data, 'quantity_available') else 0,
             quality_grade=product_data.quality_grade,
             harvest_date=product_data.harvest_date,
             expiry_date=product_data.expiry_date,

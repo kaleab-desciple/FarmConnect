@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from decimal import Decimal
 from shared_models import Product as ProductDTO, ProductCreate
 from app.core.database import get_db
 from app.core.auth import require_permission
 from .service import ProductService
+from app.application.services.inventory_service import InventoryService
 
 router = APIRouter()
 
@@ -171,3 +173,147 @@ def get_product_by_id(product_id: str, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product 
+
+
+@router.post("/{product_id}/adjust-stock", response_model=ProductDTO, dependencies=[Depends(require_permission("products:update"))])
+def adjust_stock(
+    product_id: str,
+    quantity: float,
+    reason: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_permission("products:update"))
+):
+    """
+    Adjust product stock (add partial harvest, admin correction).
+    
+    Farmers can add to their product quantity when they have partial harvests.
+    Admins can correct inventory counts.
+    
+    ## Request Body
+    - **quantity**: Quantity to add (positive) or remove (negative)
+    - **reason**: Reason for adjustment
+    
+    ## Authentication
+    Requires `products:update` permission.
+    """
+    try:
+        service = InventoryService(db)
+        product = service.adjust_stock(
+            product_id=product_id,
+            qty=Decimal(str(quantity)),
+            reason=reason,
+            user_id=current_user.sub  # Assuming token has user ID
+        )
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(product)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{product_id}/report-spoilage", response_model=ProductDTO, dependencies=[Depends(require_permission("products:update"))])
+def report_spoilage(
+    product_id: str,
+    quantity: float,
+    reason: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_permission("products:update"))
+):
+    """
+    Report spoiled goods.
+    
+    Farmers can report when their produce spoils, reducing available stock.
+    
+    ## Request Body
+    - **quantity**: Quantity spoiled
+    - **reason**: Reason for spoilage
+    
+    ## Authentication
+    Requires `products:update` permission.
+    """
+    try:
+        service = InventoryService(db)
+        product = service.record_spoilage(
+            product_id=product_id,
+            qty=Decimal(str(quantity)),
+            reason=reason,
+            user_id=current_user.sub
+        )
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(product)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{product_id}", dependencies=[Depends(require_permission("products:delete"))])
+def soft_delete_product(product_id: str, db: Session = Depends(get_db)):
+    """
+    Soft delete a product (hide from listing, keep for audit).
+    
+    Sets deleted_at timestamp and deactivates the product.
+    Cannot delete products with active reservations.
+    
+    ## Authentication
+    Requires `products:delete` permission.
+    """
+    from app.infrastructure.repositories.product_repo import ProductRepository
+    from app.domain.products.entities import Product
+    from app.domain.orders.rules import InventoryPolicy
+    
+    repo = ProductRepository(db)
+    product = repo.get_by_id(product_id)
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check if can delete
+    can_delete, reason = InventoryPolicy.can_soft_delete(product)
+    if not can_delete:
+        raise HTTPException(status_code=400, detail=reason)
+    
+    product.soft_delete()
+    repo.save(product)
+    db.commit()
+    
+    return {"message": "Product soft deleted successfully", "product_id": product_id}
+
+
+@router.get("/{product_id}/inventory-history")
+def get_inventory_history(
+    product_id: str, 
+    db: Session = Depends(get_db),
+    current_user = Depends(require_permission("products:read"))
+):
+    """
+    Get inventory movement history for a product.
+    
+    Returns the event-sourced ledger of all inventory changes.
+    
+    ## Authentication
+    Requires `products:read` permission.
+    """
+    service = InventoryService(db)
+    movements = service.get_inventory_history(product_id)
+    
+    # Convert to dict
+    return [
+        {
+            "id": m.id,
+            "product_id": m.product_id,
+            "movement_type": m.movement_type.value,
+            "quantity": float(m.quantity),
+            "reference_type": m.reference_type,
+            "reference_id": m.reference_id,
+            "notes": m.notes,
+            "created_by": m.created_by,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        }
+        for m in movements
+    ]

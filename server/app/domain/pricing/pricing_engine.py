@@ -63,8 +63,11 @@ class PricingEngine:
     def _calculate_fee_amount(self, rule: PricingRule, subtotal: Decimal, distance_km: float) -> Decimal:
         """Calculate the fee amount based on rule type and fee_type."""
         if rule.fee_type == FeeType.FIXED:
+            # Convert float to Decimal properly
             return Decimal(str(rule.fee_value))
         elif rule.fee_type == FeeType.PERCENTAGE:
-            return subtotal * Decimal(str(rule.fee_value / 100))
+            # Ensure we do Decimal arithmetic, not float
+            fee_percentage = Decimal(str(rule.fee_value)) / Decimal('100')
+            return subtotal * fee_percentage
         else:
             return Decimal(0)

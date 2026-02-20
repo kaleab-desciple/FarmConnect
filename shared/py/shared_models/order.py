@@ -18,9 +18,16 @@ from pydantic import (
 
 class OrderStatus(Enum):
     CREATED = "CREATED"
+    PENDING_PAYMENT = "PENDING_PAYMENT"
+    FUNDED = "FUNDED"
     CONFIRMED = "CONFIRMED"
+    IN_DELIVERY = "IN_DELIVERY"
     DELIVERED = "DELIVERED"
+    DELIVERY_FAILED = "DELIVERY_FAILED"
+    RETURNED = "RETURNED"
+    COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
 
 
 class UserRole(Enum):
@@ -95,6 +102,11 @@ class Unit(Enum):
 
 
 class QualityGrade(Enum):
+    GRADE_A = "GRADE_A"
+    GRADE_B = "GRADE_B"
+    GRADE_C = "GRADE_C"
+    PREMIUM = "PREMIUM"
+    STANDARD = "STANDARD"
     A = "A"
     B = "B"
     C = "C"

@@ -7,6 +7,7 @@ from shared_models import User, Product, Order, Escrow, Dispute, Reputation
 from app.domain.farm.entities import Harvest
 from shared_models.enums import DisputeResolution
 from app.domain.ledger.entities import LedgerEvent
+from app.domain.products.inventory import InventoryMovement, ProductBatch
 
 # ORM models
 from app.infrastructure.db.models.user import UserORM
@@ -18,6 +19,7 @@ from app.infrastructure.db.models.reputation import ReputationORM
 from app.infrastructure.db.models.ledger import LedgerEventORM
 from app.infrastructure.db.models.pricing import PricingRuleORM
 from app.infrastructure.db.models.harvest import HarvestORM
+from app.infrastructure.db.models.inventory import InventoryMovementORM, ProductBatchORM
 #from app.infrastructure.db.models.farm import FarmORM, FieldORM
 #from app.infrastructure.db.models.crop import CropCycleORM
 #from app.infrastructure.db.models.alert import AlertORM
@@ -122,6 +124,8 @@ def orm_to_domain(orm: Any) -> Any:
         LedgerEventORM: LedgerEvent,
         PricingRuleORM: PricingRule,
         HarvestORM: Harvest,
+        InventoryMovementORM: InventoryMovement,
+        ProductBatchORM: ProductBatch,
     }
 
     domain_cls = orm_type_map.get(type(orm))
@@ -131,6 +135,35 @@ def orm_to_domain(orm: Any) -> Any:
     data: Dict[str, Any] = {
         k: v for k, v in orm.__dict__.items() if not k.startswith("_")
     }
+    
+    # Handle Product-specific float to Decimal conversions
+    # The ORM uses float columns but domain entities expect Decimal
+    if isinstance(orm, ProductORM):
+        from decimal import Decimal
+        for float_field in ['total_quantity', 'reserved_quantity', 'sold_quantity', 'spoiled_quantity', 'base_price']:
+            if float_field in data and data[float_field] is not None:
+                data[float_field] = Decimal(str(data[float_field]))
+    
+    # Handle Order-specific float to Decimal conversions
+    if isinstance(orm, OrderORM):
+        from decimal import Decimal
+        for float_field in ['quantity', 'unit_price', 'subtotal', 'delivery_cost', 'delivery_fee', 
+                           'delivery_margin', 'quality_fee', 'platform_fee', 'total_price']:
+            if float_field in data and data[float_field] is not None:
+                data[float_field] = Decimal(str(data[float_field]))
+    
+    # Handle InventoryMovement-specific float to Decimal conversions
+    if isinstance(orm, InventoryMovementORM):
+        from decimal import Decimal
+        if 'quantity' in data and data['quantity'] is not None:
+            data['quantity'] = Decimal(str(data['quantity']))
+    
+    # Handle ProductBatch-specific float to Decimal conversions
+    if isinstance(orm, ProductBatchORM):
+        from decimal import Decimal
+        for float_field in ['total_quantity', 'reserved_quantity', 'sold_quantity', 'spoiled_quantity']:
+            if float_field in data and data[float_field] is not None:
+                data[float_field] = Decimal(str(data[float_field]))
     
     # Handle SQLAlchemy reserved attribute names
     # Some ORMs use 'metadata_' to avoid conflict with Base.metadata
@@ -199,6 +232,8 @@ def domain_to_orm(domain_obj: Any) -> Any:
         LedgerEvent: LedgerEventORM,
         PricingRule: PricingRuleORM,
         Harvest: HarvestORM,
+        InventoryMovement: InventoryMovementORM,
+        ProductBatch: ProductBatchORM,
     }
 
     orm_cls = domain_type_map.get(type(domain_obj))

@@ -19,6 +19,12 @@ from app.infrastructure.repositories.payment_repo import EscrowRepository
 from app.infrastructure.repositories.pricing_repo import PricingRuleRepository
 from app.domain.pricing.pricing_engine import PricingEngine
 from app.domain.pricing.value_objects import PricingInput
+from app.application.services.inventory_service import (
+    InventoryService, 
+    InsufficientStockError as InventoryInsufficientStockError,
+    ProductNotFoundError as InventoryProductNotFoundError
+)
+from app.domain.common.enums import OrderStatus
 from shared_models.escrow import Provider
 
 
@@ -29,6 +35,7 @@ class OrderService:
         self.order_repo = OrderRepository(session)
         self.escrow_repo = EscrowRepository(session)
         self.pricing_repo = PricingRuleRepository(session)
+        self.inventory_service = InventoryService(session)
 
     def create_order(self, order_data: OrderCreate) -> tuple[OrderDTO, EscrowDTO]:
         # Validate required fields
@@ -68,25 +75,50 @@ class OrderService:
         # Calculate pricing
         pricing_result = engine.calculate(pricing_input)
 
-        # Create domain order with calculated pricing
+        # Reserve inventory AFTER creating order (to get order_id)
+        # This prevents overselling when multiple merchants order simultaneously
+        # First, create a placeholder order to get the ID
         now = datetime.now(timezone.utc)
         domain_order = DomainOrder(
             farmer_id=order_data.farmer_id,
             merchant_id=order_data.merchant_id,
             product_id=order_data.product_id,
-            quantity=order_data.quantity,
-            unit_price=order_data.unit_price,
+            quantity=Decimal(str(order_data.quantity)),
+            unit_price=Decimal(str(order_data.unit_price)),
+            subtotal=pricing_result.subtotal,
+            delivery_cost=pricing_result.delivery_fee + pricing_result.delivery_margin,
             delivery_fee=pricing_result.delivery_fee if pricing_result.delivery_fee > 0 else None,
             delivery_margin=pricing_result.delivery_margin if pricing_result.delivery_margin > 0 else None,
             platform_fee=pricing_result.platform_fee,
             quality_fee=pricing_result.quality_fee if pricing_result.quality_fee > 0 else None,
             total_price=pricing_result.total_price,
-            status=order_data.status,
+            status=OrderStatus.PENDING_PAYMENT,
             created_at=now
         )
 
-        # Save order
+        # Save order first to get ID
         saved_order = self.order_repo.save(domain_order)
+        
+        # Now reserve stock with the real order_id
+        try:
+            self.inventory_service.reserve_stock(
+                product_id=order_data.product_id,
+                order_id=saved_order.id,
+                qty=Decimal(str(order_data.quantity))
+            )
+        except InventoryProductNotFoundError:
+            raise HTTPException(status_code=404, detail="Product not found")
+        except InventoryInsufficientStockError as e:
+            # Rollback order using repository delete method
+            self.order_repo.delete(saved_order.id)
+            raise HTTPException(
+                status_code=409, 
+                detail=f"Insufficient stock: {e.available} available, {e.requested} requested"
+            )
+        except Exception as e:
+            # Cleanup on any error using repository delete method
+            self.order_repo.delete(saved_order.id)
+            raise HTTPException(status_code=500, detail=str(e))
 
         # Create escrow
         domain_escrow = DomainEscrow(

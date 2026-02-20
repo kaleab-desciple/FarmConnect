@@ -8,7 +8,7 @@ Create Date: 2026-01-18 20:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as psql
-from app.domain.common.enums import UserRole, OrderStatus, EscrowState, LoanState, DisputeState, Category, Unit, QualityGrade, Provider
+from app.domain.common.enums import UserRole, OrderStatus, EscrowState, LoanState, DisputeState, Category, Unit, QualityGrade, Provider, InventoryMovementType, ProductStatus
 
 # revision identifiers, used by Alembic.
 revision = '001_create_core_tables'
@@ -60,7 +60,7 @@ def upgrade() -> None:
         sa.Column("unit", sa.Enum(*[u.value for u in Unit], name="unit_enum"), nullable=True),
         sa.Column("base_price", sa.Float(), nullable=True),
         sa.Column("currency", sa.String(3), nullable=False, server_default=sa.text("'USD'")),
-        sa.Column("quantity_available", sa.Float(), nullable=True),
+        sa.Column("total_quantity", sa.Float(), nullable=True),
         sa.Column("quality_grade", sa.Enum(*[q.value for q in QualityGrade], name="quality_grade_enum"), nullable=True),
         sa.Column("harvest_date", sa.Date(), nullable=True),
         sa.Column("expiry_date", sa.Date(), nullable=True),
@@ -71,7 +71,27 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()"))
     )
-
+    # ========================================
+    # Step 6: Create product_batches table
+    # ========================================
+    op.create_table(
+        'product_batches',
+        sa.Column('id', sa.String(), primary_key=True, server_default=sa.text('gen_random_uuid()')),
+        sa.Column('product_id', sa.String(), sa.ForeignKey('products.id'), nullable=False),
+        sa.Column('batch_code', sa.String(50), nullable=False),
+        sa.Column('total_quantity', sa.Float(), nullable=False, server_default='0'),
+        sa.Column('reserved_quantity', sa.Float(), nullable=False, server_default='0'),
+        sa.Column('sold_quantity', sa.Float(), nullable=False, server_default='0'),
+        sa.Column('spoiled_quantity', sa.Float(), nullable=False, server_default='0'),
+        sa.Column('harvest_date', sa.Date(), nullable=True),
+        sa.Column('expiry_date', sa.Date(), nullable=True),
+        sa.Column('quality_grade', sa.Enum('GRADE_A', 'GRADE_B', 'GRADE_C', 'PREMIUM', 'STANDARD', 'A', 'B', 'C', name='quality_grade_enum'), nullable=True),
+        sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
+        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
+    )
+    op.create_unique_constraint('uq_product_batch_code', 'product_batches', ['product_id', 'batch_code'])
+    op.create_index('idx_batches_product', 'product_batches', ['product_id'])
+    
     # 6. Orders table
     op.create_table(
         "orders",
@@ -113,6 +133,7 @@ def downgrade() -> None:
     # Dropping tables in reverse order
     op.drop_table("escrows")
     op.drop_table("orders")
+    op.drop_table("product_batches")
     op.drop_table("products")
     op.drop_table("users")
 

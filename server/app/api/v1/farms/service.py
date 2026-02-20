@@ -58,6 +58,26 @@ class FarmService:
 
     def _get_internal_user_id(self, token_payload: TokenPayload) -> str:
         """Resolve internal user ID from Keycloak ID in token"""
+        from app.core.config import settings
+        
+        # Handle dev mode when AUTH_ENABLED=false
+        if not settings.AUTH_ENABLED:
+            # In dev mode, use any existing user for API testing
+            logger.warning("AUTH_ENABLED=false - using dev mode fallback")
+            
+            # Check if this is the mock dev user
+            if token_payload.user_id == "dev-user" or token_payload.email == "dev@example.com":
+                # Try to find any existing user to use as fallback
+                all_users = self.user_repo.list_all()
+                if all_users:
+                    logger.info(f"Using user {all_users[0].id} for dev mode")
+                    return all_users[0].id
+                else:
+                    raise HTTPException(
+                        status_code=401,
+                        detail="No users found in database. Please provision a user first."
+                    )
+        
         user = None
         keycloak_id = token_payload.user_id
         

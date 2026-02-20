@@ -2,9 +2,10 @@ from uuid import uuid4
 from datetime import datetime, date, timezone
 from typing import Optional
 import sqlalchemy as sa
-from sqlalchemy import String, Float, Date, DateTime, Boolean, Enum as SAEnum, ForeignKey
+from sqlalchemy import String, Float, Date, DateTime, Boolean, Integer, Enum as SAEnum, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 from app.infrastructure.db.base import Base
 from app.domain.common.enums import Category, Unit, QualityGrade
 
@@ -21,7 +22,13 @@ class ProductORM(Base):
     unit: Mapped[Unit] = mapped_column(SAEnum(Unit, name='unit_enum'), nullable=False)
     base_price: Mapped[float] = mapped_column(Float, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
-    quantity_available: Mapped[float] = mapped_column(Float, nullable=True)
+
+    # Inventory quantities — available is derived (total - reserved - sold - spoiled)
+    total_quantity: Mapped[float] = mapped_column(Float, nullable=True, default=0)
+    reserved_quantity: Mapped[float] = mapped_column(Float, nullable=False, default=0, server_default="0")
+    sold_quantity: Mapped[float] = mapped_column(Float, nullable=False, default=0, server_default="0")
+    spoiled_quantity: Mapped[float] = mapped_column(Float, nullable=False, default=0, server_default="0")
+
     quality_grade: Mapped[QualityGrade] = mapped_column(SAEnum(QualityGrade, name='quality_grade_enum'), nullable=True)
     harvest_id: Mapped[Optional[str]] = mapped_column(String, sa.ForeignKey("harvests.id", ondelete="SET NULL"), nullable=True)
     crop_cycle_id: Mapped[Optional[str]] = mapped_column(String, sa.ForeignKey("crop_cycles.id", ondelete="SET NULL"), nullable=True)
@@ -39,6 +46,13 @@ class ProductORM(Base):
     # declarative base (Base.metadata). Use `metadata_` in Python and map the
     # column name to `metadata` in the database.
     metadata_: Mapped[dict] = mapped_column(JSONB, name="metadata", nullable=True)
+
+    # Soft delete
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Optimistic concurrency
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )

@@ -17,6 +17,7 @@ from .weather import (
 )
 from .notifications import NotificationORM, NotificationPreferenceORM
 from .harvest import HarvestORM
+from .inventory import InventoryMovementORM, ProductBatchORM
 
 __all__ = [
     "UserORM",
@@ -49,4 +50,8 @@ __all__ = [
     "NotificationORM",
     "NotificationPreferenceORM",
     "HarvestORM",
+    # Inventory Management
+    "InventoryMovementORM",
+    "ProductBatchORM",
 ]
+

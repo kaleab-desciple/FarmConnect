@@ -2,10 +2,12 @@
 Application service for escrow lifecycle management.
 
 Handles state transitions with accounting entries in atomic transactions.
+Integrates with inventory service for stock management.
 """
 
 from typing import Optional
 from datetime import datetime, timezone
+from decimal import Decimal
 from sqlalchemy.orm import Session
 from app.domain.payments.services.escrow_service import (
     EscrowDomainService,
@@ -21,6 +23,7 @@ from app.infrastructure.repositories.journal_repo import JournalRepository
 from app.infrastructure.repositories.order_repo import OrderRepository
 from app.application.accounting.ledger_to_journal_mapper import LedgerToJournalMapper
 from app.application.accounting.post_journal_entry import PostJournalEntry, PostJournalEntryRequest
+from app.application.services.inventory_service import InventoryService
 
 
 class EscrowLifecycleService:
@@ -40,6 +43,7 @@ class EscrowLifecycleService:
         self.domain_service = EscrowDomainService()
         self.journal_mapper = LedgerToJournalMapper(self.account_repo)
         self.post_journal_uc = PostJournalEntry(self.journal_repo, self.account_repo)
+        self.inventory_service = InventoryService(session)
 
     def fund_escrow(self, escrow_id: str, provider_reference: str) -> Escrow:
         """
@@ -65,6 +69,24 @@ class EscrowLifecycleService:
         # Apply side effects
         escrow.funded_at = datetime.now(timezone.utc)
         escrow.provider_reference = provider_reference
+        
+        # CRITICAL: Confirm sale - move reserved → sold
+        # This is called after escrow is funded (payment received)
+        try:
+            self.inventory_service.confirm_sale(
+                product_id=order.product_id,
+                order_id=order.id,
+                qty=order.quantity
+            )
+        except Exception as e:
+            # Log but don't fail - inventory can be reconciled manually
+            print(f"Warning: Failed to confirm sale in inventory: {e}")
+        
+        # Also update order status to FUNDED
+        from app.domain.common.enums import OrderStatus
+        order.status = OrderStatus.FUNDED
+        order.updated_at = datetime.now(timezone.utc)
+        self.order_repo.save(order)
         
         return result
 
@@ -118,7 +140,26 @@ class EscrowLifecycleService:
         
         # Apply side effects
         escrow.provider_reference = provider_reference
-        # Note: REFUNDED state typically doesn't set released_at, but we set strictly strictly provider_reference here
+        
+        # CRITICAL: Release reservation - return stock to available
+        # This is called when escrow is refunded (order cancelled after payment)
+        try:
+            self.inventory_service.release_reservation(
+                product_id=order.product_id,
+                order_id=order.id,
+                qty=order.quantity,
+                reason="escrow_refunded"
+            )
+        except Exception as e:
+            print(f"Warning: Failed to release reservation in inventory: {e}")
+        
+        # Also update order status to CANCELLED
+        from app.domain.common.enums import OrderStatus
+        order.status = OrderStatus.CANCELLED
+        order.cancelled_reason = "Refund processed"
+        order.cancelled_at = datetime.now(timezone.utc)
+        order.updated_at = datetime.now(timezone.utc)
+        self.order_repo.save(order)
         
         return result
 
