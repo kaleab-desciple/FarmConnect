@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
-from shared_models.enums import UserRole
+from app.domain.common.enums import UserRole
 from app.core.database import get_db
 from app.core.auth import (
     TokenPayload,
@@ -276,3 +276,22 @@ def provision_field_analyst(
     **Required Roles:** ADMIN, MANAGER, or AGENT
     """
     return _provision_user_handler(request, UserRole.FIELD_ANALYST, db, current_user)
+
+@router.post(
+    "/provision/aggregator",
+    response_model=ProvisionUserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new aggregator",
+    dependencies=[Depends(require_permission("users:provision")), Depends(block_service_accounts)]
+)
+def provision_aggregator(
+    request: ProvisionUserRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("users:provision"))
+):
+    """
+    Provision a new field analyst user.
+    
+    **Required Roles:** ADMIN, MANAGER, or AGENT
+    """
+    return _provision_user_handler(request, UserRole.AGGREGATOR, db, current_user)

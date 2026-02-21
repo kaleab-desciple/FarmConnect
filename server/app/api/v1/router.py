@@ -17,6 +17,7 @@ from .ai.routes import router as ai_router
 from .weather.routes import router as weather_router
 from .harvest.harvest_routes import router as harvest_router
 from app.api.qc.routes import router as qc_router
+from .aggregator.routes import router as aggregator_router
 
 api_router = APIRouter()
 
@@ -46,6 +47,9 @@ api_router.include_router(harvest_router, prefix="/agri", tags=["Harvest Managem
 
 # QC/Grading Routes
 api_router.include_router(qc_router, prefix="/qc", tags=["QC & Lab"])
+
+# Aggregator Settlement Routes
+api_router.include_router(aggregator_router, prefix="/aggregator", tags=["Aggregator & Settlement"])
 
 
 # Advisory Routes

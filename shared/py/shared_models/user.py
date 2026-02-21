@@ -20,6 +20,7 @@ class UserRole(Enum):
     MODERATOR = "MODERATOR"
     AGRONOMIST = "AGRONOMIST"
     FIELD_ANALYST = "FIELD_ANALYST"
+    AGGREGATOR = "AGGREGATOR"
 
 
 class OrderStatus(Enum):

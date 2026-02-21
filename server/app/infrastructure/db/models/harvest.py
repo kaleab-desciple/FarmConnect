@@ -83,6 +83,7 @@ class HarvestBatchORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     batch_code: Mapped[str] = mapped_column(String(100), nullable=False)
     aggregator_id: Mapped[Optional[str]] = mapped_column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    settlement_state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # For batch settlement state
     status: Mapped[HarvestBatchState] = mapped_column(
         SAEnum(HarvestBatchState, name='harvest_batch_state_enum', create_type=False),
         nullable=False,
@@ -108,6 +109,17 @@ class HarvestBatchORM(Base):
     qc_reports: Mapped[list["BatchQCReportORM"]] = relationship("BatchQCReportORM", back_populates="batch", cascade="all, delete-orphan")
     samples: Mapped[list["SampleORM"]] = relationship("SampleORM", back_populates="harvest_batch", cascade="all, delete-orphan")
     certifications: Mapped[list["CertificationORM"]] = relationship("CertificationORM", back_populates="harvest_batch", cascade="all, delete-orphan")
+    
+    # Aggregator settlement relationships
+    acceptance_weighments: Mapped[list["AcceptanceWeighmentORM"]] = relationship(
+        "AcceptanceWeighmentORM", back_populates="batch", cascade="all, delete-orphan"
+    )
+    reconciliation_records: Mapped[list["ReconciliationRecordORM"]] = relationship(
+        "ReconciliationRecordORM", back_populates="batch", cascade="all, delete-orphan"
+    )
+    settlement_summaries: Mapped[list["AggregatorSettlementSummaryORM"]] = relationship(
+        "AggregatorSettlementSummaryORM", back_populates="batch", cascade="all, delete-orphan"
+    )
     
     __table_args__ = (
         UniqueConstraint('batch_code', name='uq_harvest_batch_code'),

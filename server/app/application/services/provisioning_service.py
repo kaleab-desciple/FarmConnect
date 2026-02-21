@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from shared_models.user import User
-from shared_models.enums import UserRole
+from app.domain.common.enums import UserRole
 from app.infrastructure.repositories.user_repo import UserRepository
 from app.infrastructure.external.keycloak_admin import (
     get_keycloak_admin,
@@ -175,7 +175,8 @@ class UserProvisioningService:
             UserRole.ADMIN: "Admins",
             UserRole.MODERATOR: "Moderators",
             UserRole.AGRONOMIST: "Agronomists",
-            UserRole.FIELD_ANALYST: "FieldAnalysts"
+            UserRole.FIELD_ANALYST: "FieldAnalysts",
+            UserRole.AGGREGATOR: "Aggregators"
         }
         
         group = role_to_group.get(role)

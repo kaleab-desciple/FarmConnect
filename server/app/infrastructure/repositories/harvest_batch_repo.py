@@ -144,6 +144,21 @@ class HarvestBatchRepository:
         orms = self.db.query(HarvestBatchORM).filter(HarvestBatchORM.status == status).all()
         return [self._orm_to_batch(orm) for orm in orms]
     
+    def get_batch_with_contributions(self, batch_id: str) -> Optional[Dict[str, Any]]:
+        """Get a harvest batch with all its contributions."""
+        orm = self.db.query(HarvestBatchORM).filter(HarvestBatchORM.id == batch_id).first()
+        if not orm:
+            return None
+        
+        contributions = self.db.query(HarvestBatchContributionORM).filter(
+            HarvestBatchContributionORM.harvest_batch_id == batch_id
+        ).all()
+        
+        return {
+            "batch": self._orm_to_batch(orm),
+            "contributions": contributions
+        }
+    
     # ========================================
     # Contribution Operations
     # ========================================

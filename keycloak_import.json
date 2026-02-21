@@ -41,6 +41,9 @@
             {
                 "name": "FIELD_ANALYST",
                 "description": "Field Data Analyst"
+            },
+            {   "name": "AGGREGATOR",
+                "description": "Aggregator"
             }
         ],
         "client": {
@@ -108,7 +111,12 @@
             "realmRoles": [
                 "FIELD_ANALYST"
             ]
-        }
+        },
+        {
+            "name": "Aggregators",
+            "realmRoles": [
+                "AGGREGATOR"
+            ]}
     ],
     "clients": [
         {

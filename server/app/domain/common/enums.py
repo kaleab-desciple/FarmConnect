@@ -11,6 +11,7 @@ class UserRole(str, Enum):
     MODERATOR = "MODERATOR"
     AGRONOMIST = "AGRONOMIST"
     FIELD_ANALYST = "FIELD_ANALYST"
+    AGGREGATOR = "AGGREGATOR"
 
 class OrderStatus(str, Enum):
     CREATED = "CREATED"
@@ -300,6 +301,48 @@ class MessageType(str, Enum):
     VIDEO = "VIDEO"
     LOCATION = "LOCATION"
     SYSTEM = "SYSTEM"
+
+
+# Aggregator Reconciliation & Settlement Enums
+
+class ReconciliationStatus(str, Enum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    DISPUTED = "DISPUTED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
+class SettlementStatus(str, Enum):
+    PENDING = "PENDING"
+    PREPARED = "PREPARED"
+    APPROVED = "APPROVED"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class SettlementMethod(str, Enum):
+    BY_WEIGHT = "BY_WEIGHT"          # Proportional by delivered weight
+    BY_VALUE = "BY_VALUE"            # Proportional by crop value
+    FIXED_RATE = "FIXED_RATE"       # Fixed rate per unit
+    TIERED = "TIERED"                # Tiered based on quality grade
+
+
+class WeighmentType(str, Enum):
+    INITIAL = "INITIAL"              # Initial weighment at aggregator
+    VERIFICATION = "VERIFICATION"     # Re-weighment for verification
+    FINAL = "FINAL"                  # Final weighment after processing
+
+
+class SmallholderPaymentStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    PROCESSING = "PROCESSING"
+    PAID = "PAID"
+    FAILED = "FAILED"
 
 
 # QC/Grading Enums

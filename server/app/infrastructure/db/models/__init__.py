@@ -18,6 +18,7 @@ from .weather import (
 from .notifications import NotificationORM, NotificationPreferenceORM
 from .harvest import HarvestORM, HarvestEventORM, HarvestBatchORM, HarvestBatchContributionORM, BatchQCReportORM, ProductBatchSourceORM, AuditEventORM
 from .inventory import InventoryMovementORM, ProductBatchORM
+from .aggregator import AggregatorORM, AcceptanceWeighmentORM, ReconciliationRecordORM, SettlementRuleORM, AggregatorSettlementSummaryORM, SplitSettlementORM
 
 __all__ = [
     "UserORM",
@@ -59,5 +60,12 @@ __all__ = [
     # Inventory Management
     "InventoryMovementORM",
     "ProductBatchORM",
+    # Aggregator Settlement
+    "AggregatorORM",
+    "AcceptanceWeighmentORM",
+    "ReconciliationRecordORM",
+    "SettlementRuleORM",
+    "AggregatorSettlementSummaryORM",
+    "SplitSettlementORM",
 ]
 
