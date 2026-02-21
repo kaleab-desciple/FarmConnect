@@ -120,23 +120,7 @@ def upgrade() -> None:
     # ========================================
     # Step 5: Create batch_qc_reports table
     # ========================================
-    op.create_table(
-        'batch_qc_reports',
-        sa.Column('id', sa.String(), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('batch_id', sa.String(), 
-                 sa.ForeignKey('harvest_batches.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('lab_id', sa.String(), nullable=True),  # Lab/organization ID
-        sa.Column('tested_at', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('metrics', JSONB(), nullable=True),  # moisture, aflatoxin, mold, etc.
-        sa.Column('passed', sa.Boolean(), nullable=False),
-        sa.Column('report_url', sa.String(500), nullable=True),  # Signed URL to report
-        sa.Column('signed_hash', sa.String(200), nullable=True),  # Hash of report for verification
-        sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
-    )
-    op.create_index('idx_qc_reports_batch_id', 'batch_qc_reports', ['batch_id'])
-    op.create_index('idx_qc_reports_lab_id', 'batch_qc_reports', ['lab_id'])
-    
+
     # ========================================
     # Step 6: Create product_batch_sources join table
     # ========================================
@@ -248,13 +232,6 @@ def downgrade() -> None:
     # ========================================
     op.drop_index('idx_product_batches_harvest_batch', table_name='product_batches')
     op.drop_column('product_batches', 'harvest_batch_id')
-    
-    # ========================================
-    # Drop batch_qc_reports table
-    # ========================================
-    op.drop_index('idx_qc_reports_lab_id', table_name='batch_qc_reports')
-    op.drop_index('idx_qc_reports_batch_id', table_name='batch_qc_reports')
-    op.drop_table('batch_qc_reports')
     
     # ========================================
     # Drop harvest_batch_contributions table

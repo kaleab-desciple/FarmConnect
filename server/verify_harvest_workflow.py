@@ -99,7 +99,7 @@ def verify():
         print(f"Product created: ID={product.id}, Name={product.name}, Harvest_ID={product.harvest_id}")
         
         assert product.harvest_id == str(harvest.id)
-        assert product.quantity_available == 1200.0
+        assert product.total_quantity == 1200.0
         
         print("VERIFICATION SUCCESSFUL")
         

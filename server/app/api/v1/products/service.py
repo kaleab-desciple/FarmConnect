@@ -1,6 +1,6 @@
 from __future__ import annotations
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from shared_models import (
     Product as ProductDTO,
     ProductCreate,
@@ -9,6 +9,13 @@ from shared_models import (
 from app.domain.products.entities import Product as DomainProduct
 from app.infrastructure.repositories.user_repo import UserRepository
 from app.infrastructure.repositories.product_repo import ProductRepository
+from app.infrastructure.repositories.harvest_batch_repo import HarvestBatchRepository
+from app.application.services.qc_service import QCService
+from app.api.products.validation import (
+    ListingValidationError,
+    get_qc_requirements,
+)
+from app.domain.harvest.entities import HarvestBatchState
 
 
 class ProductService:
@@ -16,8 +23,90 @@ class ProductService:
         self.session = session
         self.user_repo = UserRepository(session)
         self.product_repo = ProductRepository(session)
+        self.harvest_batch_repo = HarvestBatchRepository(session)
+        self.qc_service = QCService(session)
 
-    def create_product(self, product_data: ProductCreate) -> ProductDTO:
+    def _validate_harvest_batch_for_listing(
+        self,
+        harvest_batch_id: str,
+        commodity: str,
+    ) -> None:
+        """
+        Validate that a harvest batch can be used for product listing.
+        
+        This validates:
+        1. Batch exists and is SEALED or QC_PASSED
+        2. For commodities requiring lab tests: has valid QC report
+        3. For commodities requiring verification: QC report is verified
+        
+        Raises:
+            ListingValidationError: If validation fails
+        """
+        batch = self.harvest_batch_repo.get_batch_by_id(harvest_batch_id)
+        if not batch:
+            raise ListingValidationError(
+                code="BATCH_NOT_FOUND",
+                message=f"Harvest batch {harvest_batch_id} not found",
+                batch_ids=[harvest_batch_id],
+            )
+        
+        # Check batch status
+        if batch.status == HarvestBatchState.DRAFT:
+            raise ListingValidationError(
+                code="MISSING_SEAL",
+                message=f"Harvest batch {harvest_batch_id} is not sealed",
+                batch_ids=[harvest_batch_id],
+            )
+        
+        if batch.status == HarvestBatchState.QC_FAILED:
+            raise ListingValidationError(
+                code="QC_FAILED",
+                message=f"Harvest batch {harvest_batch_id} failed QC",
+                batch_ids=[harvest_batch_id],
+            )
+        
+        # Get commodity-specific QC requirements
+        requirements = get_qc_requirements(commodity)
+        
+        # Check for valid QC report if required
+        if requirements.get("require_lab_test", False):
+            has_valid_report = self.qc_service.qc_repo.has_valid_qc_report(
+                harvest_batch_id,
+                require_verified=requirements.get("require_verified", False),
+            )
+            
+            if not has_valid_report:
+                if requirements.get("require_verified", False):
+                    raise ListingValidationError(
+                        code="QC_UNVERIFIED",
+                        message=f"Harvest batch {harvest_batch_id} requires verified QC report",
+                        batch_ids=[harvest_batch_id],
+                    )
+                raise ListingValidationError(
+                    code="MISSING_QC_REPORT",
+                    message=f"Harvest batch {harvest_batch_id} requires QC report",
+                    batch_ids=[harvest_batch_id],
+                )
+
+    def create_product(
+        self,
+        product_data: ProductCreate,
+        harvest_batch_id: Optional[str] = None,
+    ) -> ProductDTO:
+        """
+        Create a new product listing with optional harvest batch linkage.
+        
+        Args:
+            product_data: The product data
+            harvest_batch_id: Optional harvest batch ID for lineage tracking
+        
+        Returns:
+            Created product DTO
+        
+        Raises:
+            ValueError: If validation fails
+            ListingValidationError: If harvest batch validation fails
+        """
         # Validate business rules
         if not product_data.name or not product_data.farmer_id:
             raise ValueError("Product name and farmer_id are required")
@@ -27,6 +116,13 @@ class ProductService:
         if not farmer:
             raise ValueError("Farmer not found")
 
+        # Validate harvest batch if provided
+        if harvest_batch_id:
+            # Get commodity from product data or metadata
+            commodity = product_data.category.value if product_data.category else "other"
+            
+            self._validate_harvest_batch_for_listing(harvest_batch_id, commodity)
+        
         # Create domain product
         domain_product = DomainProduct(
             farmer_id=product_data.farmer_id,
@@ -36,15 +132,33 @@ class ProductService:
             unit=product_data.unit,
             base_price=product_data.base_price,
             currency=product_data.currency,
-            total_quantity=product_data.quantity_available if hasattr(product_data, 'quantity_available') else 0,
+            total_quantity=product_data.total_quantity if hasattr(product_data, 'total_quantity') else 0,
             quality_grade=product_data.quality_grade,
             harvest_date=product_data.harvest_date,
             expiry_date=product_data.expiry_date,
             location=product_data.location,
             images=product_data.images,
             is_active=product_data.is_active,
-            metadata=product_data.metadata
+            metadata=product_data.metadata,
         )
+
+        # If harvest_batch_id provided, store in metadata for lineage
+        if harvest_batch_id:
+            # Get batch info for lineage
+            batch = self.harvest_batch_repo.get_batch_by_id(harvest_batch_id)
+            
+            # Store lineage info in metadata
+            lineage_info = {
+                "harvest_batch_id": harvest_batch_id,
+                "lineage_hash": batch.lineage_hash if batch else None,
+                "aggregated_weight_kg": batch.aggregated_weight_kg if batch else None,
+                "sealed_at": batch.sealed_at.isoformat() if batch and batch.sealed_at else None,
+            }
+            
+            if domain_product.metadata:
+                domain_product.metadata.update(lineage_info)
+            else:
+                domain_product.metadata = lineage_info
 
         # Save product
         saved_product = self.product_repo.save(domain_product)

@@ -327,3 +327,169 @@ def verify_lineage_hash(
     """
     computed_hash = compute_lineage_hash(batch_id, aggregator_id, created_at, contributions)
     return computed_hash == expected_hash
+
+
+# ========================================
+# Sample Entities (Sampling Requests)
+# ========================================
+
+
+class SampleBase(BaseModel):
+    """Base Sample entity for QC sampling."""
+    sample_code: str
+    harvest_batch_id: UUID
+    collected_by: Optional[str] = None
+    collected_at: Optional[datetime] = None
+    sample_points: Optional[Dict[str, Any]] = None  # GPS points or summary
+    photos: Optional[List[Dict[str, Any]]] = None  # Array of {url, hash, exif}
+    chain_of_custody: Optional[Dict[str, Any]] = None
+    submitted_to_lab: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class SampleCreate(SampleBase):
+    """Sample creation entity."""
+    pass
+
+
+class Sample(SampleBase):
+    """Sample domain entity with full fields."""
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ========================================
+# LabProvider Entities
+# ========================================
+
+
+class LabProviderBase(BaseModel):
+    """Base LabProvider entity for lab accreditation."""
+    name: str
+    public_key: Optional[str] = None  # PEM public key for signature verification
+    metadata: Optional[Dict[str, Any]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LabProviderCreate(LabProviderBase):
+    """LabProvider creation entity."""
+    pass
+
+
+class LabProvider(LabProviderBase):
+    """LabProvider domain entity with full fields."""
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ========================================
+# Certification Entities
+# ========================================
+
+
+class CertificationBase(BaseModel):
+    """Base Certification entity for product certifications."""
+    harvest_batch_id: UUID
+    issuer: str
+    cert_type: str  # ORGANIC, FAIRTRADE, etc.
+    cert_number: Optional[str] = None
+    valid_from: datetime
+    valid_to: datetime
+    cert_url: Optional[str] = None
+    signed_hash: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CertificationCreate(CertificationBase):
+    """Certification creation entity."""
+    pass
+
+
+class Certification(CertificationBase):
+    """Certification domain entity with full fields."""
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ========================================
+# QC Grade Rule Entities
+# ========================================
+
+
+class QCGradeRuleBase(BaseModel):
+    """Base QCGradeRule entity for configurable grade thresholds."""
+    commodity: str  # e.g., "maize", "coffee", "wheat"
+    grade: str  # GRADE_A, GRADE_B, GRADE_C, REJECT
+    rules: List[Dict[str, Any]]  # [{"metric":"moisture_pct","op":"<=","value":13.0}, ...]
+    is_active: bool = True
+
+    class Config:
+        from_attributes = True
+
+
+class QCGradeRuleCreate(QCGradeRuleBase):
+    """QCGradeRule creation entity."""
+    pass
+
+
+class QCGradeRule(QCGradeRuleBase):
+    """QCGradeRule domain entity with full fields."""
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ========================================
+# Expanded BatchQCReport Entities (for QC workflow)
+# ========================================
+
+
+class BatchQCReportV2Base(BaseModel):
+    """Expanded BatchQCReport entity for lab reports."""
+    batch_id: UUID
+    sample_id: Optional[UUID] = None
+    lab_id: Optional[str] = None
+    tested_at: datetime
+    metrics: Optional[Dict[str, Any]] = None  # {moisture_pct:12.4, aflatoxin_ppb:3.4}
+    grade: Optional[str] = None  # GRADE_A, GRADE_B, GRADE_C, REJECT
+    passed: bool
+    report_url: Optional[str] = None
+    signed_hash: Optional[str] = None
+    verified: bool = False  # Whether signature verification succeeded
+    notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BatchQCReportV2Create(BatchQCReportV2Base):
+    """BatchQCReportV2 creation entity."""
+    pass
+
+
+class BatchQCReportV2(BatchQCReportV2Base):
+    """BatchQCReportV2 domain entity with full fields."""
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

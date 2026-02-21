@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from decimal import Decimal
@@ -7,11 +7,16 @@ from app.core.database import get_db
 from app.core.auth import require_permission
 from .service import ProductService
 from app.application.services.inventory_service import InventoryService
+from app.api.products.validation import ListingValidationError
 
 router = APIRouter()
 
 @router.post("/", response_model=ProductDTO, dependencies=[Depends(require_permission("products:create"))])
-def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+def create_product(
+    product: ProductCreate,
+    harvest_batch_id: Optional[str] = Query(None, description="Harvest batch ID for lineage tracking"),
+    db: Session = Depends(get_db)
+):
     """
     Create a new product listing.
     
@@ -32,6 +37,16 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     - **available_from**: Availability start date (optional)
     - **location**: Pickup location (optional)
     
+    ## Query Parameters
+    - **harvest_batch_id**: Optional harvest batch ID for lineage tracking and QC validation
+    
+    ## QC Validation
+    When harvest_batch_id is provided, the system validates:
+    1. Batch is SEALED or QC_PASSED
+    2. For commodities requiring lab tests (maize, wheat, coffee, rice, soybeans):
+       - Must have a valid QC report with passed=True
+       - For coffee: QC report must be verified (signature verified)
+    
     ## Authentication & Authorization
     Requires `products:create` permission.
     Farmers can only create products for themselves.
@@ -41,6 +56,7 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     - Unit price must be positive
     - Category must be valid enum value
     - Farmer must exist in the system
+    - If harvest_batch_id provided, batch must pass QC validation
     
     ## Responses
     - **200**: Product created successfully
@@ -51,7 +67,14 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     """
     service = ProductService(db)
     try:
-        return service.create_product(product)
+        return service.create_product(product, harvest_batch_id=harvest_batch_id)
+    except ListingValidationError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail={
+            "error": e.message,
+            "code": e.code,
+            "batch_ids": e.batch_ids,
+        })
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))

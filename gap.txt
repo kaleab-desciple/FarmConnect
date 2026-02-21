@@ -345,5 +345,132 @@ SoilSample
 attributes: sample_id, field_id, sample_point (lat/lon), depth_cm, collected_by, collected_at, lab_report_url, nutrients: {N,P,K}, pH, organic_matter, moisture, chain_of_custody_hash
 
 =============
+=============
+I've implemented the comprehensive harvest management system with all the requested features. Here's what was created:
+
+## 1. Alembic Migration ([`harvest_events_v1.py`](server/app/alembic/versions/harvest_events_v1.py))
+- Created `harvest_batch_state_enum` with values: DRAFT, SEALED, QC_PENDING, QC_PASSED, QC_FAILED, ARCHIVED
+- Created `harvest_events` table for field-level harvest tracking (weight, moisture, photos, location, weighbridge receipts)
+- Created `harvest_batches` table with lineage_hash, sealed_at, sealed_by, seal_evidence
+- Created `harvest_batch_contributions` table (many-to-many)
+- Created `batch_qc_reports` table for lab reports
+- Created `product_batch_sources` join table for product-to-harvest-batch linkage
+- Created `audit_events` table for traceability
+- Added DB trigger `trg_prevent_sealed_contribution` to enforce append-only contributions after sealing
+
+## 2. Domain Entities ([`domain/harvest/entities.py`](server/app/domain/harvest/entities.py))
+- [`HarvestEvent`](server/app/domain/harvest/entities.py:33) - Field-level harvest with weight, moisture, photos, location
+- [`HarvestBatch`](server/app/domain/harvest/entities.py:109) - Batch aggregation with status tracking
+- [`HarvestBatchContribution`](server/app/domain/harvest/entities.py:79) - Many-to-many relationship
+- [`BatchQCReport`](server/app/domain/harvest/entities.py:155) - QC lab results with pass/fail
+- [`compute_lineage_hash()`](server/app/domain/harvest/entities.py:217) - Deterministic SHA256 hash computation
+
+## 3. ORM Models ([`infrastructure/db/models/harvest.py`](server/app/infrastructure/db/models/harvest.py))
+- Added new ORM models for all tables with proper relationships and constraints
+
+## 4. Repository ([`infrastructure/repositories/harvest_batch_repo.py`](server/app/infrastructure/repositories/harvest_batch_repo.py))
+- [`HarvestBatchRepository`](server/app/infrastructure/repositories/harvest_batch_repo.py:39) with methods:
+  - `create_event()` - Create harvest events
+  - `create_draft_batch()` - Create draft batches
+  - `add_contribution()` - Add contributions (validates batch not sealed)
+  - `compute_lineage_hash()` - Compute SHA256 hash of contributions
+  - `seal_batch()` - Seal batch with hash, aggregated weight, moisture average
+  - `create_qc_report()` - Add QC report and update batch status
+  - `verify_batch_can_be_used_for_listing()` - Guard for product listings
+
+## 5. Guards ([`application/harvest/guards.py`](server/app/application/harvest/guards.py))
+- [`HarvestBatchGuard.validate_batch_for_product_creation()`](server/app/application/harvest/guards.py:20) - Validates batch is QC_PASSED
+- [`HarvestBatchGuard.validate_batch_for_listing_publish()`](server/app/application/harvest/guards.py:60) - Validates all linked batches
+- Prevents product listings referencing non-sealed harvest batches
+
+## 6. Unit Tests ([`tests/test_harvest_batch.py`](server/app/tests/test_harvest_batch.py))
+- Lineage hash deterministic tests (same inputs produce same hash)
+- Lineage hash verification tests
+- Batch state validation tests
+- Harvest event field validation (weight, moisture range)
+- Contribution weight validation
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+I've implemented the comprehensive harvest management system with all the requested features and business rules:
+
+Key Implementation Details
+1. Database Tables & Schema (harvest_events_v1.py)
+harvest_events - Field-level harvests with weight, moisture, photos, location
+harvest_batches - Aggregated batches with status tracking (DRAFT → SEALED → QC_PENDING → QC_PASSED/QC_FAILED)
+harvest_batch_contributions - Many-to-many linking events to batches
+batch_qc_reports - Lab results with pass/fail
+product_batch_sources - Join table for product-to-harvest-batch linkage
+audit_events - Append-only traceability
+2. Business Rules & Flow
+HarvestEvent: Written when farmer records harvest (evidence: photos OR weighbridge receipt required)
+HarvestBatch: Created DRAFT, contributions added while DRAFT
+Seal Operation (harvest_batch_repo.py):
+Uses SELECT FOR UPDATE to serialize concurrent seals
+Validates no harvest events already in sealed batches
+Computes deterministic lineage_hash (SHA256 of sorted contributions)
+Calculates weighted average moisture
+Sets status=SEALED, records sealed_at, sealed_by, seal_evidence
+3. Immutability Enforcement
+DB Trigger (harvest_events_v1.py): Blocks INSERT/UPDATE/DELETE on contributions when batch is SEALED
+Application-level (harvest_batch_repo.py): Validates batch status before adding contributions
+4. Product Listing Guards (guards.py)
+Prevents product creation unless harvest batch is QC_PASSED
+Validates all linked batches before publishing listings
+5. End-to-End Flow
+Farmer records harvest → harvest_events INSERT
+Aggregator creates batch (DRAFT) → harvest_batches INSERT
+Aggregator adds contributions → harvest_batch_contributions INSERT (while DRAFT)
+Aggregator seals batch → harvest_batches UPDATE (SEALED + lineage_hash)
+Lab submits QC → batch_qc_reports INSERT + harvest_batches status update
+Product created from sealed QC_PASSED batch → product listing allowed
+
+================
+Reworked the harvest -> product conversion to use the new harvest-batch, immutable-lineage and QC flows.
+Key behaviors:
+When converting a legacy Harvest to a product the service now:
+Creates a HarvestEvent from the legacy harvest record.
+Creates a draft HarvestBatch and adds the event as a contribution.
+Seals the batch (computes lineage hash, aggregated weight, moisture average).
+Sets the batch to QC_PENDING.
+If inline QC data is provided in product_data["qc_report"], it creates a QC report for the batch (which may change batch status to QC_PASSED or QC_FAILED).
+If the harvest batch has passed QC:
+Creates the product via the existing ProductService.create_product (which validates harvest-batch rules).
+Creates a ProductBatch for inventory and links it to the harvest batch using HarvestBatchRepository.link_product_batch_to_harvest_batch.
+If the batch has not yet passed QC:
+Creates the Product record but keeps it inactive (is_active=False) and includes lineage metadata (harvest_batch_id) so it can be activated once QC completes.
+Files changed
+
+service.py
+Replaced prior simple direct ProductORM creation with the full batch-and-qc flow:
+imports HarvestBatchRepository, ProductBatchRepository and domain DTOs needed for events/batches/contributions/qc.
+creates harvest events, draft batches, contributions, seals batch and manages QC.
+when QC passed: creates product using ProductService and product batch and links them; when QC pending: creates product as inactive and returns it (so UI/clients can show pending approval).
+Assumptions and design notes
+
+The code uses existing repository classes already present in the codebase:
+HarvestBatchRepository for events, batches, lineage, QC reports and product batch linking.
+ProductBatchRepository to create product batches (inventory).
+ProductService to create validated product listings when a batch is QC_PASSED.
+If product_data contains:
+harvest_batch_id — the code will use that batch instead of creating a new one.
+qc_report — the code will attempt to create an inline QC report (non-fatal if it fails).
+batch_code, batch_notes, batch_metadata, product_batch_code, seal_evidence — these are used to populate the batch/product batch.
+When the batch is not QC_PASSED, the product is created inactive (is_active=False). This avoids creating sellable listings without QC. When QC is later created and passes, you can activate the product (or re-run ProductService.create_product if you prefer).
+I intentionally kept QC creation non-fatal so the conversion won’t fail if the lab data is missing or malformed; this mirrors typical real-world workflows where QC is a separate step.
+How to test locally (quick smoke)
+
+The repo includes a smoke script for batch flows: harvest_batch_flow.py. You can run it inside your API container or local environment (make sure env variables and DB are configured).
+To exercise the new path with a legacy Harvest record:
+Call the harvest conversion route (your existing route is POST /harvests/{harvest_id}/convert-to-product) with a payload similar to: { "name": "My crop product", "quantity": 100, "base_price": 1.5, "currency": "USD", "batch_code": "BATCH-1234", // optional qc report to auto-create QC: "qc_report": { "lab_id": "LAB-001", "metrics": {"moisture": 12.3}, "passed": true } }
+If QC is passed the response will be the created product DTO (active). If QC is pending the returned product will be created but inactive (and its metadata will include harvest_batch_id).
+For programmatic tests, you can reuse the pattern in harvest_batch_flow.py which demonstrates event->batch->seal->qc->product_batch linking.
+Notes & next steps
+
+I preserved backward compatibility where possible: legacy Harvest -> the new event/batch flow is generated at conversion time so existing harvest rows are not touched.
+Possible improvements you may want:
+Add a small unit/integration test covering: convert legacy harvest -> batch created -> QC pending product inactive, then create QC report -> product activation + product batch linking.
+Automatically create a ProductBatch movement (inventory) record at product activation if you need an initial inventory movement (append-only ledger).
+Improve error responses from the route to reflect different states (e.g., product created but pending QC).
+================
+================
 
 

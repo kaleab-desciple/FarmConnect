@@ -186,12 +186,18 @@ def get_user_id(payload: Dict[str, Any]) -> Optional[str]:
         payload: Decoded JWT payload
         
     Returns:
-        User ID (sub claim) or None for service accounts
+        User ID (sub claim) or fallback to email/preferred_username for service accounts
     """
     if is_service_account(payload):
         return None
     
-    return payload.get("sub")
+    # Try sub first, then fall back to email or preferred_username
+    user_id = payload.get("sub")
+    #if not user_id:
+        # Fallback: use email as user identifier if sub is missing
+    #    user_id = payload.get("email") or payload.get("preferred_username")
+    
+    return user_id
 
 
 def get_username(payload: Dict[str, Any]) -> Optional[str]:

@@ -19,6 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.db.base import Base
 from app.domain.common.enums import Unit, QualityGrade
 from app.domain.harvest.entities import HarvestBatchState
+from app.domain.common.enums import QCGrade, CertificationType
 
 class HarvestORM(Base):
     """Harvest entity representing a harvest event for a specific crop cycle and field."""
@@ -105,6 +106,8 @@ class HarvestBatchORM(Base):
         "HarvestBatchContributionORM", back_populates="batch", cascade="all, delete-orphan"
     )
     qc_reports: Mapped[list["BatchQCReportORM"]] = relationship("BatchQCReportORM", back_populates="batch", cascade="all, delete-orphan")
+    samples: Mapped[list["SampleORM"]] = relationship("SampleORM", back_populates="harvest_batch", cascade="all, delete-orphan")
+    certifications: Mapped[list["CertificationORM"]] = relationship("CertificationORM", back_populates="harvest_batch", cascade="all, delete-orphan")
     
     __table_args__ = (
         UniqueConstraint('batch_code', name='uq_harvest_batch_code'),
@@ -143,17 +146,21 @@ class HarvestBatchContributionORM(Base):
 class BatchQCReportORM(Base):
     """
     BatchQCReport entity for quality control lab results.
+    Expanded with sample_id, grade, and verified fields.
     """
     __tablename__ = "batch_qc_reports"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     batch_id: Mapped[str] = mapped_column(String, ForeignKey("harvest_batches.id", ondelete="CASCADE"), nullable=False)
+    sample_id: Mapped[Optional[str]] = mapped_column(String, ForeignKey("samples.id", ondelete="SET NULL"), nullable=True)
     lab_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     tested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     metrics: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    grade: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # qc_grade_enum
     passed: Mapped[bool] = mapped_column(Boolean, nullable=False)
     report_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     signed_hash: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -163,6 +170,7 @@ class BatchQCReportORM(Base):
     __table_args__ = (
         Index('idx_qc_reports_batch_id', 'batch_id'),
         Index('idx_qc_reports_lab_id', 'lab_id'),
+        Index('idx_qc_reports_sample_id', 'sample_id'),
     )
 
 
@@ -212,3 +220,98 @@ class AuditEventORM(Base):
         Index('idx_audit_events_type', 'event_type'),
         Index('idx_audit_events_created', 'created_at'),
     )
+
+
+# ========================================
+# QC/Grading ORM Models
+# ========================================
+
+
+class LabProviderORM(Base):
+    """LabProvider ORM entity for lab accreditation."""
+    __tablename__ = "lab_providers"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    public_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # PEM public key
+    metadata_: Mapped[Optional[dict]] = mapped_column(JSONB, name="metadata", nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_lab_providers_name', 'name'),
+    )
+
+
+class SampleORM(Base):
+    """Sample ORM entity for QC sampling requests."""
+    __tablename__ = "samples"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    sample_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    harvest_batch_id: Mapped[str] = mapped_column(String, ForeignKey("harvest_batches.id", ondelete="CASCADE"), nullable=False)
+    collected_by: Mapped[Optional[str]] = mapped_column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    collected_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    sample_points: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)  # GPS points
+    photos: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)  # Array of {url, hash, exif}
+    chain_of_custody: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    submitted_to_lab: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    harvest_batch: Mapped["HarvestBatchORM"] = relationship("HarvestBatchORM", back_populates="samples")
+    
+    __table_args__ = (
+        Index('idx_samples_harvest_batch_id', 'harvest_batch_id'),
+        Index('idx_samples_sample_code', 'sample_code', unique=True),
+    )
+
+
+class CertificationORM(Base):
+    """Certification ORM entity for product certifications."""
+    __tablename__ = "certifications"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    harvest_batch_id: Mapped[str] = mapped_column(String, ForeignKey("harvest_batches.id", ondelete="CASCADE"), nullable=False)
+    issuer: Mapped[str] = mapped_column(String(255), nullable=False)
+    cert_type: Mapped[str] = mapped_column(String(50), nullable=False)  # certification_type_enum
+    cert_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_to: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    cert_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    signed_hash: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    metadata_: Mapped[Optional[dict]] = mapped_column(JSONB, name="metadata", nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    harvest_batch: Mapped["HarvestBatchORM"] = relationship("HarvestBatchORM")
+    
+    __table_args__ = (
+        Index('idx_certifications_harvest_batch_id', 'harvest_batch_id'),
+        Index('idx_certifications_type', 'cert_type'),
+    )
+
+
+class QCGradeRuleORM(Base):
+    """QCGradeRule ORM entity for configurable grade thresholds."""
+    __tablename__ = "qc_grade_rules"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    commodity: Mapped[str] = mapped_column(String(100), nullable=False)
+    grade: Mapped[str] = mapped_column(String(20), nullable=False)  # qc_grade_enum
+    rules: Mapped[list] = mapped_column(JSONB, nullable=False)  # [{"metric":"moisture_pct","op":"<=","value":13.0}]
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_qc_grade_rules_commodity', 'commodity'),
+    )
+
+
+# ========================================
+# Aliases for backwards compatibility
+# ========================================
+
+# BatchQCReportV2ORM is an alias for BatchQCReportORM
+# The V2 version added sample_id, grade, and verified fields
+BatchQCReportV2ORM = BatchQCReportORM

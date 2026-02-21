@@ -301,3 +301,30 @@ class MessageType(str, Enum):
     LOCATION = "LOCATION"
     SYSTEM = "SYSTEM"
 
+
+# QC/Grading Enums
+
+
+class QCGrade(str, Enum):
+    """Quality grade for QC evaluation."""
+    GRADE_A = "GRADE_A"
+    GRADE_B = "GRADE_B"
+    GRADE_C = "GRADE_C"
+    REJECT = "REJECT"
+
+
+class BatchQCState(str, Enum):
+    """Batch QC status states."""
+    QC_PENDING = "QC_PENDING"
+    QC_PASSED = "QC_PASSED"
+    QC_FAILED = "QC_FAILED"
+
+
+class CertificationType(str, Enum):
+    """Certification types for products."""
+    ORGANIC = "ORGANIC"
+    FAIRTRADE = "FAIRTRADE"
+    RAINFOREST_ALLIANCE = "RAINFOREST_ALLIANCE"
+    GLOBALGAP = "GLOBALGAP"
+    OTHER = "OTHER"
+

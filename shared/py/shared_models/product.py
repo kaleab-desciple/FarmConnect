@@ -62,7 +62,7 @@ class ProductBase(BaseModel):
         description="Farmer-set price per unit (before delivery & platform margin)",
     )
     currency: constr(pattern=r"^[A-Z]{3}$") = "USD"
-    quantity_available: confloat(ge=0.0)
+    total_quantity: confloat(ge=0.0)
     quality_grade: Optional[QualityGrade] = Field(
         None, description="Optional quality grading"
     )
@@ -90,7 +90,7 @@ class ProductUpdate(BaseModel):
     unit: Optional[Unit] = None
     base_price: Optional[PositiveFloat] = None
     currency: Optional[constr(pattern=r"^[A-Z]{3}$")] = None
-    quantity_available: Optional[confloat(ge=0.0)] = None
+    total_quantity: Optional[confloat(ge=0.0)] = None
     quality_grade: Optional[QualityGrade] = None
     harvest_date: Optional[date] = None
     expiry_date: Optional[date] = None

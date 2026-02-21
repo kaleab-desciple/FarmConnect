@@ -16,6 +16,7 @@ from .monitoring.routes import router as monitoring_router
 from .ai.routes import router as ai_router
 from .weather.routes import router as weather_router
 from .harvest.harvest_routes import router as harvest_router
+from app.api.qc.routes import router as qc_router
 
 api_router = APIRouter()
 
@@ -42,6 +43,9 @@ api_router.include_router(monitoring_router, prefix="/agri", tags=["Monitoring &
 api_router.include_router(ai_router, prefix="/agri", tags=["AI Diagnosis"])
 api_router.include_router(weather_router, prefix="/agri", tags=["Weather Service"])
 api_router.include_router(harvest_router, prefix="/agri", tags=["Harvest Management"])
+
+# QC/Grading Routes
+api_router.include_router(qc_router, prefix="/qc", tags=["QC & Lab"])
 
 
 # Advisory Routes
