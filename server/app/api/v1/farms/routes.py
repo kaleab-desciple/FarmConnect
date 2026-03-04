@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth.dependencies import get_current_user, get_optional_user, require_auth
+from app.core.auth.dependencies import get_current_user, get_optional_user, require_auth, require_permission
 from app.domain.farm.entities import (
     Farm, FarmCreate, FarmUpdate,
     Field, FieldCreate, FieldUpdate,
@@ -34,7 +34,7 @@ router = APIRouter()
 async def create_farm(
     farm: FarmCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("farms:create"))
 ):
     """
     Create a new farm.
@@ -145,7 +145,7 @@ async def list_farms(
 async def get_farm(
     farm_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("farms:read"))
 ):
     """
     Get detailed information about a specific farm.
@@ -211,7 +211,7 @@ async def update_farm(
     farm_id: str,
     farm: FarmUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("farms:update"))
 ):
     """
     Update an existing farm's information.
@@ -271,7 +271,7 @@ async def update_farm(
 async def delete_farm(
     farm_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("farms:delete"))
 ):
     """
     Delete a farm (soft delete).
@@ -321,7 +321,7 @@ async def delete_farm(
 async def create_field(
     field: FieldCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("fields:create"))
 ):
     """
     Create a new field within a farm.
@@ -377,7 +377,7 @@ async def create_field(
 async def list_fields(
     farm_id: str = Query(..., description="Farm ID"),
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("fields:read"))
 ):
     """
     List all fields belonging to a specific farm.
@@ -415,7 +415,7 @@ async def get_field(
     field_id: str,
     days: Optional[int] = Query(default=None, ge=1, le=14, description="Number of forecast days (optional, returns weather if provided)"),
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("fields:read"))
 ):
     """
     Get detailed information about a specific field.
@@ -522,7 +522,7 @@ async def update_field(
     field_id: str,
     field: FieldUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("fields:update"))
 ):
     """
     Update an existing field's information.
@@ -576,7 +576,7 @@ async def update_field(
 async def delete_field(
     field_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("fields:delete"))
 ):
     """
     Delete a field (soft delete).
@@ -622,7 +622,7 @@ async def delete_field(
 async def create_crop_cycle(
     cycle: CropCycleCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("crop_cycles:create"))
 ):
     """
     Create a new crop cycle for a field.
@@ -680,7 +680,7 @@ async def create_crop_cycle(
 async def list_crop_cycles(
     field_id: str = Query(..., description="Field ID"),
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("crop_cycles:read"))
 ):
     """
     List all crop cycles for a specific field.
@@ -717,7 +717,7 @@ async def list_crop_cycles(
 async def get_crop_cycle(
     cycle_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("crop_cycles:read"))
 ):
     """
     Get detailed information about a specific crop cycle.
@@ -785,7 +785,7 @@ async def update_crop_cycle(
     cycle_id: str,
     cycle: CropCycleUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("crop_cycles:update"))
 ):
     """
     Update an existing crop cycle.

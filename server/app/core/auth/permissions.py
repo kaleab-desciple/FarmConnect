@@ -25,16 +25,16 @@ PERMISSIONS = {
     "users:reputation": ["ADMIN", "MANAGER", "AGENT"],
     
     # Products Domain
-    "products:create": ["ADMIN", "FARMER"],
-    "products:update": ["ADMIN", "FARMER"],
+    "products:create": ["ADMIN", "FARMER", "AGENT"],
+    "products:update": ["ADMIN", "FARMER", "AGENT"],
     "products:read": ["ADMIN", "MANAGER", "AGENT", "FARMER", "MERCHANT", "DELIVERY"],
     "products:delete": ["ADMIN"],
     
     # Orders Domain
     "orders:create": ["ADMIN", "FARMER", "MERCHANT"],
     "orders:read": ["ADMIN", "MANAGER", "AGENT", "FARMER", "MERCHANT", "DELIVERY"],
-    "orders:update": ["ADMIN", "MANAGER", "FARMER", "MERCHANT", "DELIVERY"],
-    "orders:cancel": ["ADMIN", "MANAGER", "FARMER", "MERCHANT"],
+    "orders:update": ["ADMIN", "MANAGER", "FARMER", "MERCHANT", "DELIVERY", "AGENT"],
+    "orders:cancel": ["ADMIN", "MANAGER", "FARMER", "MERCHANT", "AGENT"],
     
     # Escrow Domain
     "escrow:read": ["ADMIN", "MANAGER", "reporting_service"],
@@ -67,36 +67,29 @@ PERMISSIONS = {
     "system:analytics": ["ADMIN", "reporting_service"],
     
     # Agricultural Intelligence Domain
-    # Farms - FARMER: Own CRUD, AGRONOMIST: Assigned R, FIELD_ANALYST: All R, ADMIN: All CRUD
-    "farms:create": ["ADMIN", "FARMER"],
-    "farms:read:own": ["FARMER"],
-    "farms:read:assigned": ["AGRONOMIST"],
-    "farms:read:all": ["ADMIN", "FIELD_ANALYST"],
-    "farms:update:own": ["FARMER"],
-    "farms:update:all": ["ADMIN"],
-    "farms:delete:own": ["FARMER"],
-    "farms:delete:all": ["ADMIN"],
+    # Farms 
+    "farms:create": ["ADMIN", "FARMER", "AGENT"],
+    "farms:read": ["ADMIN", "MANAGER", "AGENT", "FARMER", "AGRONOMIST", "FIELD_ANALYST"],
+    "farms:update": ["ADMIN", "FARMER", "AGENT"],
+    "farms:delete": ["ADMIN", "FARMER"],
     
-    # Fields - FARMER: Own CRUD, AGRONOMIST: Assigned R, FIELD_ANALYST: All R, ADMIN: All CRUD
-    "fields:create": ["ADMIN", "FARMER"],
-    "fields:read:own": ["FARMER"],
-    "fields:read:assigned": ["AGRONOMIST"],
-    "fields:read:all": ["ADMIN", "FIELD_ANALYST"],
-    "fields:update:own": ["FARMER"],
-    "fields:update:all": ["ADMIN"],
-    "fields:delete:own": ["FARMER"],
-    "fields:delete:all": ["ADMIN"],
+    # Fields 
+    "fields:create": ["ADMIN", "FARMER", "AGENT"],
+    "fields:read": ["ADMIN", "MANAGER", "AGENT", "FARMER", "AGRONOMIST", "FIELD_ANALYST"],
+    "fields:update": ["ADMIN", "FARMER", "AGENT"],
+    "fields:delete": ["ADMIN", "FARMER"],
     
-    # Crop Cycles - FARMER: Own CRUD, AGRONOMIST: Assigned RU, FIELD_ANALYST: All R, ADMIN: All CRUD
-    "crop_cycles:create": ["ADMIN", "FARMER"],
-    "crop_cycles:read:own": ["FARMER"],
-    "crop_cycles:read:assigned": ["AGRONOMIST"],
-    "crop_cycles:read:all": ["ADMIN", "FIELD_ANALYST"],
-    "crop_cycles:update:own": ["FARMER"],
-    "crop_cycles:update:assigned": ["AGRONOMIST"],
-    "crop_cycles:update:all": ["ADMIN"],
-    "crop_cycles:delete:own": ["FARMER"],
-    "crop_cycles:delete:all": ["ADMIN"],
+    # Crop Cycles
+    "crop_cycles:create": ["ADMIN", "FARMER", "AGENT"],
+    "crop_cycles:read": ["ADMIN", "MANAGER", "AGENT", "FARMER", "AGRONOMIST", "FIELD_ANALYST"],
+    "crop_cycles:update": ["ADMIN", "FARMER", "AGRONOMIST", "AGENT"],
+    "crop_cycles:delete": ["ADMIN", "FARMER"],
+    
+    # Harvests Domain
+    "harvests:create": ["ADMIN", "FARMER", "AGENT"],
+    "harvests:read": ["ADMIN", "MANAGER", "AGENT", "FARMER", "AGRONOMIST", "FIELD_ANALYST"],
+    "harvests:update": ["ADMIN", "FARMER", "AGENT"],
+    "harvests:delete": ["ADMIN"],
     
     # NDVI Data - FARMER: Own R, AGRONOMIST: Assigned R, FIELD_ANALYST: All CRUD, ADMIN: All CRUD
     "ndvi:create": ["ADMIN", "FIELD_ANALYST"],

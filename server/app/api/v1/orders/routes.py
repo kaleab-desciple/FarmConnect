@@ -246,8 +246,8 @@ def cancel_order(
     
     # Check authorization (only merchant or farmer can cancel)
     if order.merchant_id != current_user.sub and order.farmer_id != current_user.sub:
-        # Check if admin
-        if not any(role in current_user.roles for role in ['ADMIN', 'MANAGER']):
+        # Check if admin/manager/agent
+        if not any(role in current_user.all_roles for role in ['ADMIN', 'MANAGER', 'AGENT']):
             raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
     
     # Validate transition

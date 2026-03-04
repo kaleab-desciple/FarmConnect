@@ -57,7 +57,11 @@ class HarvestService:
         authenticated_farmer_id = authenticated_user.id if authenticated_user else None
         
         # Simple farmer_id check - compare user's farmer_id with requested farmer_id
-        if str(data.farmer_id) != str(authenticated_farmer_id) and not current_user.has_realm_role("ADMIN"):
+        if str(data.farmer_id) != str(authenticated_farmer_id) and not (
+            current_user.has_realm_role("ADMIN") or 
+            current_user.has_realm_role("AGENT") or 
+            current_user.has_realm_role("AGRONOMIST")
+        ):
             raise HTTPException(status_code=403, detail="Not authorized")
 
         # 3. Validation logic
@@ -121,7 +125,11 @@ class HarvestService:
         authenticated_farmer_id = authenticated_user.id if authenticated_user else None
         
         # Authorization - compare user's farmer_id with harvest's farmer_id
-        if str(harvest.farmer_id) != str(authenticated_farmer_id) and not current_user.has_realm_role("ADMIN"):
+        if str(harvest.farmer_id) != str(authenticated_farmer_id) and not (
+            current_user.has_realm_role("ADMIN") or 
+            current_user.has_realm_role("AGENT") or 
+            current_user.has_realm_role("AGRONOMIST")
+        ):
             raise HTTPException(status_code=403, detail="Not authorized")
 
         # Use HarvestBatch flow: create a harvest event -> draft batch -> contribution -> seal -> QC flow

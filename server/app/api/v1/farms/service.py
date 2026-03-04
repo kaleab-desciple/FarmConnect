@@ -213,10 +213,13 @@ class FarmService:
                     if not (current_user.has_realm_role("ADMIN") or current_user.has_realm_role("AGENT")):
                         raise
             
-            # If admin/agent, can see all farms or specific farmer's farms
+            # If admin/manager/analyst/agent, can see all farms or specific farmer's farms
             if farmer_id and not (
                 current_user.has_realm_role("ADMIN") or 
-                current_user.has_realm_role("AGENT")
+                current_user.has_realm_role("MANAGER") or 
+                current_user.has_realm_role("FIELD_ANALYST") or
+                current_user.has_realm_role("AGENT") or
+                current_user.has_realm_role("AGRONOMIST")
             ):
                 # Regular users can only see their own farms
                 if farmer_id != internal_user_id:
@@ -225,7 +228,10 @@ class FarmService:
             # For regular users, default to their own farms
             if not farmer_id and not (
                 current_user.has_realm_role("ADMIN") or 
+                current_user.has_realm_role("MANAGER") or 
+                current_user.has_realm_role("FIELD_ANALYST") or
                 current_user.has_realm_role("AGENT") or
+                current_user.has_realm_role("AGRONOMIST") or
                 current_user.is_service_account
             ):
                 farmer_id = internal_user_id
@@ -333,10 +339,16 @@ class FarmService:
         if not current_user:
             return False
         
-        # Admin/agent/service can access
+        # Admin/manager/analyst/service can access
         if (current_user.has_realm_role("ADMIN") or 
-            current_user.has_realm_role("AGENT") or
+            current_user.has_realm_role("MANAGER") or 
+            current_user.has_realm_role("FIELD_ANALYST") or
             current_user.is_service_account):
+            return True
+
+        # Agent/Agronomist can access
+        if (current_user.has_realm_role("AGENT") or 
+            current_user.has_realm_role("AGRONOMIST")):
             return True
             
         # Owner can access
@@ -354,6 +366,11 @@ class FarmService:
         # Admin/service can edit
         if (current_user.has_realm_role("ADMIN") or 
             current_user.is_service_account):
+            return True
+            
+        # Agent/Agronomist can edit
+        if (current_user.has_realm_role("AGENT") or 
+            current_user.has_realm_role("AGRONOMIST")):
             return True
             
         # Owner can edit

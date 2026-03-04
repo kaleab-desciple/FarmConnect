@@ -92,6 +92,12 @@
             ]
         },
         {
+            "name": "Moderators",
+            "realmRoles": [
+                "MODERATOR"
+            ]
+        },
+        {
             "name": "Delivery",
             "realmRoles": [
                 "DELIVERY"

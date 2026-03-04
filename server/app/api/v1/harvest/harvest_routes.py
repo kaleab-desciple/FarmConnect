@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth.dependencies import require_auth
+from app.core.auth.dependencies import require_auth, require_permission
 from app.domain.farm.entities import Harvest, HarvestCreate, HarvestUpdate
 from app.application.harvest.service import HarvestService
 from app.api.v1.harvest.schemas import ProductConversionResponse
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/harvests")
 async def record_harvest(
     data: HarvestCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("harvests:create"))
 ):
     """Record a new harvest event."""
     service = HarvestService(db)
@@ -32,7 +32,7 @@ async def record_harvest(
 async def list_harvests_for_cycle(
     cycle_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("harvests:read"))
 ):
     """List all harvests for a specific crop cycle."""
     service = HarvestService(db)
@@ -52,7 +52,7 @@ async def convert_to_product(
     harvest_id: UUID,
     product_data: Dict[str, Any],
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(require_permission("products:create"))
 ):
     """
     Convert a harvest into a sellable product.
