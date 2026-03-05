@@ -3,6 +3,7 @@ from .user import UserORM
 from .product import ProductORM
 from .order import OrderORM
 from .dispute import DisputeORM
+from .delivery import DeliveryORM
 from .reputation import ReputationORM
 from .ledger import LedgerEventORM
 from .account import AccountORM
@@ -25,6 +26,7 @@ __all__ = [
     "OrderORM",
     "EscrowORM",
     "DisputeORM",
+    "DeliveryORM",
     "ReputationORM",
     "LedgerEventORM",
     "AccountORM",

@@ -14,7 +14,22 @@ def fund_escrow(
     amount: Decimal,
     source_account: str,
     provider_type: str,
+    auto_confirm: bool = True,
 ):
+    """
+    Fund an escrow and optionally auto-confirm the order.
+    
+    Args:
+        db: Database session
+        escrow_id: The escrow ID to fund
+        amount: Amount to fund
+        source_account: Source account for the payment
+        provider_type: Payment provider type
+        auto_confirm: If True (default), automatically confirm the order after funding.
+                     This transitions the order from FUNDED to CONFIRMED, allowing delivery assignment.
+    """
+    from app.application.services.escrow_lifecycle_service import EscrowLifecycleService
+    
     escrow = db.get(EscrowORM, escrow_id)
 
     if escrow is None:
@@ -32,14 +47,29 @@ def fund_escrow(
         # no state change, retry allowed
         raise e
 
-    # state transition AFTER money movement
-    escrow.state = transition(
-        EscrowState(escrow.state),
-        EscrowState.FUNDED
-    ).value
-
-    db.commit()
-    return escrow
+    # Use the lifecycle service to handle state transition with all side effects
+    # This will:
+    # 1. Transition escrow CREATED → FUNDED
+    # 2. Confirm sale in inventory (reserved → sold)
+    # 3. Update order status (FUNDED → CONFIRMED if auto_confirm=True)
+    lifecycle_service = EscrowLifecycleService(db)
+    try:
+        # Pass provider reference as the payment reference
+        funded_escrow = lifecycle_service.fund_escrow(
+            escrow_id=str(escrow_id),
+            provider_reference=f"payment_{escrow_id}",
+            auto_confirm=auto_confirm
+        )
+        return funded_escrow
+    except Exception as e:
+        # If lifecycle service fails, at least ensure the escrow state is updated
+        # This is a fallback to ensure the payment is recorded
+        escrow.state = transition(
+            EscrowState(escrow.state),
+            EscrowState.FUNDED
+        ).value
+        db.commit()
+        raise e
 
 
 class PaymentService:

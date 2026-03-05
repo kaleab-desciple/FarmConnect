@@ -20,6 +20,7 @@ from app.application.services.provisioning_service import (
     UserProvisioningService,
     ProvisionedUser
 )
+from app.infrastructure.repositories.user_repo import UserRepository
 
 logger = logging.getLogger(__name__)
 
@@ -66,18 +67,31 @@ def _provision_user_handler(
             agent_id=current_user.user_id
         )
         
+        # For FARMER and MERCHANT, set onboarding_status to PENDING_REVIEW
+        # so a MANAGER must approve before the user becomes fully active.
+        # Other roles (AGENT, DELIVERY, etc.) are immediately ACTIVE.
+        requires_approval = role in (UserRole.FARMER, UserRole.MERCHANT)
+        if requires_approval:
+            from app.domain.common.enums import OnboardingStatus
+            user_repo = UserRepository(db)
+            user_repo.update(result.user_id, {
+                "onboarding_status": OnboardingStatus.PENDING_REVIEW.value,
+                "onboarding_agent_id": current_user.user_id,
+            })
+        
         logger.info(
             f"User provisioned by {current_user.username}: "
             f"{request.email} as {role.value}"
         )
-        
+
+        pending_note = " Pending MANAGER approval before account is activated." if requires_approval else ""
         return ProvisionUserResponse(
             user_id=result.user_id,
             keycloak_id=result.keycloak_id,
             email=result.email,
             temporary_password=result.temporary_password,
             password_reset_required=result.password_reset_required,
-            message=f"User successfully created with role {role.value}. "
+            message=f"User successfully created with role {role.value}.{pending_note} "
                     f"Temporary password must be changed on first login."
         )
         

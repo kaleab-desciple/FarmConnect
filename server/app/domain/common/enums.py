@@ -26,6 +26,15 @@ class OrderStatus(str, Enum):
     EXPIRED = "EXPIRED"
 
 
+class DeliveryStatus(str, Enum):
+    ASSIGNED = "ASSIGNED"
+    PICKED_UP = "PICKED_UP"
+    IN_TRANSIT = "IN_TRANSIT"
+    DELIVERED = "DELIVERED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
 class InventoryMovementType(str, Enum):
     STOCK_IN = "STOCK_IN"
     RESERVATION = "RESERVATION"
@@ -68,6 +77,8 @@ class LoanState(str, Enum):
 class DisputeState(str, Enum):
     OPEN = "OPEN"
     UNDER_REVIEW = "UNDER_REVIEW"
+    ESCALATED_TO_AGENT = "ESCALATED_TO_AGENT"
+    ESCALATED_TO_MANAGER = "ESCALATED_TO_MANAGER"
     RESOLVED = "RESOLVED"
     REOPENED = "REOPENED"
 
@@ -76,6 +87,12 @@ class DisputeResolution(str, Enum):
     RELEASE = "RELEASE"
     PARTIAL_RELEASE = "PARTIAL_RELEASE"
     REFUND = "REFUND"
+
+
+class OnboardingStatus(str, Enum):
+    PENDING_REVIEW = "PENDING_REVIEW"
+    ACTIVE = "ACTIVE"
+    REJECTED = "REJECTED"
 
 
 class Category(str, Enum):

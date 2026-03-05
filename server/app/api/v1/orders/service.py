@@ -22,7 +22,8 @@ from app.domain.pricing.value_objects import PricingInput
 from app.application.services.inventory_service import (
     InventoryService, 
     InsufficientStockError as InventoryInsufficientStockError,
-    ProductNotFoundError as InventoryProductNotFoundError
+    ProductNotFoundError as InventoryProductNotFoundError,
+    ReservationFailedError as InventoryReservationFailedError
 )
 from app.domain.common.enums import OrderStatus
 from shared_models.escrow import Provider
@@ -114,6 +115,13 @@ class OrderService:
             raise HTTPException(
                 status_code=409, 
                 detail=f"Insufficient stock: {e.available} available, {e.requested} requested"
+            )
+        except InventoryReservationFailedError as e:
+            # Rollback order using repository delete method
+            self.order_repo.delete(saved_order.id)
+            raise HTTPException(
+                status_code=409,
+                detail=e.reason
             )
         except Exception as e:
             # Cleanup on any error using repository delete method

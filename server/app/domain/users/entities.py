@@ -13,3 +13,5 @@ class User:
     phone: Optional[str] = None
     created_at: Optional[datetime] = None
     metadata_: Optional[Dict[str, Any]] = None
+    onboarding_status: Optional[str] = None
+    onboarding_agent_id: Optional[str] = None

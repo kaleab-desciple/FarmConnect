@@ -45,20 +45,26 @@ class EscrowLifecycleService:
         self.post_journal_uc = PostJournalEntry(self.journal_repo, self.account_repo)
         self.inventory_service = InventoryService(session)
 
-    def fund_escrow(self, escrow_id: str, provider_reference: str) -> Escrow:
+    def fund_escrow(self, escrow_id: str, provider_reference: str, auto_confirm: bool = True) -> Escrow:
         """
         Fund an escrow - CREATED → FUNDED
 
         Creates accounting entries for customer payment obligation.
+        
+        Args:
+            escrow_id: The escrow ID to fund
+            provider_reference: Reference from the payment provider
+            auto_confirm: If True (default), automatically confirm the order after funding.
+                         Set to False to require manual farmer confirmation.
         """
         return self._execute_transition(
             escrow_id,
-            lambda escrow: self._fund_escrow_with_order(escrow, provider_reference),
+            lambda escrow: self._fund_escrow_with_order(escrow, provider_reference, auto_confirm),
             LedgerEventType.ESCROW_FUNDED,
             f"Escrow funded with reference {provider_reference}"
         )
 
-    def _fund_escrow_with_order(self, escrow: Escrow, provider_reference: str) -> EscrowTransitionResult:
+    def _fund_escrow_with_order(self, escrow: Escrow, provider_reference: str, auto_confirm: bool = True) -> EscrowTransitionResult:
         """Helper to get order and call domain service."""
         order = self.order_repo.get_by_id(escrow.order_id)
         if not order or not order.merchant_id:
@@ -82,9 +88,21 @@ class EscrowLifecycleService:
             # Log but don't fail - inventory can be reconciled manually
             print(f"Warning: Failed to confirm sale in inventory: {e}")
         
-        # Also update order status to FUNDED
+        # Update order status based on auto_confirm flag
         from app.domain.common.enums import OrderStatus
-        order.status = OrderStatus.FUNDED
+        from app.domain.orders.state_machine import OrderStateMachine
+        
+        if auto_confirm:
+            # Auto-confirm: FUNDED → CONFIRMED
+            try:
+                order.status = OrderStateMachine.transition(order.status, OrderStatus.CONFIRMED)
+            except Exception:
+                # If transition fails (e.g., already confirmed), just set to FUNDED
+                order.status = OrderStatus.FUNDED
+        else:
+            # Manual confirmation required: just set to FUNDED
+            order.status = OrderStatus.FUNDED
+            
         order.updated_at = datetime.now(timezone.utc)
         self.order_repo.save(order)
         

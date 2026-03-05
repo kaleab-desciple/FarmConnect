@@ -19,6 +19,10 @@
                 "description": "Operations / Regional Manager"
             },
             {
+                "name": "MODERATOR",
+                "description": "Market Integrity Moderator"
+            },
+            {
                 "name": "AGENT",
                 "description": "Field Agent"
             },

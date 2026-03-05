@@ -308,6 +308,45 @@ def soft_delete_product(product_id: str, db: Session = Depends(get_db)):
     return {"message": "Product soft deleted successfully", "product_id": product_id}
 
 
+@router.post("/{product_id}/activate", response_model=ProductDTO, dependencies=[Depends(require_permission("products:update"))])
+def activate_product(product_id: str, db: Session = Depends(get_db)):
+    """
+    Activate a product listing to make it available for orders.
+    
+    Products created from harvest conversion may start as inactive. This endpoint
+    activates them so merchants can place orders.
+    
+    ## Path Parameters
+    - **product_id**: UUID of the product to activate
+    
+    ## Authentication & Authorization
+    Requires `products:update` permission.
+    Typically the farmer who owns the product or an admin can activate it.
+    
+    ## Responses
+    - **200**: Product activated successfully
+    - **404**: Product not found
+    - **500**: Internal server error
+    """
+    from app.infrastructure.repositories.product_repo import ProductRepository
+    
+    repo = ProductRepository(db)
+    product = repo.get_by_id(product_id)
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    if product.is_active:
+        return product  # Already active, no-op
+    
+    product.is_active = True
+    repo.save(product)
+    db.commit()
+    
+    from app.infrastructure.db.mappers import domain_to_dto
+    return domain_to_dto(product)
+
+
 @router.get("/{product_id}/inventory-history")
 def get_inventory_history(
     product_id: str, 

@@ -5,6 +5,7 @@ from .products.routes import router as products_router
 from .orders.routes import router as orders_router
 from .payments.escrow import router as escrow_router
 from .disputes.routes import router as disputes_router
+from .delivery.routes import router as delivery_router
 from .ledger import router as ledger_router
 from .accounting.routes import router as accounting_router
 from .reports.routes import router as reports_router
@@ -33,6 +34,7 @@ api_router.include_router(products_router, prefix="/products", tags=["Products"]
 api_router.include_router(orders_router, prefix="/orders", tags=["Orders"])
 api_router.include_router(escrow_router, prefix="/escrows", tags=["Escrow"])
 api_router.include_router(disputes_router, prefix="/disputes", tags=["Disputes"])
+api_router.include_router(delivery_router, prefix="/delivery", tags=["Delivery"])
 api_router.include_router(ledger_router, prefix="/ledger", tags=["Ledger"])
 api_router.include_router(accounting_router, prefix="/accounting", tags=["Accounting"])
 api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])

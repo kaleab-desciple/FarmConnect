@@ -22,6 +22,7 @@ PERMISSIONS = {
     "users:provision": ["ADMIN", "MANAGER", "AGENT"],
     "users:read": ["ADMIN", "MANAGER", "AGENT"],
     "users:write": ["ADMIN", "MANAGER"],
+    "users:approve": ["ADMIN", "MANAGER"],
     "users:reputation": ["ADMIN", "MANAGER", "AGENT"],
     
     # Products Domain
@@ -51,7 +52,7 @@ PERMISSIONS = {
     
     # Disputes Domain
     "disputes:create": ["ADMIN", "FARMER", "MERCHANT", "DELIVERY"],
-    "disputes:resolve": ["ADMIN", "MANAGER"],
+    "disputes:resolve": ["ADMIN", "MANAGER", "MODERATOR"],
     "disputes:read": ["ADMIN", "MANAGER", "reporting_service"],
     
     # Reports Domain (Read-only)
@@ -125,5 +126,10 @@ PERMISSIONS = {
     # Knowledge Base Domain
     "knowledge:read": ["ADMIN", "FARMER", "MERCHANT", "AGRONOMIST", "MANAGER", "FIELD_ANALYST"],
     "knowledge:create": ["ADMIN", "AGRONOMIST"],
-    "knowledge:publish": ["ADMIN", "AGRONOMIST"]
+    "knowledge:publish": ["ADMIN", "AGRONOMIST"],
+
+    # Delivery Domain
+    "delivery:assign": ["ADMIN", "MANAGER"],
+    "delivery:update": ["DELIVERY"],
+    "delivery:read": ["ADMIN", "MANAGER", "AGENT", "DELIVERY"]
 }

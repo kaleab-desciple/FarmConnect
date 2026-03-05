@@ -48,6 +48,14 @@ class InsufficientStockError(InventoryServiceError):
         )
 
 
+class ReservationFailedError(InventoryServiceError):
+    """Raised when a stock reservation fails due to policy."""
+    def __init__(self, product_id: str, reason: str):
+        self.product_id = product_id
+        self.reason = reason
+        super().__init__(f"Reservation failed for product {product_id}: {reason}")
+
+
 class InventoryService:
     """
     Application service: orchestrates inventory with concurrency control.
@@ -103,7 +111,10 @@ class InventoryService:
         # Check availability using domain policy
         can_reserve, reason = InventoryPolicy.can_reserve(product, qty)
         if not can_reserve:
-            raise InsufficientStockError(product.id, product.available_quantity, qty)
+            if "Insufficient stock" in reason:
+                raise InsufficientStockError(product.id, product.available_quantity, qty)
+            else:
+                raise ReservationFailedError(product.id, reason)
         
         # Reserve quantity on product aggregate
         product.reserve(qty)

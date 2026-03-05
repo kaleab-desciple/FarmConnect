@@ -245,7 +245,7 @@ def cancel_order(
         raise HTTPException(status_code=404, detail="Order not found")
     
     # Check authorization (only merchant or farmer can cancel)
-    if order.merchant_id != current_user.sub and order.farmer_id != current_user.sub:
+    if order.merchant_id != current_user.user_id and order.farmer_id != current_user.user_id:
         # Check if admin/manager/agent
         if not any(role in current_user.all_roles for role in ['ADMIN', 'MANAGER', 'AGENT']):
             raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
@@ -408,6 +408,65 @@ def complete_order(
     
     try:
         new_status = OrderStateMachine.transition(order.status, OrderStatus.COMPLETED)
+        order.status = new_status
+        order.updated_at = datetime.now(timezone.utc)
+        
+        order_repo.save(order)
+        db.commit()
+        
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(order)
+        
+    except InvalidStateTransitionError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{order_id}/confirm", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:update"))])
+def confirm_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user)
+):
+    """
+    Confirm an order - mark as ready for delivery.
+    
+    Transition: FUNDED → CONFIRMED
+    After the buyer funds the escrow, the seller (farmer) confirms the order
+    to indicate it's ready for pickup/delivery.
+    
+    ## Authentication
+    Requires `orders:update` permission.
+    Typically the farmer who owns the product or an admin can confirm.
+    """
+    from app.infrastructure.repositories.order_repo import OrderRepository
+    from app.domain.orders.state_machine import OrderStateMachine, InvalidStateTransitionError
+    from datetime import datetime, timezone
+    
+    order_repo = OrderRepository(db)
+    order = order_repo.get_by_id(order_id)
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization (farmer or admin can confirm)
+    from app.infrastructure.repositories.user_repo import UserRepository
+    user_repo = UserRepository(db)
+    farmer = user_repo.get_by_id(order.farmer_id)
+    
+    is_authorized = (
+        current_user.user_id == order.farmer_id or
+        current_user.user_id == str(farmer.keycloak_id) if farmer and farmer.keycloak_id else False or
+        any(role in current_user.all_roles for role in ['ADMIN', 'MANAGER', 'AGENT', 'MODERATOR'])
+    )
+    
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to confirm this order")
+    try:
+        new_status = OrderStateMachine.transition(order.status, OrderStatus.CONFIRMED)
         order.status = new_status
         order.updated_at = datetime.now(timezone.utc)
         
