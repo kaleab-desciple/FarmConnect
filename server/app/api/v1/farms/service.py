@@ -5,10 +5,8 @@ Farm Connect AgriManagement
 Following the same architecture, patterns, and structure as the forum implementation.
 """
 from __future__ import annotations
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List
 from datetime import datetime, date, timezone
-from decimal import Decimal
-from uuid import UUID
 import logging
 
 from sqlalchemy.orm import Session
@@ -19,6 +17,7 @@ from shared_models import (
     Farm as FarmDTO,
     FarmCreate as FarmCreateDTO,
     FarmUpdate as FarmUpdateDTO,
+    FarmListResponse,
     Field as FieldDTO,
     FieldCreate as FieldCreateDTO,
     FieldUpdate as FieldUpdateDTO,
@@ -27,9 +26,15 @@ from shared_models import (
     CropCycleUpdate as CropCycleUpdateDTO,
 )
 from app.domain.farm.entities import (
-    Farm, FarmCreate, FarmUpdate,
-    Field, FieldCreate, FieldUpdate,
-    CropCycle, CropCycleCreate, CropCycleUpdate,
+    Farm as DomainFarm, 
+    FarmCreate as DomainFarmCreate, 
+    FarmUpdate as DomainFarmUpdate,
+    Field as DomainField, 
+    FieldCreate as DomainFieldCreate, 
+    FieldUpdate as DomainFieldUpdate,
+    CropCycle as DomainCropCycle, 
+    CropCycleCreate as DomainCropCycleCreate, 
+    CropCycleUpdate as DomainCropCycleUpdate,
 )
 from app.infrastructure.repositories.farm_repo import (
     FarmRepository, FieldRepository, CropCycleRepository
@@ -101,18 +106,18 @@ class FarmService:
     
     def create_farm(
         self,
-        farm_data: FarmCreate,
+        farm_data: FarmCreateDTO,
         current_user: TokenPayload
-    ) -> Farm:
+    ) -> FarmDTO:
         """
         Create a new farm.
         
         Args:
-            farm_data: Farm creation data
+            farm_data: Farm creation data (DTO)
             current_user: Authenticated user (must be the farmer)
             
         Returns:
-            Created farm
+            Created farm (DTO)
             
         Raises:
             HTTPException: Validation errors or unauthorized
@@ -146,18 +151,35 @@ class FarmService:
                 detail="Longitude must be between -180 and 180"
             )
         
-        # Create farm
-        created = self.farm_repo.create(farm_data)
+        # Convert DTO to domain entity for repository
+        domain_farm_data = DomainFarmCreate(
+            farmer_id=farm_data.farmer_id,
+            name=farm_data.name,
+            location_lat=farm_data.location_lat,
+            location_lng=farm_data.location_lng,
+            location_address=farm_data.location_address,
+            total_area_ha=farm_data.total_area_ha,
+            boundary_geojson=farm_data.boundary_geojson,
+            centroid_geojson=farm_data.centroid_geojson,
+            metadata=farm_data.metadata,
+        )
         
-        logger.info(f"Created farm: {created.id} for farmer: {farm_data.farmer_id}")
+        # Create farm (repository returns domain entity)
+        created_domain = self.farm_repo.create(domain_farm_data)
         
-        return created
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        created_dto = domain_to_dto(created_domain)
+        
+        logger.info(f"Created farm: {created_domain.id} for farmer: {farm_data.farmer_id}")
+        
+        return created_dto
     
     def get_farm(
         self,
         farm_id: str,
         current_user: TokenPayload
-    ) -> Farm:
+    ) -> FarmDTO:
         """
         Get a farm by ID with ownership check.
         
@@ -166,7 +188,7 @@ class FarmService:
             current_user: Authenticated user
             
         Returns:
-            Farm
+            Farm (DTO)
             
         Raises:
             HTTPException: Farm not found or unauthorized
@@ -180,7 +202,9 @@ class FarmService:
         if not self._can_access_farm(farm, current_user):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        return farm
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(farm)
     
     def list_farms(
         self,
@@ -188,7 +212,7 @@ class FarmService:
         current_user: Optional[TokenPayload] = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Dict[str, Any]:
+    ) -> FarmListResponse:
         """
         List farms with filtering and pagination.
         
@@ -199,7 +223,7 @@ class FarmService:
             page_size: Items per page
             
         Returns:
-            Paginated farm list
+            Paginated farm list (DTO)
         """
         # If user is provided, filter by their farms or allow access based on role
         if current_user:
@@ -245,30 +269,34 @@ class FarmService:
         end = start + page_size
         paginated_farms = farms[start:end]
         
-        return {
-            "farms": [self._farm_to_response(f) for f in paginated_farms],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": total_pages
-        }
+        # Convert domain entities to DTOs
+        from app.infrastructure.db.mappers import domain_to_dto
+        farms_dto = [domain_to_dto(f) for f in paginated_farms]
+        
+        return FarmListResponse(
+            farms=farms_dto,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
     
     def update_farm(
         self,
         farm_id: str,
-        farm_data: FarmUpdate,
+        farm_data: FarmUpdateDTO,
         current_user: TokenPayload
-    ) -> Farm:
+    ) -> FarmDTO:
         """
         Update a farm with ownership check.
         
         Args:
             farm_id: Farm ID
-            farm_data: Update data
+            farm_data: Update data (DTO)
             current_user: Authenticated user
             
         Returns:
-            Updated farm
+            Updated farm (DTO)
             
         Raises:
             HTTPException: Farm not found or unauthorized
@@ -296,11 +324,27 @@ class FarmService:
                     detail="Longitude must be between -180 and 180"
                 )
         
-        updated = self.farm_repo.update(farm_id, farm_data)
+        # Convert DTO to domain entity for repository
+        domain_farm_data = DomainFarmUpdate(
+            name=farm_data.name,
+            location_lat=farm_data.location_lat,
+            location_lng=farm_data.location_lng,
+            location_address=farm_data.location_address,
+            total_area_ha=farm_data.total_area_ha,
+            boundary_geojson=farm_data.boundary_geojson,
+            centroid_geojson=farm_data.centroid_geojson,
+            metadata=farm_data.metadata,
+        )
+        
+        updated_domain = self.farm_repo.update(farm_id, domain_farm_data)
+        
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        updated_dto = domain_to_dto(updated_domain)
         
         logger.info(f"Updated farm: {farm_id}")
         
-        return updated
+        return updated_dto
     
     def delete_farm(
         self,
@@ -380,29 +424,14 @@ class FarmService:
         
         return False
     
-    def _farm_to_response(self, farm: Farm) -> Dict[str, Any]:
-        """Convert farm to response dict"""
-        return {
-            "id": str(farm.id),
-            "farmer_id": farm.farmer_id,
-            "name": farm.name,
-            "location_lat": str(farm.location_lat) if farm.location_lat else None,
-            "location_lng": str(farm.location_lng) if farm.location_lng else None,
-            "location_address": farm.location_address,
-            "total_area_ha": str(farm.total_area_ha) if farm.total_area_ha else None,
-            "boundary_geojson": farm.boundary_geojson,
-            "created_at": farm.created_at.isoformat() if farm.created_at else None,
-            "updated_at": farm.updated_at.isoformat() if farm.updated_at else None,
-        }
-    
     # ============ Field Operations ============
     
     def create_field(
         self,
-        field_data: FieldCreate,
+        field_data: FieldCreateDTO,
         current_user: TokenPayload
-    ) -> Field:
-        """Create a new field in a farm"""
+    ) -> FieldDTO:
+        """Create a new field in a farm (returns DTO)"""
         # Verify farm exists and user has access
         farm = self.farm_repo.get_by_id(str(field_data.farm_id))
         if not farm:
@@ -411,18 +440,38 @@ class FarmService:
         if not self._can_access_farm(farm, current_user):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        created = self.field_repo.create(field_data)
+        # Convert DTO to domain entity for repository
+        domain_field_data = DomainFieldCreate(
+            farm_id=field_data.farm_id,
+            name=field_data.name,
+            area_ha=field_data.area_ha,
+            boundary_geojson=field_data.boundary_geojson,
+            centroid_geojson=field_data.centroid_geojson,
+            soil_type=field_data.soil_type,
+            soil_classification=field_data.soil_classification,
+            elevation_m=field_data.elevation_m,
+            slope_degree=field_data.slope_degree,
+            irrigation_type=field_data.irrigation_type,
+            drainage_type=field_data.drainage_type,
+            metadata=field_data.metadata,
+        )
         
-        logger.info(f"Created field: {created.id} in farm: {field_data.farm_id}")
+        created_domain = self.field_repo.create(domain_field_data)
         
-        return created
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        created_dto = domain_to_dto(created_domain)
+        
+        logger.info(f"Created field: {created_domain.id} in farm: {field_data.farm_id}")
+        
+        return created_dto
     
     def get_field(
         self,
         field_id: str,
         current_user: TokenPayload
-    ) -> Field:
-        """Get a field by ID"""
+    ) -> FieldDTO:
+        """Get a field by ID (returns DTO)"""
         field = self.field_repo.get_by_id(field_id)
         
         if not field:
@@ -433,14 +482,16 @@ class FarmService:
         if not farm or not self._can_access_farm(farm, current_user):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        return field
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(field)
     
     def list_fields(
         self,
         farm_id: str,
         current_user: TokenPayload
-    ) -> List[Dict[str, Any]]:
-        """List fields for a farm"""
+    ) -> List[FieldDTO]:
+        """List fields for a farm (returns DTOs)"""
         farm = self.farm_repo.get_by_id(farm_id)
         if not farm:
             raise HTTPException(status_code=404, detail="Farm not found")
@@ -450,26 +501,17 @@ class FarmService:
         
         fields = self.field_repo.get_by_farm_id(farm_id)
         
-        return [
-            {
-                "id": str(f.id),
-                "farm_id": str(f.farm_id),
-                "name": f.name,
-                "area_ha": str(f.area_ha),
-                "soil_type": f.soil_type,
-                "irrigation_type": f.irrigation_type,
-                "created_at": f.created_at.isoformat() if f.created_at else None,
-            }
-            for f in fields
-        ]
+        # Convert domain entities to DTOs
+        from app.infrastructure.db.mappers import domain_to_dto
+        return [domain_to_dto(f) for f in fields]
     
     def update_field(
         self,
         field_id: str,
-        field_data: FieldUpdate,
+        field_data: FieldUpdateDTO,
         current_user: TokenPayload
-    ) -> Field:
-        """Update a field"""
+    ) -> FieldDTO:
+        """Update a field (returns DTO)"""
         field = self.field_repo.get_by_id(field_id)
         
         if not field:
@@ -480,7 +522,26 @@ class FarmService:
         if not farm or not self._can_edit_farm(farm, current_user):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        return self.field_repo.update(field_id, field_data)
+        # Convert DTO to domain entity for repository
+        domain_field_data = DomainFieldUpdate(
+            name=field_data.name,
+            area_ha=field_data.area_ha,
+            boundary_geojson=field_data.boundary_geojson,
+            centroid_geojson=field_data.centroid_geojson,
+            soil_type=field_data.soil_type,
+            soil_classification=field_data.soil_classification,
+            elevation_m=field_data.elevation_m,
+            slope_degree=field_data.slope_degree,
+            irrigation_type=field_data.irrigation_type,
+            drainage_type=field_data.drainage_type,
+            metadata=field_data.metadata,
+        )
+        
+        updated_domain = self.field_repo.update(field_id, domain_field_data)
+        
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(updated_domain)
     
     def delete_field(
         self,
@@ -504,10 +565,10 @@ class FarmService:
     
     def create_crop_cycle(
         self,
-        cycle_data: CropCycleCreate,
+        cycle_data: CropCycleCreateDTO,
         current_user: TokenPayload
-    ) -> CropCycle:
-        """Create a new crop cycle"""
+    ) -> CropCycleDTO:
+        """Create a new crop cycle (returns DTO)"""
         # Verify field exists and user has access
         field = self.field_repo.get_by_id(str(cycle_data.field_id))
         if not field:
@@ -524,18 +585,43 @@ class FarmService:
                 detail=f"Invalid status. Must be one of: {', '.join(self.CROP_CYCLE_STATUSES)}"
             )
         
-        created = self.crop_cycle_repo.create(cycle_data)
+        # Convert DTO to domain entity for repository
+        domain_cycle_data = DomainCropCycleCreate(
+            field_id=cycle_data.field_id,
+            product_category=cycle_data.product_category,
+            crop_name=cycle_data.crop_name,
+            variety=cycle_data.variety,
+            cultivar=cycle_data.cultivar,
+            planting_date=cycle_data.planting_date,
+            expected_harvest_date=cycle_data.expected_harvest_date,
+            actual_harvest_date=cycle_data.actual_harvest_date,
+            status=cycle_data.status,
+            expected_yield_kg=cycle_data.expected_yield_kg,
+            actual_yield_kg=cycle_data.actual_yield_kg,
+            yield_quality_grade=cycle_data.yield_quality_grade,
+            seed_source=cycle_data.seed_source,
+            planting_density_per_ha=cycle_data.planting_density_per_ha,
+            seed_cost_usd=cycle_data.seed_cost_usd,
+            notes=cycle_data.notes,
+            metadata=cycle_data.metadata,
+        )
         
-        logger.info(f"Created crop cycle: {created.id} for field: {cycle_data.field_id}")
+        created_domain = self.crop_cycle_repo.create(domain_cycle_data)
         
-        return created
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        created_dto = domain_to_dto(created_domain)
+        
+        logger.info(f"Created crop cycle: {created_domain.id} for field: {cycle_data.field_id}")
+        
+        return created_dto
     
     def get_crop_cycle(
         self,
         cycle_id: str,
         current_user: TokenPayload
-    ) -> CropCycle:
-        """Get a crop cycle by ID"""
+    ) -> CropCycleDTO:
+        """Get a crop cycle by ID (returns DTO)"""
         cycle = self.crop_cycle_repo.get_by_id(cycle_id)
         
         if not cycle:
@@ -550,14 +636,16 @@ class FarmService:
         if not farm or not self._can_access_farm(farm, current_user):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        return cycle
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(cycle)
     
     def list_crop_cycles(
         self,
         field_id: str,
         current_user: TokenPayload
-    ) -> List[Dict[str, Any]]:
-        """List crop cycles for a field"""
+    ) -> List[CropCycleDTO]:
+        """List crop cycles for a field (returns DTOs)"""
         field = self.field_repo.get_by_id(field_id)
         if not field:
             raise HTTPException(status_code=404, detail="Field not found")
@@ -568,28 +656,17 @@ class FarmService:
         
         cycles = self.crop_cycle_repo.get_by_field_id(field_id)
         
-        return [
-            {
-                "id": str(c.id),
-                "field_id": str(c.field_id),
-                "product_category": c.product_category,
-                "crop_name": c.crop_name,
-                "variety": c.variety,
-                "planting_date": c.planting_date.isoformat() if c.planting_date else None,
-                "expected_harvest_date": c.expected_harvest_date.isoformat() if c.expected_harvest_date else None,
-                "status": c.status,
-                "expected_yield_kg": str(c.expected_yield_kg) if c.expected_yield_kg else None,
-            }
-            for c in cycles
-        ]
+        # Convert domain entities to DTOs
+        from app.infrastructure.db.mappers import domain_to_dto
+        return [domain_to_dto(c) for c in cycles]
     
     def update_crop_cycle(
         self,
         cycle_id: str,
-        cycle_data: CropCycleUpdate,
+        cycle_data: CropCycleUpdateDTO,
         current_user: TokenPayload
-    ) -> CropCycle:
-        """Update a crop cycle"""
+    ) -> CropCycleDTO:
+        """Update a crop cycle (returns DTO)"""
         cycle = self.crop_cycle_repo.get_by_id(cycle_id)
         
         if not cycle:
@@ -611,7 +688,31 @@ class FarmService:
                 detail=f"Invalid status. Must be one of: {', '.join(self.CROP_CYCLE_STATUSES)}"
             )
         
-        return self.crop_cycle_repo.update(cycle_id, cycle_data)
+        # Convert DTO to domain entity for repository
+        domain_cycle_data = DomainCropCycleUpdate(
+            product_category=cycle_data.product_category,
+            crop_name=cycle_data.crop_name,
+            variety=cycle_data.variety,
+            cultivar=cycle_data.cultivar,
+            planting_date=cycle_data.planting_date,
+            expected_harvest_date=cycle_data.expected_harvest_date,
+            actual_harvest_date=cycle_data.actual_harvest_date,
+            status=cycle_data.status,
+            expected_yield_kg=cycle_data.expected_yield_kg,
+            actual_yield_kg=cycle_data.actual_yield_kg,
+            yield_quality_grade=cycle_data.yield_quality_grade,
+            seed_source=cycle_data.seed_source,
+            planting_density_per_ha=cycle_data.planting_density_per_ha,
+            seed_cost_usd=cycle_data.seed_cost_usd,
+            notes=cycle_data.notes,
+            metadata=cycle_data.metadata,
+        )
+        
+        updated_domain = self.crop_cycle_repo.update(cycle_id, domain_cycle_data)
+        
+        # Convert domain entity to DTO for response
+        from app.infrastructure.db.mappers import domain_to_dto
+        return domain_to_dto(updated_domain)
     
 """    # ============ Farm Task Operations ============
     

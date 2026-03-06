@@ -5,18 +5,25 @@ Farm Connect AgriManagement
 Following the same architecture, patterns, and structure as the forum implementation.
 Routes → Service → Repository pattern with proper authentication and authorization.
 """
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth.dependencies import get_current_user, get_optional_user, require_auth, require_permission
-from app.domain.farm.entities import (
-    Farm, FarmCreate, FarmUpdate,
-    Field, FieldCreate, FieldUpdate,
-    CropCycle, CropCycleCreate, CropCycleUpdate
-    )
+from shared_models import (
+    Farm as FarmDTO,
+    FarmCreate as FarmCreateDTO,
+    FarmUpdate as FarmUpdateDTO,
+    FarmListResponse,
+    Field as FieldDTO,
+    FieldCreate as FieldCreateDTO,
+    FieldUpdate as FieldUpdateDTO,
+    CropCycle as CropCycleDTO,
+    CropCycleCreate as CropCycleCreateDTO,
+    CropCycleUpdate as CropCycleUpdateDTO,
+)
 
 from .service import FarmService
 
@@ -28,58 +35,20 @@ router = APIRouter()
 
 @router.post(
     "/farms",
-    response_model=Dict[str, Any],
+    response_model=FarmDTO,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_farm(
-    farm: FarmCreate,
+    farm: FarmCreateDTO,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("farms:create"))
 ):
     """
     Create a new farm.
-    
-    Creates a new farm entity with location, area, and ownership information.
-    Regular users can create farms for themselves, while agents and admins
-    can create farms on behalf of farmers.
-    
-    ## Request Body
-    - **farmer_id**: UUID of the farmer who owns this farm (required)
-    - **name**: Farm name (required)
-    - **location_lat**: Latitude coordinate (optional)
-    - **location_lng**: Longitude coordinate (optional)
-    - **location_address**: Human-readable address (optional)
-    - **total_area_ha**: Total farm area in hectares (optional)
-    - **boundary_geojson**: GeoJSON polygon defining farm boundaries (optional)
-    - **metadata**: Additional farm metadata as JSON (optional)
-    
-    ## Authentication
-    Requires authentication. Permission checks:
-    - Regular users can only create farms for themselves
-    - Agents/admins can create farms for any farmer
-    
-    ## Responses
-    - **201**: Farm created successfully
-    - **400**: Invalid request data
-    - **401**: Unauthorized (not authenticated)
-    - **403**: Forbidden (insufficient permissions)
-    - **500**: Internal server error
     """
     try:
         service = FarmService(db)
-        created = service.create_farm(farm, current_user)
-        
-        return {
-            "id": str(created.id),
-            "farmer_id": created.farmer_id,
-            "name": created.name,
-            "location_lat": str(created.location_lat) if created.location_lat else None,
-            "location_lng": str(created.location_lng) if created.location_lng else None,
-            "location_address": created.location_address,
-            "total_area_ha": str(created.total_area_ha) if created.total_area_ha else None,
-            "created_at": created.created_at.isoformat() if created.created_at else None,
-            "status": "created"
-        }
+        return service.create_farm(farm, current_user)
     except HTTPException:
         raise
     except Exception as e:
@@ -87,7 +56,7 @@ async def create_farm(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/farms", response_model=Dict[str, Any])
+@router.get("/farms", response_model=FarmListResponse)
 async def list_farms(
     farmer_id: Optional[str] = Query(None, description="Filter by farmer ID"),
     page: int = Query(default=1, ge=1),
@@ -141,7 +110,7 @@ async def list_farms(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/farms/{farm_id}", response_model=Dict[str, Any])
+@router.get("/farms/{farm_id}", response_model=FarmDTO)
 async def get_farm(
     farm_id: str,
     db: Session = Depends(get_db),
@@ -184,32 +153,17 @@ async def get_farm(
     """
     try:
         service = FarmService(db)
-        farm = service.get_farm(farm_id, current_user)
-        
-        return {
-            "id": str(farm.id),
-            "farmer_id": farm.farmer_id,
-            "name": farm.name,
-            "location_lat": str(farm.location_lat) if farm.location_lat else None,
-            "location_lng": str(farm.location_lng) if farm.location_lng else None,
-            "location_address": farm.location_address,
-            "total_area_ha": str(farm.total_area_ha) if farm.total_area_ha else None,
-            "boundary_geojson": farm.boundary_geojson,
-            "centroid_geojson": farm.centroid_geojson,
-            "metadata": farm.metadata,
-            "created_at": farm.created_at.isoformat() if farm.created_at else None,
-            "updated_at": farm.updated_at.isoformat() if farm.updated_at else None,
-        }
+        return service.get_farm(farm_id, current_user)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/farms/{farm_id}", response_model=Dict[str, Any])
+@router.put("/farms/{farm_id}", response_model=FarmDTO)
 async def update_farm(
     farm_id: str,
-    farm: FarmUpdate,
+    farm: FarmUpdateDTO,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("farms:update"))
 ):
@@ -247,19 +201,7 @@ async def update_farm(
     """
     try:
         service = FarmService(db)
-        updated = service.update_farm(farm_id, farm, current_user)
-        
-        return {
-            "id": str(updated.id),
-            "farmer_id": updated.farmer_id,
-            "name": updated.name,
-            "location_lat": str(updated.location_lat) if updated.location_lat else None,
-            "location_lng": str(updated.location_lng) if updated.location_lng else None,
-            "location_address": updated.location_address,
-            "total_area_ha": str(updated.total_area_ha) if updated.total_area_ha else None,
-            "updated_at": updated.updated_at.isoformat() if updated.updated_at else None,
-            "status": "updated"
-        }
+        return service.update_farm(farm_id, farm, current_user)
     except HTTPException:
         raise
     except Exception as e:
@@ -315,11 +257,11 @@ async def delete_farm(
 
 @router.post(
     "/fields",
-    response_model=Dict[str, Any],
+    response_model=FieldDTO,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_field(
-    field: FieldCreate,
+    field: FieldCreateDTO,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("fields:create"))
 ):
@@ -355,17 +297,7 @@ async def create_field(
     """
     try:
         service = FarmService(db)
-        created = service.create_field(field, current_user)
-        
-        return {
-            "id": str(created.id),
-            "farm_id": str(created.farm_id),
-            "name": created.name,
-            "area_ha": str(created.area_ha),
-            "soil_type": created.soil_type,
-            "created_at": created.created_at.isoformat() if created.created_at else None,
-            "status": "created"
-        }
+        return service.create_field(field, current_user)
     except HTTPException:
         raise
     except Exception as e:
@@ -373,7 +305,7 @@ async def create_field(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/fields", response_model=List[Dict[str, Any]])
+@router.get("/fields", response_model=List[FieldDTO])
 async def list_fields(
     farm_id: str = Query(..., description="Farm ID"),
     db: Session = Depends(get_db),
@@ -410,7 +342,7 @@ async def list_fields(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/fields/{field_id}", response_model=Dict[str, Any])
+@router.get("/fields/{field_id}", response_model=FieldDTO)
 async def get_field(
     field_id: str,
     days: Optional[int] = Query(default=None, ge=1, le=14, description="Number of forecast days (optional, returns weather if provided)"),
@@ -517,10 +449,10 @@ async def get_field(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/fields/{field_id}", response_model=Dict[str, Any])
+@router.put("/fields/{field_id}", response_model=FieldDTO)
 async def update_field(
     field_id: str,
-    field: FieldUpdate,
+    field: FieldUpdateDTO,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("fields:update"))
 ):
@@ -558,13 +490,7 @@ async def update_field(
     """
     try:
         service = FarmService(db)
-        updated = service.update_field(field_id, field, current_user)
-        
-        return {
-            "id": str(updated.id),
-            "name": updated.name,
-            "status": "updated"
-        }
+        return service.update_field(field_id, field, current_user)
     except HTTPException:
         raise
     except Exception as e:
@@ -616,11 +542,11 @@ async def delete_field(
 
 @router.post(
     "/crop-cycles",
-    response_model=Dict[str, Any],
+    response_model=CropCycleDTO,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_crop_cycle(
-    cycle: CropCycleCreate,
+    cycle: CropCycleCreateDTO,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("crop_cycles:create"))
 ):
@@ -656,19 +582,7 @@ async def create_crop_cycle(
     """
     try:
         service = FarmService(db)
-        created = service.create_crop_cycle(cycle, current_user)
-        
-        return {
-            "id": str(created.id),
-            "field_id": str(created.field_id),
-            "product_category": created.product_category,
-            "crop_name": created.crop_name,
-            "variety": created.variety,
-            "planting_date": created.planting_date.isoformat() if created.planting_date else None,
-            "status": created.status,
-            "created_at": created.created_at.isoformat() if created.created_at else None,
-            "status": "created"
-        }
+        return service.create_crop_cycle(cycle, current_user)
     except HTTPException:
         raise
     except Exception as e:
@@ -676,7 +590,7 @@ async def create_crop_cycle(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/crop-cycles", response_model=List[Dict[str, Any]])
+@router.get("/crop-cycles", response_model=List[CropCycleDTO])
 async def list_crop_cycles(
     field_id: str = Query(..., description="Field ID"),
     db: Session = Depends(get_db),
@@ -713,7 +627,7 @@ async def list_crop_cycles(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/crop-cycles/{cycle_id}", response_model=Dict[str, Any])
+@router.get("/crop-cycles/{cycle_id}", response_model=CropCycleDTO)
 async def get_crop_cycle(
     cycle_id: str,
     db: Session = Depends(get_db),
@@ -754,36 +668,17 @@ async def get_crop_cycle(
     """
     try:
         service = FarmService(db)
-        cycle = service.get_crop_cycle(cycle_id, current_user)
-        
-        return {
-            "id": str(cycle.id),
-            "field_id": str(cycle.field_id),
-            "product_category": cycle.product_category,
-            "crop_name": cycle.crop_name,
-            "variety": cycle.variety,
-            "cultivar": cycle.cultivar,
-            "planting_date": cycle.planting_date.isoformat() if cycle.planting_date else None,
-            "expected_harvest_date": cycle.expected_harvest_date.isoformat() if cycle.expected_harvest_date else None,
-            "actual_harvest_date": cycle.actual_harvest_date.isoformat() if cycle.actual_harvest_date else None,
-            "status": cycle.status,
-            "expected_yield_kg": str(cycle.expected_yield_kg) if cycle.expected_yield_kg else None,
-            "actual_yield_kg": str(cycle.actual_yield_kg) if cycle.actual_yield_kg else None,
-            "yield_quality_grade": cycle.yield_quality_grade,
-            "notes": cycle.notes,
-            "created_at": cycle.created_at.isoformat() if cycle.created_at else None,
-            "updated_at": cycle.updated_at.isoformat() if cycle.updated_at else None,
-        }
+        return service.get_crop_cycle(cycle_id, current_user)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/crop-cycles/{cycle_id}", response_model=Dict[str, Any])
+@router.put("/crop-cycles/{cycle_id}", response_model=CropCycleDTO)
 async def update_crop_cycle(
     cycle_id: str,
-    cycle: CropCycleUpdate,
+    cycle: CropCycleUpdateDTO,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("crop_cycles:update"))
 ):
@@ -820,12 +715,7 @@ async def update_crop_cycle(
     """
     try:
         service = FarmService(db)
-        updated = service.update_crop_cycle(cycle_id, cycle, current_user)
-        
-        return {
-            "id": str(updated.id),
-            "status": "updated"
-        }
+        return service.update_crop_cycle(cycle_id, cycle, current_user)
     except HTTPException:
         raise
     except Exception as e:

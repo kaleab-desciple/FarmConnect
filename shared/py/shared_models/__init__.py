@@ -10,10 +10,9 @@ from .journal_entry import JournalEntry
 from .journal_line import JournalLine
 from .ledger_event import LedgerEvent
 from .pricing_rule import PricingRule
-from .farm import Farm, FarmCreate, FarmUpdate
+from .farm import Farm, FarmCreate, FarmUpdate, FarmListResponse
 from .farm import Field, FieldCreate, FieldUpdate
 from .farm import CropCycle, CropCycleCreate, CropCycleUpdate
-from .farm import FarmTask, FarmTaskCreate, FarmTaskUpdate
 from .monitoring import SoilReading, SoilReadingCreate, SoilReadingUpdate
 from .monitoring import NDVISnapshot, NDVISnapshotCreate, NDVISnapshotUpdate
 from .monitoring import PestDiseaseReport, PestDiseaseReportCreate, PestDiseaseReportUpdate
@@ -40,15 +39,13 @@ __all__ = [
     "Farm",
     "FarmCreate",
     "FarmUpdate",
+    "FarmListResponse",
     "Field",
     "FieldCreate",
     "FieldUpdate",
     "CropCycle",
     "CropCycleCreate",
     "CropCycleUpdate",
-    "FarmTask",
-    "FarmTaskCreate",
-    "FarmTaskUpdate",
     # Monitoring DTOs
     "SoilReading",
     "SoilReadingCreate",

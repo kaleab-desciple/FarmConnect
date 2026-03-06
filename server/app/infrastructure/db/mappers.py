@@ -4,6 +4,7 @@ from enum import Enum
 # Shared models (Pydantic DTOs)
 #Farm, Field, CropCycle, Alert
 from shared_models import User, Product, Order, Escrow, Dispute, Reputation
+from shared_models.farm import Farm, Field, CropCycle
 from app.domain.farm.entities import Harvest
 from shared_models.enums import DisputeResolution
 from app.domain.ledger.entities import LedgerEvent
@@ -287,8 +288,8 @@ def domain_to_dto(domain_obj: Any) -> Any:
     from app.domain.payments.entities import Escrow as DomainEscrow
     from app.domain.disputes.entities import Dispute as DomainDispute
     from app.domain.reputation.entities import Reputation as DomainReputation
-#    from app.domain.agriculture.entities import Farm as DomainFarm, Field as DomainField
-#    from app.domain.agriculture.entities import CropCycle as DomainCropCycle, Alert as DomainAlert
+    from app.domain.farm.entities import Farm as DomainFarm, Field as DomainField
+    from app.domain.farm.entities import CropCycle as DomainCropCycle
 
     domain_type_map = {
         DomainUser: User,
@@ -297,10 +298,9 @@ def domain_to_dto(domain_obj: Any) -> Any:
         DomainEscrow: Escrow,
         DomainDispute: Dispute,
         DomainReputation: Reputation,
-#        DomainFarm: Farm,
-#        DomainField: Field,
-#        DomainCropCycle: CropCycle,
-#        DomainAlert: Alert,
+        DomainFarm: Farm,
+        DomainField: Field,
+        DomainCropCycle: CropCycle,
     }
     dto_cls = domain_type_map.get(type(domain_obj))
     if dto_cls is None:
