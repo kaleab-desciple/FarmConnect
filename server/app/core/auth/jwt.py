@@ -76,20 +76,47 @@ def verify_token(token: str) -> Dict[str, Any]:
         if not rsa_key:
             raise JWTValidationError(f"No matching key found for kid: {kid}")
         
-        # Verify and decode token
-        payload = jwt.decode(
-            token,
-            rsa_key,
-            algorithms=["RS256"],
-            audience=settings.KEYCLOAK_AUDIENCE,
-            issuer=settings.KEYCLOAK_ISSUER,
-            options={
-                "verify_signature": True,
-                "verify_aud": True,
-                "verify_iss": True,
-                "verify_exp": True,
-            }
-        )
+        # Build list of acceptable issuers
+        # Keycloak might use localhost or the internal hostname depending on configuration
+        keycloak_url = settings.KEYCLOAK_URL.rstrip('/')
+        allowed_issuers = [
+            settings.KEYCLOAK_ISSUER,
+            f"{keycloak_url}/realms/{settings.KEYCLOAK_REALM}",
+        ]
+        # Add alternative with localhost if keycloak URL uses internal hostname
+        if "keycloak" in keycloak_url:
+            allowed_issuers.append(keycloak_url.replace("keycloak", "localhost") + f"/realms/{settings.KEYCLOAK_REALM}")
+        if "localhost" not in keycloak_url:
+            allowed_issuers.append(keycloak_url.replace("keycloak", "localhost") + f"/realms/{settings.KEYCLOAK_REALM}")
+        
+        logger.debug(f"Validating token issuer against: {allowed_issuers}")
+        
+        # Verify and decode token - try each allowed issuer
+        payload = None
+        last_error = None
+        for issuer in allowed_issuers:
+            try:
+                payload = jwt.decode(
+                    token,
+                    rsa_key,
+                    algorithms=["RS256"],
+                    audience=settings.KEYCLOAK_AUDIENCE,
+                    issuer=issuer,
+                    options={
+                        "verify_signature": True,
+                        "verify_aud": True,
+                        "verify_iss": True,
+                        "verify_exp": True,
+                    }
+                )
+                logger.debug(f"Token verified successfully with issuer: {issuer}")
+                break
+            except JWTClaimsError as e:
+                last_error = e
+                continue
+        
+        if payload is None and last_error:
+            raise JWTValidationError(f"Invalid token claims: {last_error}")
         
         logger.debug(f"Token verified successfully for subject: {payload.get('sub')}")
         return payload

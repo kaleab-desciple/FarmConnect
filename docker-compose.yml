@@ -47,7 +47,7 @@ services:
       - postgres
     networks:
       - agri-network
-      
+    
   # MongoDB 8.2.2
   mongodb:
     image: mongo:8.2.2
@@ -105,7 +105,9 @@ services:
 
   # API Server
   api:
-    build: ./server
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
     entrypoint: [ "sh", "-c", "alembic -c app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload" ]
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:password@postgres:5432/agri_db
@@ -115,7 +117,8 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: farm-connect
       KEYCLOAK_CLIENT_ID: farm-connect-backend
-      KEYCLOAK_ISSUER_URL: http://localhost:8080/realms/farm-connect
+      KEYCLOAK_CLIENT_SECRET: CHANGE_ME_BACKEND_SECRET
+      KEYCLOAK_ISSUER_URL: http://keycloak:8080/realms/farm-connect
       PYTHONPATH: /app/shared/py
       AUTH_ENABLED: "true"
     ports:
@@ -136,6 +139,40 @@ services:
       - ./shared:/app/shared
     networks:
       - agri-network
+
+  # Frontend Development Server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+      - VITE_KEYCLOAK_URL=http://localhost:8080
+      - VITE_WS_URL=ws://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - agri-network
+
+  # Frontend Production (uncomment for production)
+  # frontend-prod:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #     target: production
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - agri-network
 
 volumes:
   postgres_data:

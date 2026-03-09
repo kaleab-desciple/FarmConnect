@@ -1,0 +1,380 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   CSS Variables for Theming
+   ========================================================================== */
+:root {
+  /* Primary Colors */
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
+
+  /* Status Colors */
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Crop Colors (for map visualization) */
+  --color-crop-maize: #fbbf24;
+  --color-crop-cabbage: #22c55e;
+  --color-crop-tomato: #ef4444;
+  --color-crop-wheat: #f59e0b;
+  --color-crop-barley: #d97706;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Poppins', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing */
+  --spacing-touch: 48px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* High Contrast Mode for Outdoor Usage */
+.high-contrast {
+  --color-primary-50: #000000;
+  --color-primary-100: #0a0a0a;
+  --color-primary-200: #171717;
+  --color-primary-300: #262626;
+  --color-primary-400: #404040;
+  --color-primary-500: #525252;
+  --color-primary-600: #737373;
+  --color-primary-700: #a3a3a3;
+  --color-primary-800: #d4d4d4;
+  --color-primary-900: #fafafa;
+  
+  --color-success: #00ff00;
+  --color-warning: #ffff00;
+  --color-error: #ff0000;
+  --color-info: #00ffff;
+}
+
+/* Dark Mode */
+.dark {
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-border: #334155;
+}
+
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
+  /* Prevent pull-to-refresh on mobile */
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* Reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Component Styles
+   ========================================================================== */
+@layer components {
+  /* Touch-friendly buttons */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-3 font-medium;
+    @apply transition-all duration-200 ease-in-out;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    min-height: var(--spacing-touch);
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700;
+    @apply focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300;
+    @apply focus:ring-gray-500;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-gray-700 hover:bg-gray-100;
+    @apply focus:ring-gray-500;
+  }
+
+  /* Card component */
+  .card {
+    @apply rounded-xl bg-white shadow-card;
+    @apply border border-gray-100;
+  }
+
+  .card-elevated {
+    @apply card shadow-elevated;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full rounded-lg border border-gray-300 px-4 py-3;
+    @apply text-gray-900 placeholder-gray-400;
+    @apply transition-all duration-200;
+    @apply focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20;
+    min-height: var(--spacing-touch);
+  }
+
+  .input-error {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+  }
+
+  /* Bottom sheet styles */
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 z-50;
+    @apply rounded-t-2xl bg-white shadow-2xl;
+    @apply transform transition-transform duration-300 ease-out;
+    max-height: 90vh;
+  }
+
+  .bottom-sheet-handle {
+    @apply mx-auto my-3 h-1.5 w-12 rounded-full bg-gray-300;
+  }
+
+  /* Status badge */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+
+  /* Offline indicator */
+  .offline-banner {
+    @apply fixed bottom-0 left-0 right-0 z-50;
+    @apply bg-yellow-500 text-yellow-900 px-4 py-2;
+    @apply text-center text-sm font-medium;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse rounded bg-gray-200;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 w-full;
+  }
+
+  .skeleton-avatar {
+    @apply skeleton h-12 w-12 rounded-full;
+  }
+
+  .skeleton-card {
+    @apply skeleton h-48 w-full rounded-xl;
+  }
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+@layer utilities {
+  /* Visibility for screen readers only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Safe area padding for mobile */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Touch action for better mobile experience */
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+
+  /* Prevent text selection in UI elements */
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Text balance for headings */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600;
+  }
+
+  .gradient-hero {
+    @apply bg-gradient-to-br from-primary-50 via-white to-primary-100;
+  }
+}
+
+/* ==========================================================================
+   Leaflet Map Overrides
+   ========================================================================== */
+.leaflet-container {
+  font-family: var(--font-sans) !important;
+  z-index: 1;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-control-zoom a {
+  min-width: 36px !important;
+  min-height: 36px !important;
+  line-height: 36px !important;
+}
+
+/* ==========================================================================
+   Animation Keyframes
+   ========================================================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    90deg,
+    theme('colors.gray.200') 25%,
+    theme('colors.gray.100') 50%,
+    theme('colors.gray.200') 75%
+  );
+  background-size: 200% 100%;
+}

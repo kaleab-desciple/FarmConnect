@@ -3,9 +3,11 @@ Public authentication endpoints (no auth required).
 """
 from typing import Optional
 import logging
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+import httpx
 
 from app.core.config import settings
 from app.core.auth import (
@@ -25,6 +27,34 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+class RefreshTokenRequest(BaseModel):
+    """Refresh token request."""
+    refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    """Refresh token response."""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class LoginRequest(BaseModel):
+    """Login request with email and password."""
+    email: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """Login response with tokens and user info."""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: dict
+
+
 class AuthInfoResponse(BaseModel):
     """Information about authentication configuration."""
     keycloak_url: str
@@ -33,6 +63,115 @@ class AuthInfoResponse(BaseModel):
     token_endpoint: str
     auth_enabled: bool
     message: str
+
+
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    summary="User login",
+    description="Authenticate user with email/password and return tokens. No authentication required."
+)
+async def login(request: LoginRequest):
+    """
+    Authenticate user with email and password via Keycloak.
+    
+    This endpoint proxies the authentication request to Keycloak's token endpoint
+    using the password grant flow.
+    """
+    try:
+        # Get Keycloak token endpoint
+        keycloak_url = settings.KEYCLOAK_URL.rstrip('/')
+        realm = settings.KEYCLOAK_REALM
+        client_id = settings.KEYCLOAK_CLIENT_ID
+        client_secret = getattr(settings, 'KEYCLOAK_CLIENT_SECRET', None)
+        
+        logger.info(f"Login attempt: keycloak_url={keycloak_url}, realm={realm}, client_id={client_id}")
+        logger.info(f"Client secret present: {bool(client_secret)}")
+        
+        token_url = f"{keycloak_url}/realms/{realm}/protocol/openid-connect/token"
+        
+        # Build token request data
+        token_data = {
+            "grant_type": "password",
+            "client_id": client_id,
+            "username": request.email,
+            "password": request.password,
+        }
+        
+        # Add client_secret if configured
+        if client_secret:
+            token_data["client_secret"] = client_secret
+        
+        # Request token from Keycloak
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                token_url,
+                data=token_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+        
+        logger.info(f"Keycloak response status: {response.status_code}")
+        if response.status_code != 200:
+            logger.error(f"Keycloak error: {response.text}")
+            error_detail = "Invalid email or password"
+            try:
+                error_data = response.json()
+                error_detail = error_data.get("error_description", error_data.get("error", "Invalid email or password"))
+            except:
+                pass
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=error_detail
+            )
+        
+        token_data = response.json()
+        access_token = token_data["access_token"]
+        refresh_token = token_data.get("refresh_token", "")
+        expires_in = token_data.get("expires_in", 3600)
+        
+        # Get user info from Keycloak
+        userinfo_url = f"{keycloak_url}/realms/{realm}/protocol/openid-connect/userinfo"
+        async with httpx.AsyncClient() as client:
+            user_response = await client.get(
+                userinfo_url,
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+        
+        if user_response.status_code == 200:
+            userinfo = user_response.json()
+            user = {
+                "id": userinfo.get("sub", ""),
+                "email": userinfo.get("email", request.email),
+                "name": userinfo.get("name", userinfo.get("preferred_username", "")),
+                "phone": userinfo.get("phone_number"),
+                "role": "FARMER",  # Default role, will be updated from Keycloak claims
+            }
+        else:
+            user = {
+                "id": "",
+                "email": request.email,
+                "name": request.email,
+                "role": "FARMER",
+            }
+        
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=expires_in,
+            user=user
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Authentication service unavailable: {str(e)}"
+        )
 
 
 class TokenInfoResponse(BaseModel):
@@ -159,4 +298,60 @@ def verify_token_endpoint(token: str):
         return TokenInfoResponse(
             valid=False,
             message=str(e)
+        )
+
+
+@router.post(
+    "/refresh",
+    response_model=RefreshTokenResponse,
+    summary="Refresh access token",
+    description="Refresh access token using a valid refresh token. No authentication required."
+)
+async def refresh_token(request: RefreshTokenRequest):
+    """
+    Refresh access token using a valid refresh token.
+    
+    This endpoint proxies the refresh request to Keycloak's token endpoint.
+    """
+    try:
+        keycloak_url = settings.KEYCLOAK_URL.rstrip('/')
+        realm = settings.KEYCLOAK_REALM
+        client_id = settings.KEYCLOAK_CLIENT_ID
+        client_secret = getattr(settings, 'KEYCLOAK_CLIENT_SECRET', None)
+        
+        token_url = f"{keycloak_url}/realms/{realm}/protocol/openid-connect/token"
+        
+        # Build token request data
+        token_data = {
+            "grant_type": "refresh_token",
+            "refresh_token": request.refresh_token,
+            "client_id": client_id,
+        }
+        
+        if client_secret:
+            token_data["client_secret"] = client_secret
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(token_url, data=token_data)
+            
+            if response.status_code != 200:
+                logger.error(f"Token refresh failed: {response.status_code} - {response.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired refresh token"
+                )
+            
+            token_response = response.json()
+            
+            return RefreshTokenResponse(
+                access_token=token_response["access_token"],
+                refresh_token=token_response.get("refresh_token", request.refresh_token),
+                token_type=token_response.get("token_type", "bearer"),
+                expires_in=token_response.get("expires_in", 3600)
+            )
+    except httpx.RequestError as e:
+        logger.error(f"Token refresh request failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service unavailable"
         )
