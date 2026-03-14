@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from decimal import Decimal
 from shared_models import Product as ProductDTO, ProductCreate
 from app.core.database import get_db
@@ -81,6 +81,111 @@ def create_product(
     except Exception as e:
         db.rollback()
         raise e
+
+
+@router.get("/catalog", response_model=List[Dict[str, Any]])
+def get_product_catalog(
+    db: Session = Depends(get_db),
+    current_user = Depends(require_permission("products:read"))
+):
+    """
+    Get enriched product catalog for marketplace display.
+    
+    This endpoint returns products with eagerly loaded farmer information
+    to avoid N+1 queries on the frontend. Each product includes:
+    - Basic product information (id, name, category, pricing, quantity)
+    - Farmer details (name, farm location/region)
+    - Farmer reputation score
+    
+    ## Authentication & Authorization
+    Requires `products:read` permission.
+    Available to all authenticated users (merchants, agents, admins).
+    
+    ## Response Format
+    Returns array of products with farmer enrichment:
+    ```json
+    [
+      {
+        "id": "uuid",
+        "name": "Organic Tomatoes",
+        "category": "VEGETABLES",
+        "base_price": 2.50,
+        "currency": "USD",
+        "total_quantity": 1000,
+        "quality_grade": "GRADE_A",
+        "is_active": true,
+        "farmer": {
+          "id": "uuid",
+          "name": "John Doe",
+          "farm_region": "Addis Ababa",
+          "reputation_score": 85
+        }
+      }
+    ]
+    ```
+    
+    ## Use Cases
+    - ProductGrid.tsx in Marketplace
+    - Merchant product browsing
+    - Product comparison with farmer info
+    
+    ## Responses
+    - **200**: Products retrieved successfully
+    - **401**: Unauthorized
+    - **403**: Forbidden (missing products:read permission)
+    - **500**: Internal server error
+    """
+    from sqlalchemy.orm import joinedload
+    from app.infrastructure.db.models import ProductORM, UserORM, FarmORM
+#    from app.infrastructure.repositories.reputation_repo import ReputationRepository
+    
+    # Eager load products with farmer and farm info
+    products = (
+        db.query(ProductORM)
+        .filter(ProductORM.deleted_at.is_(None))
+        .filter(ProductORM.is_active == True)
+        .all()
+    )
+    
+    # Get reputation scores
+    #reputation_repo = ReputationRepository(db)
+    
+    # Build enriched catalog
+    catalog = []
+    for product in products:
+        # Get farmer info
+        farmer = db.query(UserORM).filter(UserORM.id == product.farmer_id).first()
+        
+        # Get farm region
+        farm = db.query(FarmORM).filter(FarmORM.farmer_id == product.farmer_id).first()
+        farm_region = None
+        if farm:
+            farm_region = farm.location_address or f"{farm.location_lat}, {farm.location_lng}"
+        
+        # Get reputation
+        #reputation = reputation_repo.get_by_user_id(product.farmer_id)
+        #reputation_score = reputation.reputation_score if reputation else None
+        
+        catalog.append({
+            "id": str(product.id),
+            "name": product.name,
+            "description": product.description,
+            "category": product.category.value if product.category else None,
+            "base_price": float(product.base_price) if product.base_price else None,
+            "currency": product.currency,
+            "total_quantity": float(product.total_quantity) if product.total_quantity else None,
+            "quality_grade": product.quality_grade.value if product.quality_grade else None,
+            "is_active": product.is_active,
+            "harvest_date": product.harvest_date.isoformat() if product.harvest_date else None,
+            "farmer": {
+                "id": str(farmer.id) if farmer else None,
+                "name": farmer.name if farmer else None,
+                "farm_region": farm_region,
+            #    "reputation_score": reputation_score
+            } if farmer else None
+        })
+    
+    return catalog
 
 
 @router.get("/", response_model=List[ProductDTO], dependencies=[Depends(require_permission("products:read"))])

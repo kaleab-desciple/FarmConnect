@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.auth import require_permission
+from app.core.auth import require_permission, get_current_user
 from app.infrastructure.repositories.account_repo import AccountRepository
 from app.infrastructure.repositories.journal_repo import JournalRepository
 from app.application.accounting.get_trial_balance import GetTrialBalance, TrialBalance
@@ -471,3 +471,109 @@ def get_user_statement(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/farmer/earnings", response_model=dict)
+def get_farmer_earnings(
+    farmer_id: Optional[str] = Query(None, description="Filter by farmer ID"),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Get farmer earnings summary.
+    
+    Returns earnings data for a farmer including:
+    - Total earnings from completed orders
+    - Pending payments
+    - Recent transactions
+    
+    ## Authentication & Authorization
+    Requires `ledger:read` permission.
+    
+    ## Query Parameters
+    - **farmer_id**: Filter by farmer UUID (optional, defaults to current user)
+    
+    ## Response Format
+    ```json
+    {
+      "total_earnings": 1500.00,
+      "pending_payments": 250.00,
+      "completed_payments": 1250.00,
+      "recent_transactions": [
+        {
+          "date": "2024-01-15T10:00:00Z",
+          "amount": 500.00,
+          "description": "Order #12345 - Tomatoes"
+        }
+      ]
+    }
+    ```
+    """
+    from app.infrastructure.repositories.user_repo import UserRepository
+    from app.infrastructure.repositories.account_repo import AccountRepository
+    from app.infrastructure.repositories.journal_repo import JournalRepository
+    from app.domain.accounting.entities import OwnerType, AccountType
+    from sqlalchemy import func
+    
+    # Get internal user ID if farmer_id not specified
+    internal_farmer_id = farmer_id
+    if not internal_farmer_id:
+        user_repo = UserRepository(db)
+        keycloak_id = current_user.user_id
+        user = user_repo.get_by_keycloak_id(keycloak_id)
+        if not user and current_user.email:
+            user = user_repo.get_by_email(current_user.email)
+        if user:
+            internal_farmer_id = user.id
+    
+    # Get user's cash account
+    account_repo = AccountRepository(db)
+    journal_repo = JournalRepository(db)
+    
+    # Find farmer's CASH account
+    from app.infrastructure.db.models.account import AccountORM
+    cash_account = db.query(AccountORM).filter(
+        AccountORM.owner_type == OwnerType.USER.value,
+        AccountORM.owner_id == internal_farmer_id,
+        AccountORM.account_type == AccountType.ASSET.value,
+     #   AccountORM.deleted_at.is_(None)
+    ).first()
+    
+    earnings_data = {
+        "total_earnings": 0.0,
+        "pending_payments": 0.0,
+        "completed_payments": 0.0,
+        "recent_transactions": []
+    }
+    
+    if cash_account:
+        # Get journal entries for this account
+        from app.infrastructure.db.models.journal_entry import JournalEntryORM, JournalLineORM
+        
+        # Get all credit entries (money received) - these are earnings
+        credit_lines = db.query(JournalLineORM).join(
+            JournalEntryORM, JournalLineORM.journal_entry == JournalEntryORM.id
+        ).filter(
+            JournalLineORM.account_id == cash_account.id,
+            JournalLineORM.credit_amount > 0
+        ).order_by(JournalEntryORM.created_at.desc()).limit(10).all()
+        
+        total_earnings = 0.0
+        recent_transactions = []
+        
+        for line in credit_lines:
+            entry = db.query(JournalEntryORM).filter(JournalEntryORM.id == line.entry_id).first()
+            if entry:
+                amount = float(line.credit_amount) if line.credit_amount else 0.0
+                total_earnings += amount
+                recent_transactions.append({
+                    "date": entry.created_at.isoformat() if entry.created_at else "",
+                    "amount": amount,
+                    "description": entry.description or "Transaction"
+                })
+        
+        earnings_data["total_earnings"] = total_earnings
+        earnings_data["completed_payments"] = total_earnings
+        earnings_data["recent_transactions"] = recent_transactions
+    
+    return earnings_data

@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/monitoring.schema.json",
+  "title": "Monitoring",
+  "definitions": {
+    "SoilReading": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "ID of the field" },
+        "location_geojson": { "type": ["object", "null"], "description": "Location as GeoJSON" },
+        "sample_depth_cm": { "type": ["integer", "null"], "description": "Sample depth in cm" },
+        "sample_depth_range": { "type": ["string", "null"], "description": "Sample depth range description" },
+        "moisture_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Moisture percentage" },
+        "temperature_c": { "type": ["number", "null"], "description": "Temperature in Celsius" },
+        "ph": { "type": ["number", "null"], "minimum": 0, "maximum": 14, "description": "pH level" },
+        "nitrogen_ppm": { "type": ["number", "null"], "description": "Nitrogen in ppm" },
+        "phosphorus_ppm": { "type": ["number", "null"], "description": "Phosphorus in ppm" },
+        "potassium_ppm": { "type": ["number", "null"], "description": "Potassium in ppm" },
+        "organic_matter_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Organic matter percentage" },
+        "source": { "type": "string", "description": "Data source" },
+        "lab_name": { "type": ["string", "null"], "description": "Lab name for analysis" },
+        "lab_report_url": { "type": ["string", "null"], "description": "Lab report URL" },
+        "recorded_by": { "type": ["string", "null"], "description": "Recorded by user" },
+        "recorded_at": { "type": "string", "format": "date-time", "description": "Recording timestamp" },
+        "weather_conditions": { "type": ["string", "null"], "description": "Weather conditions" },
+        "days_since_rain": { "type": ["integer", "null"], "description": "Days since last rain" },
+        "cation_exchange_capacity": { "type": ["number", "null"], "description": "Cation exchange capacity" },
+        "electrical_conductivity_ms_cm": { "type": ["number", "null"], "description": "Electrical conductivity" },
+        "texture_analysis": { "type": ["object", "null"], "description": "Texture analysis" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" },
+        "deleted_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "field_id", "created_at"],
+      "additionalProperties": false
+    },
+    "NDVISnapshot": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "ID of the field" },
+        "crop_cycle_id": { "type": ["string", "null"], "description": "ID of the crop cycle" },
+        "source": { "type": "string", "description": "Data source" },
+        "source_metadata": { "type": ["object", "null"], "description": "Source metadata" },
+        "captured_at": { "type": "string", "format": "date-time", "description": "Capture timestamp" },
+        "processed_at": { "type": ["string", "null"], "format": "date-time", "description": "Processing timestamp" },
+        "ndvi_mean": { "type": "number", "minimum": -1, "maximum": 1, "description": "Mean NDVI value" },
+        "ndvi_min": { "type": ["number", "null"], "minimum": -1, "maximum": 1, "description": "Min NDVI value" },
+        "ndvi_max": { "type": ["number", "null"], "minimum": -1, "maximum": 1, "description": "Max NDVI value" },
+        "ndvi_stddev": { "type": ["number", "null"], "description": "NDVI standard deviation" },
+        "stress_level": { "type": ["string", "null"], "description": "Stress level" },
+        "cloud_cover_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Cloud cover percentage" },
+        "data_quality_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "Data quality score" },
+        "tile_urls": { "type": ["object", "null"], "description": "Tile URLs for imagery" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "field_id", "source", "captured_at", "ndvi_mean", "created_at"],
+      "additionalProperties": false
+    },
+    "PestDiseaseReport": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "ID of the field" },
+        "crop_cycle_id": { "type": ["string", "null"], "description": "ID of the crop cycle" },
+        "report_type": { "type": "string", "enum": ["PEST", "DISEASE"], "description": "Report type: PEST or DISEASE" },
+        "pest_disease_name": { "type": "string", "description": "Name of pest or disease" },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "description": "Severity level" },
+        "affected_area_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Affected area percentage" },
+        "location_geojson": { "type": ["object", "null"], "description": "Location as GeoJSON" },
+        "observed_at": { "type": "string", "format": "date-time", "description": "Observation timestamp" },
+        "description": { "type": ["string", "null"], "description": "Description" },
+        "treatment_status": { "type": "string", "enum": ["REPORTED", "TREATMENT_RECOMMENDED", "TREATMENT_APPLIED", "RESOLVED", "NO_ACTION"], "default": "REPORTED" },
+        "reported_by": { "type": ["string", "null"], "description": "Reported by" },
+        "image_urls": { "type": ["array", "null"], "items": { "type": "string" } },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "field_id", "report_type", "pest_disease_name", "severity", "affected_area_pct", "observed_at", "created_at"],
+      "additionalProperties": false
+    },
+    "TreatmentRecommendation": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "report_id": { "type": "string", "description": "ID of the pest/disease report" },
+        "product_name": { "type": "string", "description": "Product/recommendation name" },
+        "product_type": { "type": "string", "description": "Product type" },
+        "application_method": { "type": "string", "description": "Application method" },
+        "dosage": { "type": ["string", "null"], "description": "Dosage" },
+        "application_timing": { "type": ["string", "null"], "description": "Application timing" },
+        "reapplication_interval_days": { "type": ["integer", "null"], "description": "Reapplication interval in days" },
+        "estimated_cost_usd": { "type": ["number", "null"], "description": "Estimated cost in USD" },
+        "effectiveness_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "Effectiveness score" },
+        "notes": { "type": ["string", "null"], "description": "Additional notes" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "report_id", "product_name", "product_type", "application_method", "created_at"],
+      "additionalProperties": false
+    }
+  }
+}

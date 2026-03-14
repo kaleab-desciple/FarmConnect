@@ -34,29 +34,10 @@
       "maxLength": 1000
     },
     "category": {
-      "type": "string",
-      "enum": [
-        "GRAINS",
-        "VEGETABLES",
-        "FRUITS",
-        "DAIRY",
-        "MEAT",
-        "SPICES",
-        "OTHER"
-      ]
+      "$ref": "enums.schema.json#/definitions/Category"
     },
     "unit": {
-      "type": "string",
-      "enum": [
-        "KG",
-        "GRAM",
-        "TON",
-        "LITER",
-        "PIECE",
-        "CRATE",
-        "BAG"
-      ],
-      "description": "Measurement unit"
+      "$ref": "enums.schema.json#/definitions/Unit"
     },
     "base_price": {
       "type": "number",
@@ -65,21 +46,15 @@
     },
     "currency": {
       "type": "string",
-      "pattern": "^[A-Z]{3}$",
-      "default": "USD"
+      "default": "USD",
+      "description": "Currency code (ISO 4217)"
     },
     "quantity_available": {
       "type": "number",
       "minimum": 0
     },
     "quality_grade": {
-      "type": "string",
-      "enum": [
-        "A",
-        "B",
-        "C"
-      ],
-      "description": "Optional quality grading"
+      "$ref": "enums.schema.json#/definitions/QualityGrade"
     },
     "harvest_date": {
       "type": "string",
@@ -91,10 +66,6 @@
     },
     "location": {
       "type": "object",
-      "required": [
-        "latitude",
-        "longitude"
-      ],
       "properties": {
         "latitude": {
           "type": "number",
@@ -133,6 +104,43 @@
     "updated_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "total_quantity": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Total quantity"
+    },
+    "reserved_quantity": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Reserved quantity"
+    },
+    "sold_quantity": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Sold quantity"
+    },
+    "spoiled_quantity": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Spoiled quantity"
+    },
+    "harvest_id": {
+      "type": ["string", "null"],
+      "description": "Harvest ID"
+    },
+    "crop_cycle_id": {
+      "type": ["string", "null"],
+      "description": "Crop cycle ID"
+    },
+    "version": {
+      "type": ["integer", "null"],
+      "description": "Version for optimistic locking"
+    },
+    "deleted_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Soft delete timestamp"
     }
   },
   "additionalProperties": false

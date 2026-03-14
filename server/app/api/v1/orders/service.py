@@ -181,3 +181,31 @@ class OrderService:
         # Convert to DTO
         from app.infrastructure.db.mappers import domain_to_dto
         return domain_to_dto(order)
+
+    def get_actionable_orders(self, current_user: TokenPayload) -> list[OrderDTO]:
+        """
+        Get actionable orders based on user role.
+        
+        - FARMER: Orders where status is FUNDED (escrow locked, waiting for farmer to initiate delivery)
+        - MERCHANT: Orders where status is IN_DELIVERY (waiting for merchant to confirm receipt)
+        
+        Returns orders that require action from the current user.
+        """
+        from app.domain.common.enums import OrderStatus
+        
+        if current_user.has_realm_role("FARMER"):
+            # Farmers need to initiate delivery when escrow is funded
+            status = OrderStatus.FUNDED
+        elif current_user.has_realm_role("MERCHANT"):
+            # Merchants need to confirm receipt when order is in delivery
+            status = OrderStatus.IN_DELIVERY
+        else:
+            # Other roles don't have actionable orders in this context
+            return []
+        
+        # Get orders with the specific status and proper authorization
+        orders = self.order_repo.get_by_status(status, current_user)
+        
+        # Convert to DTOs
+        from app.infrastructure.db.mappers import domain_to_dto
+        return [domain_to_dto(order) for order in orders]

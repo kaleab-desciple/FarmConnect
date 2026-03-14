@@ -105,6 +105,15 @@ class OrderRepository:
         orms = query.all()
         return [orm_to_domain(orm) for orm in orms]
 
+    def get_by_status(self, status, current_user: Optional[TokenPayload] = None) -> List[DomainOrder]:
+        """Get orders by status with row-level authorization."""
+        query = self.session.query(OrderORM).filter(OrderORM.status == status)
+        if current_user:
+            query = self._apply_rla_filters(query, current_user)
+            
+        orms = query.all()
+        return [orm_to_domain(orm) for orm in orms]
+
     def update(self, order_id: str, updates: dict, current_user: Optional[TokenPayload] = None) -> Optional[DomainOrder]:
         query = self.session.query(OrderORM).filter(OrderORM.id == order_id)
         if current_user:

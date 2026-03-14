@@ -28,7 +28,8 @@ for schema in "${SCHEMA_DIR}"/*.json; do
   base="$(basename "${schema%.schema.json}")"
   out_file="${OUT_PY}/${base}.py"
   echo "  - ${schema} -> ${out_file}"
-  "${ROOT_DIR}/../venv/bin/datamodel-codegen" --input "${schema}" --input-file-type jsonschema \
+  # Use globally installed datamodel-codegen (installed via pip in Dockerfile)
+  datamodel-codegen --input "${schema}" --input-file-type jsonschema \
       --output "${out_file}" --use-default --force \
       --output-model-type pydantic_v2.BaseModel
 done

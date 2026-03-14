@@ -156,6 +156,43 @@ def list_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depe
     service = OrderService(db)
     return service.list_orders(current_user)
 
+@router.get("/actionable", response_model=List[OrderDTO], dependencies=[Depends(require_permission("orders:read"))])
+def get_actionable_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
+    """
+    Get orders that require action from the current user based on their role.
+    
+    This endpoint provides an "actionable inbox" for users to see orders
+    that specifically demand their attention.
+    
+    ## Role-Based Filtering
+    
+    - **FARMER**: Returns orders with status `FUNDED`
+      - These orders have escrow locked and are waiting for the farmer to initiate delivery
+      - Action required: Initiate delivery process
+    
+    - **MERCHANT**: Returns orders with status `IN_DELIVERY`
+      - These orders are in transit and waiting for the merchant to confirm receipt
+      - Action required: Confirm delivery receipt
+    
+    ## Authentication & Authorization
+    Requires `orders:read` permission.
+    
+    ## Response
+    Returns array of order objects that require action from the user.
+    
+    ## Use Cases
+    - Farmer's action required inbox (delivery initiation)
+    - Merchant's action required inbox (delivery confirmation)
+    
+    ## Responses
+    - **200**: Actionable orders retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (missing orders:read permission)
+    - **500**: Internal server error
+    """
+    service = OrderService(db)
+    return service.get_actionable_orders(current_user)
+
 @router.get("/{order_id}", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:read"))])
 def get_order(order_id: str, db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
     """

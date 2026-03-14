@@ -18,7 +18,7 @@ import { Toast } from '../../../shared/components/ui/Toast';
 /**
  * Map placeholder component - would integrate with Mapbox/Leaflet
  */
-const FarmMap: React.FC<{ onFieldClick?: (fieldId: string) => void }> = ({ onFieldClick }) => {
+const FarmMap: React.FC<{ onFieldClick?: (fieldId: string) => void; fieldCount?: number }> = ({ onFieldClick, fieldCount = 0 }) => {
   const { t } = useTranslation();
   
   return (
@@ -79,7 +79,7 @@ const FarmMap: React.FC<{ onFieldClick?: (fieldId: string) => void }> = ({ onFie
       
       {/* Field Labels */}
       <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 rounded text-xs font-medium">
-        {t('dashboard.fields')}: 3
+        {t('dashboard.fields')}: {fieldCount}
       </div>
     </div>
   );
@@ -147,20 +147,50 @@ export const FarmerDashboard: React.FC = () => {
     queryKey: ['farms'],
     queryFn: farmsAPI.list,
   });
+
+  // Fetch all fields from all farms to calculate total
+  const { data: fieldsData, isLoading: fieldsLoading } = useQuery({
+    queryKey: ['allFields'],
+    queryFn: async () => {
+      const farms = farmsData?.farms || [];
+      const allFields = [];
+      for (const farm of farms) {
+        const fields = await farmsAPI.getFields(farm.id);
+        allFields.push(...fields);
+      }
+      return allFields;
+    },
+    enabled: !!farmsData?.farms?.length,
+  });
   
   // Fetch orders data
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ['orders', 'pending'],
-    queryFn: () => ordersAPI.list({ status: 'PENDING_PAYMENT' }),
+    queryFn: () => ordersAPI.list({ status: 'CREATED' }),
   });
   
-  const isLoading = farmsLoading || ordersLoading;
+  // Fetch harvest statistics
+  const { data: harvestStats, isLoading: harvestLoading } = useQuery({
+    queryKey: ['harvestStats'],
+    queryFn: () => farmsAPI.getHarvestStatistics(),
+  });
+  
+  // Fetch earnings data
+  const { data: earningsData, isLoading: earningsLoading } = useQuery({
+    queryKey: ['earnings'],
+    queryFn: () => farmsAPI.getFarmerEarnings(),
+  });
+  
+  const isLoading = farmsLoading || fieldsLoading || ordersLoading || harvestLoading || earningsLoading;
   
   // Calculate stats
   const totalFarms = farmsData?.farms?.length || 0;
-  const totalFields = farmsData?.farms?.reduce((acc, farm) => acc + (farm.fields?.length || 0), 0) || 0;
-  const activeOrders = ordersData?.orders?.length || 0;
-  const pendingHarvest = 2; // Would come from API
+  const totalFields = fieldsData?.length || 0;
+  const activeOrders = ordersData?.length || 0;
+  const pendingHarvest = harvestStats?.pending_harvests || 0;
+  const totalEarnings = earningsData?.total_earnings || 0;
+  const totalHarvests = harvestStats?.total_harvests || 0;
+  const totalQuantity = harvestStats?.total_quantity_kg || 0;
   
   // Handle field click on map
   const handleFieldClick = (fieldId: string) => {
@@ -199,7 +229,7 @@ export const FarmerDashboard: React.FC = () => {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           {t('dashboard.myFarms')}
         </h2>
-        <FarmMap onFieldClick={handleFieldClick} />
+        <FarmMap onFieldClick={handleFieldClick} fieldCount={totalFields} />
       </section>
       
       {/* Quick Stats Overview */}
@@ -219,7 +249,7 @@ export const FarmerDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           }
-          value={1}
+          value={0}
           label={t('dashboard.alerts')}
           trend="down"
           trendValue="1"
@@ -239,7 +269,7 @@ export const FarmerDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           }
-          value="$450"
+          value={`${totalEarnings.toFixed(2)}`}
           label={t('dashboard.earnings')}
           trend="up"
           trendValue="12%"
@@ -348,19 +378,19 @@ export const FarmerDashboard: React.FC = () => {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">12.5 ha</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalFields > 0 ? totalFields : '0'} ha</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.totalArea')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalFields}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.fields')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalHarvests}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.activeCycles')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">2</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalQuantity.toFixed(1)} kg</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.harvestedThisSeason')}</p>
               </div>
             </div>

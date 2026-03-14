@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/ai.schema.json",
+  "title": "AI",
+  "definitions": {
+    "GeoLocation": {
+      "type": "object",
+      "properties": {
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+        "altitude_m": { "type": ["number", "null"], "description": "Altitude in meters" },
+        "accuracy_m": { "type": ["number", "null"], "description": "Accuracy in meters" }
+      },
+      "required": ["latitude", "longitude"],
+      "additionalProperties": false
+    },
+    "SymptomDetail": {
+      "type": "object",
+      "properties": {
+        "symptom_type": { "type": "string", "description": "Symptom type" },
+        "location_on_plant": { "type": "string", "description": "Location on plant" },
+        "pattern": { "type": ["string", "null"], "description": "Pattern" },
+        "progression": { "type": ["string", "null"], "description": "Progression" },
+        "description": { "type": ["string", "null"], "description": "Description" }
+      },
+      "required": ["symptom_type", "location_on_plant"],
+      "additionalProperties": false
+    },
+    "AnalysisDetection": {
+      "type": "object",
+      "properties": {
+        "detection_type": { "type": "string", "description": "Detection type" },
+        "name": { "type": "string", "description": "Name" },
+        "scientific_name": { "type": ["string", "null"], "description": "Scientific name" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Confidence score" },
+        "bbox": { "type": ["array", "null"], "items": { "type": "integer" }, "description": "Bounding box" },
+        "severity": { "type": ["string", "null"], "description": "Severity" },
+        "affected_area_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Affected area percentage" }
+      },
+      "required": ["detection_type", "name", "confidence"],
+      "additionalProperties": false
+    },
+    "ImageAnalysisResult": {
+      "type": "object",
+      "properties": {
+        "analysis_id": { "type": "string", "description": "Analysis ID" },
+        "image_url": { "type": "string", "description": "Image URL" },
+        "analysis_type": { "type": "string", "description": "Analysis type" },
+        "detections": { "type": "array", "items": { "$ref": "#/definitions/AnalysisDetection" }, "description": "Detections" },
+        "overall_health_score": { "type": "number", "minimum": 0, "maximum": 1, "description": "Overall health score" },
+        "primary_issue": { "type": ["string", "null"], "description": "Primary issue" },
+        "confidence_score": { "type": "number", "minimum": 0, "maximum": 1, "description": "Confidence score" },
+        "model_used": { "type": "string", "description": "Model used" },
+        "processing_time_ms": { "type": "integer", "minimum": 0, "description": "Processing time in ms" },
+        "recommendations": { "type": "array", "items": { "type": "string" }, "description": "Recommendations" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["analysis_id", "image_url", "analysis_type", "overall_health_score", "confidence_score", "model_used", "processing_time_ms"],
+      "additionalProperties": false
+    },
+    "TreatmentOption": {
+      "type": "object",
+      "properties": {
+        "treatment_id": { "type": "string", "description": "Treatment ID" },
+        "type": { "type": "string", "description": "Treatment type" },
+        "name": { "type": "string", "description": "Treatment name" },
+        "active_ingredient": { "type": ["string", "null"], "description": "Active ingredient" },
+        "efficacy_score": { "type": "number", "minimum": 0, "maximum": 1, "description": "Efficacy score" },
+        "cost_per_ha": { "type": "number", "minimum": 0, "description": "Cost per hectare" },
+        "application_method": { "type": "string", "description": "Application method" },
+        "pre_harvest_interval_days": { "type": "integer", "minimum": 0, "description": "Pre-harvest interval in days" },
+        "reentry_interval_hours": { "type": "integer", "minimum": 0, "description": "Reentry interval in hours" },
+        "restrictions": { "type": "array", "items": { "type": "string" }, "description": "Restrictions" },
+        "safety_ppe": { "type": "array", "items": { "type": "string" }, "description": "Safety PPE required" },
+        "environmental_warnings": { "type": "array", "items": { "type": "string" }, "description": "Environmental warnings" },
+        "application_instructions": { "type": "string", "description": "Application instructions" }
+      },
+      "required": ["treatment_id", "type", "name", "efficacy_score", "cost_per_ha", "application_method", "pre_harvest_interval_days", "reentry_interval_hours", "application_instructions"],
+      "additionalProperties": false
+    },
+    "DiagnosisSession": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "Field ID" },
+        "crop_cycle_id": { "type": ["string", "null"], "description": "Crop cycle ID" },
+        "location": { "$ref": "#/definitions/GeoLocation" },
+        "region": { "type": ["string", "null"] },
+        "crop_type": { "type": "string", "description": "Crop type" },
+        "growth_stage": { "type": "string", "description": "Growth stage" },
+        "planting_date": { "type": ["string", "null"] },
+        "suspected_issue": { "type": ["string", "null"] },
+        "issue_category": { "type": "string", "description": "Issue category" },
+        "affected_area_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Affected area percentage" },
+        "symptoms_list": { "type": "array", "items": { "type": "string" } },
+        "symptom_onset_days": { "type": ["integer", "null"], "minimum": 0 },
+        "symptom_severity": { "type": "string" },
+        "weather_recent": { "type": ["string", "null"] },
+        "irrigation_type": { "type": ["string", "null"] },
+        "soil_type": { "type": ["string", "null"] },
+        "image_urls": { "type": "array", "items": { "type": "string" } },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"], "default": "MEDIUM" },
+        "farmer_notes": { "type": ["string", "null"] },
+        "status": { "type": "string", "default": "processing" },
+        "confidence_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "primary_diagnosis": { "type": ["string", "null"] },
+        "symptom_details": { "type": "array", "items": { "$ref": "#/definitions/SymptomDetail" } },
+        "image_analyses": { "type": "array", "items": { "$ref": "#/definitions/ImageAnalysisResult" } },
+        "treatments_recommended": { "type": "array", "items": { "$ref": "#/definitions/TreatmentOption" } },
+        "treatments_applied": { "type": ["array", "null"], "items": { "type": "object" } },
+        "follow_ups": { "type": ["array", "null"], "items": { "type": "object" } },
+        "farmer_feedback": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["field_id", "crop_type", "growth_stage", "issue_category", "affected_area_pct", "symptom_severity"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -46,6 +46,21 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true
+    },
+    "onboarding_status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": ["PENDING_REVIEW", "ACTIVE", "REJECTED"],
+      "description": "User onboarding status"
+    },
+    "onboarding_agent_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Agent assigned for onboarding"
     }
   },
   "additionalProperties": false

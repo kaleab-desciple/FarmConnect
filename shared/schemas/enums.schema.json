@@ -10,16 +10,26 @@
         "DELIVERY",
         "AGENT",
         "MANAGER",
-        "ADMIN"
+        "ADMIN",
+        "MODERATOR",
+        "AGRONOMIST",
+        "FIELD_ANALYST"
       ]
     },
     "OrderStatus": {
       "type": "string",
       "enum": [
         "CREATED",
+        "PENDING_PAYMENT",
+        "FUNDED",
         "CONFIRMED",
+        "IN_DELIVERY",
         "DELIVERED",
-        "CANCELLED"
+        "DELIVERY_FAILED",
+        "RETURNED",
+        "COMPLETED",
+        "CANCELLED",
+        "EXPIRED"
       ]
     },
     "EscrowState": {
@@ -39,20 +49,10 @@
       "enum": [
         "OPEN",
         "UNDER_REVIEW",
+        "ESCALATED_TO_AGENT",
+        "ESCALATED_TO_MANAGER",
         "RESOLVED",
         "REOPENED"
-      ]
-    },
-    "LoanState": {
-      "type": "string",
-      "enum": [
-        "PROPOSED",
-        "APPROVED",
-        "DISBURSED",
-        "ACTIVE",
-        "OVERDUE",
-        "CLOSED",
-        "DEFAULTED"
       ]
     },
     "DisputeResolution": {
@@ -99,7 +99,12 @@
       "enum": [
         "A",
         "B",
-        "C"
+        "C",
+        "GRADE_A",
+        "GRADE_B",
+        "GRADE_C",
+        "PREMIUM",
+        "STANDARD"
       ]
     },
     "OwnerType": {
@@ -170,6 +175,268 @@
       "enum": [
         "PERCENTAGE",
         "FIXED"
+      ]
+    },
+    "ProductStatus": {
+      "type": "string",
+      "enum": [
+        "AVAILABLE",
+        "LOW_STOCK",
+        "SOLD_OUT",
+        "EXPIRED",
+        "DISCONTINUED"
+      ]
+    },
+    "DeliveryStatus": {
+      "type": "string",
+      "enum": [
+        "ASSIGNED",
+        "PICKED_UP",
+        "IN_TRANSIT",
+        "DELIVERED",
+        "FAILED",
+        "CANCELLED"
+      ]
+    },
+    "InventoryMovementType": {
+      "type": "string",
+      "enum": [
+        "STOCK_IN",
+        "RESERVATION",
+        "RESERVATION_RELEASE",
+        "SALE_CONFIRMED",
+        "SPOILAGE",
+        "RETURN",
+        "ADJUSTMENT",
+        "EXPIRY"
+      ]
+    },
+    "CropCycleStatus": {
+      "type": "string",
+      "enum": [
+        "PLANNED",
+        "PLANTED",
+        "GROWING",
+        "HARVESTED",
+        "PARTIALLY_HARVESTED",
+        "FAILED",
+        "ABANDONED"
+      ]
+    },
+    "NDVISource": {
+      "type": "string",
+      "enum": [
+        "SENTINEL_2",
+        "LANDSAT_8",
+        "LANDSAT_9",
+        "MODIS",
+        "MANUAL"
+      ]
+    },
+    "StressLevel": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "SoilReadingSource": {
+      "type": "string",
+      "enum": [
+        "IOT_SENSOR",
+        "MANUAL_TEST",
+        "LAB_ANALYSIS",
+        "ESTIMATED"
+      ]
+    },
+    "SeverityLevel": {
+      "type": "string",
+      "enum": [
+        "TRACE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "SEVERE"
+      ]
+    },
+    "RecommendationSource": {
+      "type": "string",
+      "enum": [
+        "AGRONOMIST",
+        "SYSTEM",
+        "AI_MODEL",
+        "COMMUNITY"
+      ]
+    },
+    "TaskType": {
+      "type": "string",
+      "enum": [
+        "LAND_PREPARATION",
+        "SOWING",
+        "PLANTING",
+        "IRRIGATION",
+        "FERTILIZATION",
+        "WEEDING",
+        "PEST_CONTROL",
+        "DISEASE_CONTROL",
+        "PRUNING",
+        "THINNING",
+        "HARVESTING",
+        "POST_HARVEST",
+        "INSPECTION",
+        "MAINTENANCE",
+        "OTHER"
+      ]
+    },
+    "TaskStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "SCHEDULED",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "SKIPPED",
+        "CANCELLED",
+        "OVERDUE"
+      ]
+    },
+    "TaskPriority": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "URGENT"
+      ]
+    },
+    "WeatherSource": {
+      "type": "string",
+      "enum": [
+        "NOAA_GFS",
+        "NOAA_HRRR",
+        "OPEN_METEO",
+        "LOCAL_STATION",
+        "MANUAL"
+      ]
+    },
+    "RiskType": {
+      "type": "string",
+      "enum": [
+        "FROST",
+        "FREEZE",
+        "HEAT_STRESS",
+        "DROUGHT",
+        "HEAVY_RAIN",
+        "FLOOD",
+        "HAIL",
+        "STRONG_WIND",
+        "STORM",
+        "HURRICANE",
+        "TORNADO",
+        "WILDFIRE",
+        "PEST_OUTBREAK",
+        "DISEASE_OUTBREAK"
+      ]
+    },
+    "RiskLevel": {
+      "type": "string",
+      "enum": [
+        "MINIMAL",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "AlertType": {
+      "type": "string",
+      "enum": [
+        "WEATHER_WARNING",
+        "FROST_ALERT",
+        "DROUGHT_ALERT",
+        "PEST_DETECTED",
+        "DISEASE_DETECTED",
+        "NDVI_ANOMALY",
+        "SOIL_MOISTURE_LOW",
+        "SOIL_MOISTURE_HIGH",
+        "TASK_OVERDUE",
+        "HARVEST_READY",
+        "LOAN_RISK",
+        "PAYMENT_DUE",
+        "ESCROW_HOLD",
+        "PRICE_ALERT",
+        "SYSTEM_NOTIFICATION"
+      ]
+    },
+    "AlertSeverity": {
+      "type": "string",
+      "enum": [
+        "INFO",
+        "WARNING",
+        "CRITICAL",
+        "EMERGENCY"
+      ]
+    },
+    "AdvisoryStatus": {
+      "type": "string",
+      "enum": [
+        "REQUESTED",
+        "SCHEDULED",
+        "OPEN",
+        "IN_PROGRESS",
+        "RESOLVED",
+        "CLOSED",
+        "CANCELLED"
+      ]
+    },
+    "MessageType": {
+      "type": "string",
+      "enum": [
+        "TEXT",
+        "IMAGE",
+        "DOCUMENT",
+        "VOICE",
+        "VIDEO",
+        "LOCATION",
+        "SYSTEM"
+      ]
+    },
+    "QCGrade": {
+      "type": "string",
+      "enum": [
+        "GRADE_A",
+        "GRADE_B",
+        "GRADE_C",
+        "REJECT"
+      ]
+    },
+    "BatchQCState": {
+      "type": "string",
+      "enum": [
+        "QC_PENDING",
+        "QC_PASSED",
+        "QC_FAILED"
+      ]
+    },
+    "CertificationType": {
+      "type": "string",
+      "enum": [
+        "ORGANIC",
+        "FAIRTRADE",
+        "RAINFOREST_ALLIANCE",
+        "GLOBALGAP",
+        "OTHER"
+      ]
+    },
+    "OnboardingStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING_REVIEW",
+        "ACTIVE",
+        "REJECTED"
       ]
     }
   }

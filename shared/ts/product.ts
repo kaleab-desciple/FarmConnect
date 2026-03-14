@@ -15,11 +15,11 @@ export interface ProductProperties {
     name:               Name;
     description:        Description;
     category:           Category;
-    unit:               QualityGrade;
+    unit:               Category;
     base_price:         BasePrice;
     currency:           Currency;
     quantity_available: QuantityAvailable;
-    quality_grade:      QualityGrade;
+    quality_grade:      Category;
     harvest_date:       CreatedAt;
     expiry_date:        CreatedAt;
     location:           Location;
@@ -28,6 +28,14 @@ export interface ProductProperties {
     metadata:           Metadata;
     created_at:         CreatedAt;
     updated_at:         CreatedAt;
+    total_quantity:     Quantity;
+    reserved_quantity:  Quantity;
+    sold_quantity:      Quantity;
+    spoiled_quantity:   Quantity;
+    harvest_id:         CropCycleID;
+    crop_cycle_id:      CropCycleID;
+    version:            CropCycleID;
+    deleted_at:         DeletedAt;
 }
 
 export interface BasePrice {
@@ -37,8 +45,7 @@ export interface BasePrice {
 }
 
 export interface Category {
-    type: string;
-    enum: string[];
+    $ref: string;
 }
 
 export interface CreatedAt {
@@ -46,10 +53,21 @@ export interface CreatedAt {
     format: string;
 }
 
+export interface CropCycleID {
+    type:        string[];
+    description: string;
+}
+
 export interface Currency {
-    type:    string;
-    pattern: string;
-    default: string;
+    type:        string;
+    default:     string;
+    description: string;
+}
+
+export interface DeletedAt {
+    type:        string[];
+    format:      string;
+    description: string;
 }
 
 export interface Description {
@@ -70,7 +88,6 @@ export interface Images {
 
 export interface Location {
     type:        string;
-    required:    string[];
     properties:  LocationProperties;
     description: string;
 }
@@ -98,13 +115,13 @@ export interface Name {
     maxLength: number;
 }
 
-export interface QualityGrade {
-    type:        string;
-    enum:        string[];
-    description: string;
-}
-
 export interface QuantityAvailable {
     type:    string;
     minimum: number;
+}
+
+export interface Quantity {
+    type:        string[];
+    minimum:     number;
+    description: string;
 }

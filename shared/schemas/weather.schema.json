@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/weather.schema.json",
+  "title": "Weather",
+  "definitions": {
+    "WeatherForecast": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "ID of the field" },
+        "source": { "type": "string", "description": "Data source" },
+        "forecast_date": { "type": "string", "format": "date", "description": "Forecast date" },
+        "forecast_hour": { "type": ["integer", "null"], "minimum": 0, "maximum": 23, "description": "Forecast hour" },
+        "forecast_horizon_hours": { "type": ["integer", "null"], "description": "Forecast horizon in hours" },
+        "issued_at": { "type": "string", "format": "date-time", "description": "Issue timestamp" },
+        "temperature_min_c": { "type": ["number", "null"], "description": "Min temperature in Celsius" },
+        "temperature_max_c": { "type": ["number", "null"], "description": "Max temperature in Celsius" },
+        "temperature_avg_c": { "type": ["number", "null"], "description": "Avg temperature in Celsius" },
+        "precipitation_probability_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Precipitation probability" },
+        "precipitation_mm": { "type": ["number", "null"], "description": "Precipitation in mm" },
+        "precipitation_type": { "type": ["string", "null"], "description": "Precipitation type" },
+        "wind_speed_max_mps": { "type": ["number", "null"], "description": "Max wind speed in mps" },
+        "wind_direction_deg": { "type": ["integer", "null"], "minimum": 0, "maximum": 360, "description": "Wind direction in degrees" },
+        "humidity_avg_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Avg humidity percentage" },
+        "pressure_hpa": { "type": ["number", "null"], "description": "Pressure in hPa" },
+        "growing_degree_days_accumulated": { "type": ["number", "null"], "description": "Growing degree days" },
+        "evapotranspiration_mm": { "type": ["number", "null"], "description": "Evapotranspiration in mm" },
+        "risk_type": { "type": ["string", "null"], "description": "Risk type" },
+        "risk_level": { "type": ["string", "null"], "description": "Risk level" },
+        "risk_description": { "type": ["string", "null"], "description": "Risk description" },
+        "risk_confidence_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Risk confidence percentage" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["field_id", "source", "forecast_date", "issued_at"],
+      "additionalProperties": false
+    },
+    "WeatherSnapshot": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "ID of the field" },
+        "source": { "type": "string", "description": "Data source" },
+        "source_station_id": { "type": ["string", "null"], "description": "Source station ID" },
+        "source_station_distance_km": { "type": ["number", "null"], "description": "Distance to station in km" },
+        "recorded_at": { "type": "string", "format": "date-time", "description": "Recording timestamp" },
+        "temperature_c": { "type": ["number", "null"], "description": "Temperature in Celsius" },
+        "feels_like_c": { "type": ["number", "null"], "description": "Feels like temperature" },
+        "humidity_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Humidity percentage" },
+        "pressure_hpa": { "type": ["number", "null"], "description": "Pressure in hPa" },
+        "wind_speed_mps": { "type": ["number", "null"], "description": "Wind speed in mps" },
+        "wind_direction_deg": { "type": ["integer", "null"], "minimum": 0, "maximum": 360, "description": "Wind direction" },
+        "wind_gust_mps": { "type": ["number", "null"], "description": "Wind gust in mps" },
+        "rainfall_mm": { "type": ["number", "null"], "description": "Rainfall in mm" },
+        "rainfall_intensity": { "type": ["string", "null"], "description": "Rainfall intensity" },
+        "snowfall_mm": { "type": ["number", "null"], "description": "Snowfall in mm" },
+        "cloud_cover_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Cloud cover percentage" },
+        "visibility_m": { "type": ["number", "null"], "description": "Visibility in meters" },
+        "uv_index": { "type": ["number", "null"], "description": "UV index" },
+        "soil_temperature_c": { "type": ["number", "null"], "description": "Soil temperature" },
+        "soil_moisture_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Soil moisture percentage" },
+        "leaf_wetness_hours": { "type": ["number", "null"], "description": "Leaf wetness in hours" },
+        "evapotranspiration_mm": { "type": ["number", "null"], "description": "Evapotranspiration in mm" },
+        "growing_degree_days": { "type": ["number", "null"], "description": "Growing degree days" },
+        "raw_data": { "type": ["object", "null"], "description": "Raw data" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["field_id", "source", "recorded_at"],
+      "additionalProperties": false
+    },
+    "AdvisorySession": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "farmer_id": { "type": "string", "description": "Farmer ID" },
+        "agronomist_id": { "type": ["string", "null"], "description": "Agronomist ID" },
+        "field_id": { "type": ["string", "null"], "description": "Field ID" },
+        "crop_cycle_id": { "type": ["string", "null"], "description": "Crop cycle ID" },
+        "topic": { "type": "string", "description": "Advisory topic" },
+        "title": { "type": "string", "description": "Session title" },
+        "description": { "type": ["string", "null"], "description": "Description" },
+        "status": { "type": "string", "enum": ["REQUESTED", "SCHEDULED", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED", "CANCELLED"], "default": "REQUESTED" },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"], "default": "MEDIUM" },
+        "requested_at": { "type": ["string", "null"], "format": "date-time" },
+        "scheduled_at": { "type": ["string", "null"], "format": "date-time" },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "closed_at": { "type": ["string", "null"], "format": "date-time" },
+        "communication_method": { "type": ["string", "null"] },
+        "meeting_link": { "type": ["string", "null"] },
+        "resolution_summary": { "type": ["string", "null"] },
+        "recommendations_given": { "type": ["array", "null"], "items": { "type": "string" } },
+        "farmer_rating": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["farmer_id", "topic", "title"],
+      "additionalProperties": false
+    },
+    "AdvisoryMessage": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "session_id": { "type": "string", "description": "Session ID" },
+        "sender_id": { "type": "string", "description": "Sender ID" },
+        "message_type": { "type": "string", "enum": ["TEXT", "IMAGE", "DOCUMENT", "VOICE", "VIDEO", "LOCATION", "SYSTEM"], "default": "TEXT" },
+        "message": { "type": "string", "description": "Message content" },
+        "attachments": { "type": ["object", "null"] },
+        "sent_at": { "type": ["string", "null"], "format": "date-time" },
+        "read_at": { "type": ["string", "null"], "format": "date-time" },
+        "metadata": { "type": ["object", "null"] }
+      },
+      "required": ["session_id", "sender_id", "message"],
+      "additionalProperties": false
+    },
+    "Alert": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string", "description": "User ID" },
+        "field_id": { "type": ["string", "null"], "description": "Field ID" },
+        "alert_type": { "type": "string", "enum": ["WEATHER_WARNING", "FROST_ALERT", "DROUGHT_ALERT", "PEST_DETECTED", "DISEASE_DETECTED", "NDVI_ANOMALY", "SOIL_MOISTURE_LOW", "SOIL_MOISTURE_HIGH", "TASK_OVERDUE", "HARVEST_READY", "LOAN_RISK", "PAYMENT_DUE", "ESCROW_HOLD", "PRICE_ALERT", "SYSTEM_NOTIFICATION"] },
+        "severity": { "type": "string", "enum": ["INFO", "WARNING", "CRITICAL", "EMERGENCY"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "acknowledged": { "type": "boolean", "default": false },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "alert_type", "severity", "title", "message"],
+      "additionalProperties": false
+    },
+    "FieldRiskScore": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field_id": { "type": "string", "description": "Field ID" },
+        "crop_cycle_id": { "type": ["string", "null"], "description": "Crop cycle ID" },
+        "score_date": { "type": "string", "format": "date", "description": "Score date" },
+        "overall_score": { "type": "number", "minimum": 0, "maximum": 100, "description": "Overall risk score" },
+        "risk_trend": { "type": ["string", "null"] },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["field_id", "score_date", "overall_score"],
+      "additionalProperties": false
+    },
+    "KnowledgeArticle": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "author_id": { "type": "string", "description": "Author ID" },
+        "topic": { "type": "string", "description": "Topic" },
+        "title": { "type": "string", "description": "Article title" },
+        "slug": { "type": ["string", "null"], "description": "URL slug" },
+        "summary": { "type": ["string", "null"], "description": "Summary" },
+        "content": { "type": "string", "description": "Article content" },
+        "status": { "type": "string", "enum": ["draft", "published", "archived"], "default": "draft" },
+        "published_at": { "type": ["string", "null"], "format": "date-time" },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["author_id", "topic", "title", "content"],
+      "additionalProperties": false
+    }
+  }
+}

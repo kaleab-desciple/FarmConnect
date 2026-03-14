@@ -46,8 +46,20 @@
       "format": "date-time"
     },
     "resolved_at": {
-      "type": "string",
+      "type": ["string", "null"],
       "format": "date-time"
+    },
+    "handler_role": {
+      "type": ["string", "null"],
+      "description": "Handler role"
+    },
+    "escalated_to": {
+      "type": ["string", "null"],
+      "description": "Escalated to"
+    },
+    "escalation_note": {
+      "type": ["string", "null"],
+      "description": "Escalation note"
     }
   },
   "additionalProperties": false

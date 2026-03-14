@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/farm.schema.json",
+  "title": "Farm",
+  "definitions": {
+    "Farm": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "farmer_id": { "type": "string", "description": "ID of the farmer who owns the farm" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Farm name" },
+        "location_lat": { "type": "number", "minimum": -90, "maximum": 90, "description": "Latitude coordinate" },
+        "location_lng": { "type": "number", "minimum": -180, "maximum": 180, "description": "Longitude coordinate" },
+        "location_address": { "type": ["string", "null"], "description": "Farm address" },
+        "total_area_ha": { "type": ["number", "null"], "description": "Total area in hectares" },
+        "boundary_geojson": { "type": ["object", "null"], "description": "Farm boundary as GeoJSON" },
+        "centroid_geojson": { "type": ["object", "null"], "description": "Farm centroid as GeoJSON" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "deleted_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "farmer_id", "name", "location_lat", "location_lng", "created_at", "updated_at"],
+      "additionalProperties": false
+    },
+    "Field": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "farm_id": { "type": "string", "format": "uuid", "description": "ID of the farm this field belongs to" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Field name" },
+        "area_ha": { "type": "number", "description": "Field area in hectares" },
+        "boundary_geojson": { "type": "object", "description": "Field boundary as GeoJSON" },
+        "centroid_geojson": { "type": ["object", "null"], "description": "Field centroid as GeoJSON" },
+        "soil_type": { "type": ["string", "null"], "description": "Soil type classification" },
+        "soil_classification": { "type": ["string", "null"], "description": "Detailed soil classification" },
+        "elevation_m": { "type": ["number", "null"], "description": "Elevation in meters" },
+        "slope_degree": { "type": ["number", "null"], "minimum": 0, "maximum": 90, "description": "Slope in degrees" },
+        "irrigation_type": { "type": ["string", "null"], "description": "Irrigation system type" },
+        "drainage_type": { "type": ["string", "null"], "description": "Drainage system type" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "deleted_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "farm_id", "name", "area_ha", "boundary_geojson", "created_at", "updated_at"],
+      "additionalProperties": false
+    },
+    "CropCycle": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "field_id": { "type": "string", "format": "uuid", "description": "ID of the field" },
+        "product_category": { "type": "string", "description": "Product category" },
+        "crop_name": { "type": "string", "description": "Name of the crop" },
+        "variety": { "type": ["string", "null"], "description": "Crop variety" },
+        "cultivar": { "type": ["string", "null"], "description": "Cultivar name" },
+        "planting_date": { "type": "string", "format": "date", "description": "Date of planting" },
+        "expected_harvest_date": { "type": ["string", "null"], "format": "date", "description": "Expected harvest date" },
+        "actual_harvest_date": { "type": ["string", "null"], "format": "date", "description": "Actual harvest date" },
+        "status": { "type": "string", "description": "Crop cycle status" },
+        "expected_yield_kg": { "type": ["number", "null"], "description": "Expected yield in kg" },
+        "actual_yield_kg": { "type": ["number", "null"], "description": "Actual yield in kg" },
+        "yield_quality_grade": { "type": ["string", "null"], "description": "Quality grade" },
+        "seed_source": { "type": ["string", "null"], "description": "Source of seeds" },
+        "planting_density_per_ha": { "type": ["integer", "null"], "description": "Plants per hectare" },
+        "seed_cost_usd": { "type": ["number", "null"], "description": "Seed cost in USD" },
+        "notes": { "type": ["string", "null"], "description": "Additional notes" },
+        "metadata": { "type": ["object", "null"], "description": "Additional metadata" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "deleted_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "required": ["id", "field_id", "product_category", "crop_name", "planting_date", "status", "created_at", "updated_at"],
+      "additionalProperties": false
+    }
+  }
+}

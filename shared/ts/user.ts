@@ -9,13 +9,16 @@ export interface User {
 }
 
 export interface Properties {
-    id:         ID;
-    role:       Role;
-    name:       Name;
-    email:      Email;
-    phone:      Phone;
-    created_at: CreatedAt;
-    metadata:   Metadata;
+    id:                  ID;
+    keycloak_id:         KeycloakID;
+    role:                Role;
+    name:                Name;
+    email:               Email;
+    phone:               KeycloakID;
+    created_at:          CreatedAt;
+    metadata:            Metadata;
+    onboarding_status:   OnboardingStatus;
+    onboarding_agent_id: OnboardingAgentID;
 }
 
 export interface CreatedAt {
@@ -32,6 +35,10 @@ export interface ID {
     type: string;
 }
 
+export interface KeycloakID {
+    type: string[];
+}
+
 export interface Metadata {
     type:                 string;
     additionalProperties: boolean;
@@ -42,8 +49,15 @@ export interface Name {
     minLength: number;
 }
 
-export interface Phone {
-    type: string[];
+export interface OnboardingAgentID {
+    type:        string[];
+    description: string;
+}
+
+export interface OnboardingStatus {
+    type:        string[];
+    enum:        string[];
+    description: string;
 }
 
 export interface Role {

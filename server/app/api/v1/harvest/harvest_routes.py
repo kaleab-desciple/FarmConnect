@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth.dependencies import require_auth, require_permission
+from app.core.auth.dependencies import require_auth, require_permission, get_current_user, TokenPayload
 from app.domain.farm.entities import Harvest, HarvestCreate, HarvestUpdate
 from app.application.harvest.service import HarvestService
 from app.api.v1.harvest.schemas import ProductConversionResponse
@@ -169,3 +169,105 @@ async def convert_to_product(
             })
 
     return response
+
+
+@router.get("/statistics", response_model=Dict[str, Any])
+async def get_harvest_statistics(
+    farmer_id: Optional[str] = Query(None, description="Filter by farmer ID"),
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(require_permission("harvests:read"))
+):
+    """
+    Get harvest statistics for dashboard.
+    
+    Returns aggregated harvest data including:
+    - Total harvests count
+    - Pending harvests (ready to harvest)
+    - Total quantity harvested
+    - Harvests by status
+    
+    ## Authentication & Authorization
+    Requires `harvests:read` permission.
+    
+    ## Query Parameters
+    - **farmer_id**: Filter by farmer UUID (optional, defaults to current user)
+    
+    ## Response Format
+    ```json
+    {
+      "total_harvests": 15,
+      "pending_harvests": 3,
+      "completed_harvests": 10,
+      "total_quantity_kg": 1500.5,
+      "by_status": {
+        "PLANNED": 2,
+        "IN_PROGRESS": 1,
+        "READY": 3,
+        "HARVESTED": 8,
+        "CANCELLED": 1
+      }
+    }
+    ```
+    """
+    from app.infrastructure.repositories.harvest_repo import HarvestRepository
+    from app.infrastructure.repositories.farm_repo import FarmRepository
+    from app.domain.farm.entities import CropCycle
+    
+    # Get internal user ID if farmer_id not specified
+    internal_farmer_id = farmer_id
+    if not internal_farmer_id:
+        from app.infrastructure.repositories.user_repo import UserRepository
+        user_repo = UserRepository(db)
+        keycloak_id = current_user.user_id
+        user = user_repo.get_by_keycloak_id(keycloak_id)
+        if not user and current_user.email:
+            user = user_repo.get_by_email(current_user.email)
+        if user:
+            internal_farmer_id = user.id
+    
+    # Get all harvests for this farmer directly
+    harvest_repo = HarvestRepository(db)
+    all_harvests = harvest_repo.get_by_farmer_id(internal_farmer_id) if internal_farmer_id else []
+    
+    # Count harvests by status
+    harvest_stats = {
+        "total_harvests": 0,
+        "pending_harvests": 0,
+        "completed_harvests": 0,
+        "total_quantity_kg": 0.0,
+        "by_status": {}
+    }
+    
+    harvest_stats["total_harvests"] = len(all_harvests)
+    
+    # Count by status
+    status_counts = {}
+    for h in all_harvests:
+        # Get status from the harvest - it might be in metadata or have a status field
+        status = getattr(h, 'status', None)
+        if not status:
+            # Try to get status from metadata
+            metadata = getattr(h, 'metadata', None) or {}
+            status = metadata.get('status', 'HARVESTED')  # Default to HARVESTED for existing records
+        
+        status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # Calculate pending (READY status means ready to harvest)
+        if status == "READY":
+            harvest_stats["pending_harvests"] += 1
+        
+        # Calculate completed - consider HARVESTED as completed
+        if status == "HARVESTED":
+            harvest_stats["completed_harvests"] += 1
+        
+        # Sum quantity
+        quantity = getattr(h, 'quantity_harvested', None)
+        if quantity:
+            try:
+                harvest_stats["total_quantity_kg"] += float(quantity)
+            except (ValueError, TypeError):
+                pass
+    
+    harvest_stats["by_status"] = status_counts
+    
+    return harvest_stats

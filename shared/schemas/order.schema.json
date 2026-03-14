@@ -67,12 +67,25 @@
       "exclusiveMinimum": 0
     },
     "delivery_margin": {
-      "type": "number" ,
+      "type": "number",
       "exclusiveMinimum": 0
     },
     "quality_fee": {
       "type": "number",
       "exclusiveMinimum": 0
+    },
+    "batch_id": {
+      "type": ["string", "null"],
+      "description": "Batch ID for harvest aggregation"
+    },
+    "cancelled_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Cancellation timestamp"
+    },
+    "cancelled_reason": {
+      "type": ["string", "null"],
+      "description": "Cancellation reason"
     }
   },
   "additionalProperties": false

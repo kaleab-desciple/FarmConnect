@@ -31,9 +31,10 @@ services:
       - agri-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d agri_db" ]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   pgadmin:
     image: dpage/pgadmin4
@@ -47,7 +48,7 @@ services:
       - postgres
     networks:
       - agri-network
-    
+
   # MongoDB 8.2.2
   mongodb:
     image: mongo:8.2.2
@@ -62,11 +63,11 @@ services:
       - agri-network
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
-
-  # Redis for caching
+      retries: 10
+      start_period: 30s
+    # Redis for caching
   redis:
     image: redis:7-alpine
     volumes:
@@ -105,15 +106,15 @@ services:
 
   # API Server
   api:
-    build: 
-      context: ./server
-      dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     entrypoint: [ "sh", "-c", "alembic -c app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload" ]
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:password@postgres:5432/agri_db
-      MONGODB_URL: mongodb://mongodb:27017/agri_db
-      REDIS_URL: redis://redis:6379
-      KAFKA_BROKER: kafka:9092
+      # MONGODB_URL: mongodb://mongodb:27017/agri_db
+      # REDIS_URL: redis://redis:6379
+      # KAFKA_BROKER: kafka:9092
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: farm-connect
       KEYCLOAK_CLIENT_ID: farm-connect-backend
@@ -126,16 +127,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      kafka:
-        condition: service_started
+      #mongodb:
+      #  condition: service_healthy
+      #redis:
+      #  condition: service_healthy
+      #kafka:
+      #  condition: service_started
       keycloak:
         condition: service_started
     volumes:
       - ./server:/app
+      # Mount shared directory for shared_models
       - ./shared:/app/shared
     networks:
       - agri-network
@@ -160,7 +162,6 @@ services:
       - api
     networks:
       - agri-network
-
   # Frontend Production (uncomment for production)
   # frontend-prod:
   #   build:

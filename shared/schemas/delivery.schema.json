@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/delivery.schema.json",
+  "title": "Delivery",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string",
+      "description": "ID of the order"
+    },
+    "carrier_id": {
+      "type": ["string", "null"],
+      "description": "ID of the carrier"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ASSIGNED", "PICKED_UP", "IN_TRANSIT", "DELIVERED", "FAILED", "CANCELLED"],
+      "default": "ASSIGNED",
+      "description": "Delivery status"
+    },
+    "pickup_time": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pickup timestamp"
+    },
+    "delivered_time": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Delivery timestamp"
+    },
+    "pickup_photo_url": {
+      "type": ["string", "null"],
+      "description": "Pickup photo URL"
+    },
+    "delivery_photo_url": {
+      "type": ["string", "null"],
+      "description": "Delivery photo URL"
+    },
+    "recipient_signature_url": {
+      "type": ["string", "null"],
+      "description": "Recipient signature URL"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Delivery notes"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    }
+  },
+  "required": ["order_id"],
+  "additionalProperties": false
+}

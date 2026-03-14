@@ -104,10 +104,21 @@ class HarvestService:
         self.db.commit()
         return created
 
+    def get_harvests(self, farm_id: Optional[UUID] = None, product_id: Optional[UUID] = None) -> List[Harvest]:
+        return self.harvest_repo.find_all(farm_id=farm_id, product_id=product_id)
+
     def convert_to_product(self, harvest_id: UUID, product_data: Dict[str, Any], current_user: Any) -> Any:
         harvest = self.harvest_repo.get_by_id(str(harvest_id))
         if not harvest:
             raise HTTPException(status_code=404, detail="Harvest not found")
+
+        # Validate that harvest has a QCGrade before allowing conversion to marketplace listing
+        # This ensures "Yield Only, Quality Later" workflow - quality assessment must complete first
+        if not harvest.quality_grade:
+            raise HTTPException(
+                status_code=400,
+                detail="Harvest must have a QCGrade assessment before converting to a marketplace listing. Please complete quality assessment first."
+            )
 
         # Look up the authenticated user's farmer_id from users table
         from app.infrastructure.repositories.user_repo import UserRepository
@@ -124,13 +135,28 @@ class HarvestService:
         
         authenticated_farmer_id = authenticated_user.id if authenticated_user else None
         
-        # Authorization - compare user's farmer_id with harvest's farmer_id
-        if str(harvest.farmer_id) != str(authenticated_farmer_id) and not (
+        # If authenticated_farmer_id is None but user has admin/agent/agronomist role,
+        # allow them to proceed using the harvest's farmer_id as the sealed_by
+        is_privileged_user = (
             current_user.has_realm_role("ADMIN") or 
             current_user.has_realm_role("AGENT") or 
             current_user.has_realm_role("AGRONOMIST")
-        ):
+        )
+        
+        # Authorization - compare user's farmer_id with harvest's farmer_id
+        if str(harvest.farmer_id) != str(authenticated_farmer_id) and not is_privileged_user:
             raise HTTPException(status_code=403, detail="Not authorized")
+        
+        # If no authenticated farmer found but user is privileged, use harvest's farmer_id
+        if not authenticated_farmer_id and is_privileged_user:
+            authenticated_farmer_id = str(harvest.farmer_id)
+        
+        # Final check: must have a valid farmer_id to proceed
+        if not authenticated_farmer_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="User does not have a linked farmer profile. Please ensure your account is provisioned as a farmer."
+            )
 
         # Use HarvestBatch flow: create a harvest event -> draft batch -> contribution -> seal -> QC flow
         hb_repo = HarvestBatchRepository(self.db)

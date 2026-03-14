@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/harvest.schema.json",
+  "title": "Harvest",
+  "definitions": {
+    "HarvestEvent": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "farm_id": { "type": "string", "description": "Farm ID" },
+        "field_id": { "type": "string", "description": "Field ID" },
+        "crop_cycle_id": { "type": ["string", "null"], "format": "uuid", "description": "Crop cycle ID" },
+        "collected_by": { "type": ["string", "null"], "description": "Collected by user" },
+        "harvested_at": { "type": "string", "format": "date-time", "description": "Harvest timestamp" },
+        "gross_weight_kg": { "type": "number", "description": "Gross weight in kg" },
+        "moisture_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "loss_kg": { "type": "number", "default": 0 },
+        "photos": { "type": ["array", "null"], "items": { "type": "object" } },
+        "weighbridge_receipt": { "type": ["object", "null"] },
+        "location": { "type": ["object", "null"] },
+        "notes": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "farm_id", "field_id", "harvested_at", "gross_weight_kg", "created_at", "updated_at"],
+      "additionalProperties": false
+    },
+    "HarvestBatch": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "batch_code": { "type": "string", "description": "Batch code" },
+        "aggregator_id": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] },
+        "metadata": { "type": ["object", "null"] },
+        "status": { "type": "string", "default": "DRAFT" },
+        "aggregated_weight_kg": { "type": ["number", "null"] },
+        "moisture_avg": { "type": ["number", "null"] },
+        "sealed_at": { "type": ["string", "null"], "format": "date-time" },
+        "sealed_by": { "type": ["string", "null"] },
+        "seal_evidence": { "type": ["object", "null"] },
+        "lineage_hash": { "type": ["string", "null"] },
+        "lineage_signature": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "contributions": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["id", "batch_code", "created_at", "updated_at"],
+      "additionalProperties": false
+    },
+    "HarvestBatchContribution": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "harvest_batch_id": { "type": "string", "format": "uuid" },
+        "harvest_event_id": { "type": "string", "format": "uuid" },
+        "farmer_id": { "type": "string" },
+        "contributed_weight_kg": { "type": "number" },
+        "reported_moisture_pct": { "type": ["number", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "harvest_batch_id", "harvest_event_id", "farmer_id", "contributed_weight_kg", "created_at"],
+      "additionalProperties": false
+    },
+    "BatchQCReport": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "batch_id": { "type": "string", "format": "uuid" },
+        "lab_id": { "type": ["string", "null"] },
+        "tested_at": { "type": "string", "format": "date-time" },
+        "metrics": { "type": ["object", "null"] },
+        "passed": { "type": "boolean" },
+        "report_url": { "type": ["string", "null"] },
+        "signed_hash": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "batch_id", "tested_at", "passed", "created_at"],
+      "additionalProperties": false
+    },
+    "BatchQCReportV2": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "batch_id": { "type": "string", "format": "uuid" },
+        "sample_id": { "type": ["string", "null"], "format": "uuid" },
+        "lab_id": { "type": ["string", "null"] },
+        "tested_at": { "type": "string", "format": "date-time" },
+        "metrics": { "type": ["object", "null"] },
+        "grade": { "type": ["string", "null"] },
+        "passed": { "type": "boolean" },
+        "report_url": { "type": ["string", "null"] },
+        "signed_hash": { "type": ["string", "null"] },
+        "verified": { "type": "boolean", "default": false },
+        "notes": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "batch_id", "tested_at", "passed", "created_at"],
+      "additionalProperties": false
+    },
+    "Sample": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "sample_code": { "type": "string" },
+        "harvest_batch_id": { "type": "string", "format": "uuid" },
+        "collected_by": { "type": ["string", "null"] },
+        "collected_at": { "type": ["string", "null"], "format": "date-time" },
+        "sample_points": { "type": ["object", "null"] },
+        "photos": { "type": ["array", "null"], "items": { "type": "object" } },
+        "chain_of_custody": { "type": ["object", "null"] },
+        "submitted_to_lab": { "type": "boolean", "default": false },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "sample_code", "harvest_batch_id", "created_at"],
+      "additionalProperties": false
+    },
+    "LabProvider": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "public_key": { "type": ["string", "null"] },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "created_at"],
+      "additionalProperties": false
+    },
+    "Certification": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "harvest_batch_id": { "type": "string", "format": "uuid" },
+        "issuer": { "type": "string" },
+        "cert_type": { "type": "string", "enum": ["ORGANIC", "FAIRTRADE", "RAINFOREST_ALLIANCE", "GLOBALGAP", "OTHER"] },
+        "cert_number": { "type": ["string", "null"] },
+        "valid_from": { "type": "string", "format": "date-time" },
+        "valid_to": { "type": "string", "format": "date-time" },
+        "cert_url": { "type": ["string", "null"] },
+        "signed_hash": { "type": ["string", "null"] },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "harvest_batch_id", "issuer", "cert_type", "valid_from", "valid_to", "created_at"],
+      "additionalProperties": false
+    },
+    "QCGradeRule": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "commodity": { "type": "string" },
+        "grade": { "type": "string" },
+        "rules": { "type": "array", "items": { "type": "object" } },
+        "is_active": { "type": "boolean", "default": true },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "commodity", "grade", "rules", "created_at", "updated_at"],
+      "additionalProperties": false
+    },
+    "AuditEvent": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "event_type": { "type": "string" },
+        "entity_type": { "type": "string" },
+        "entity_id": { "type": "string" },
+        "payload": { "type": ["object", "null"] },
+        "payload_hash": { "type": ["string", "null"] },
+        "previous_event_hash": { "type": ["string", "null"] },
+        "user_id": { "type": ["string", "null"] },
+        "signature": { "type": ["string", "null"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "event_type", "entity_type", "entity_id", "created_at"],
+      "additionalProperties": false
+    },
+    "Harvest": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "farmer_id": { "type": "string" },
+        "crop_cycle_id": { "type": ["string", "null"], "format": "uuid" },
+        "field_id": { "type": "string", "format": "uuid" },
+        "harvest_date": { "type": "string", "format": "date" },
+        "quantity_harvested": { "type": "number" },
+        "unit": { "type": ["string", "null"] },
+        "quality_grade": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] },
+        "metadata": { "type": ["object", "null"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "farmer_id", "field_id", "harvest_date", "quantity_harvested", "created_at", "updated_at"],
+      "additionalProperties": false
+    }
+  }
+}

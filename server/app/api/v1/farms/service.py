@@ -561,6 +561,87 @@ class FarmService:
         
         return self.field_repo.delete(field_id)
     
+    def get_field_status_map(
+        self,
+        farm_id: str,
+        current_user: TokenPayload
+    ) -> dict:
+        """
+        Get field status map for a farm with GeoJSON boundaries and active crop cycles.
+        
+        Returns GeoJSON boundaries of all fields for a farm, alongside the currently
+        active CropCycle mapped to each field (crop type and current growth stage),
+        so frontend can color-code the map.
+        
+        Args:
+            farm_id: Farm ID
+            current_user: Authenticated user
+            
+        Returns:
+            Dictionary with fields and their active crop cycle info
+            
+        Raises:
+            HTTPException: Farm not found or unauthorized
+        """
+        # Check farm exists and access
+        farm = self.farm_repo.get_by_id(farm_id)
+        if not farm:
+            raise HTTPException(status_code=404, detail="Farm not found")
+        
+        if not self._can_access_farm(farm, current_user):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get all fields for the farm
+        fields = self.field_repo.get_by_farm_id(farm_id)
+        
+        # Active crop cycle statuses
+        active_statuses = ['PLANTED', 'GROWING']
+        
+        result = {
+            "farm_id": farm_id,
+            "farm_name": farm.name,
+            "fields": []
+        }
+        
+        for field in fields:
+            # Get active crop cycle for this field (most recent one with active status)
+            crop_cycles = self.crop_cycle_repo.get_by_field_id(str(field.id))
+            active_cycle = None
+            
+            # Find the most recent active crop cycle
+            for cycle in crop_cycles:
+                if cycle.status in active_statuses:
+                    if active_cycle is None or cycle.created_at > active_cycle.created_at:
+                        active_cycle = cycle
+            
+            field_info = {
+                "field_id": str(field.id),
+                "field_name": field.name,
+                "area_ha": str(field.area_ha) if field.area_ha else None,
+                "boundary_geojson": field.boundary_geojson,
+                "centroid_geojson": field.centroid_geojson,
+                "irrigation_type": field.irrigation_type,
+                "soil_type": field.soil_type,
+                "active_crop_cycle": None
+            }
+            
+            if active_cycle:
+                field_info["active_crop_cycle"] = {
+                    "crop_cycle_id": str(active_cycle.id),
+                    "crop_name": active_cycle.crop_name,
+                    "product_category": active_cycle.product_category,
+                    "variety": active_cycle.variety,
+                    "status": active_cycle.status,
+                    "planting_date": active_cycle.planting_date.isoformat() if active_cycle.planting_date else None,
+                    "expected_harvest_date": active_cycle.expected_harvest_date.isoformat() if active_cycle.expected_harvest_date else None,
+                    "expected_yield_kg": str(active_cycle.expected_yield_kg) if active_cycle.expected_yield_kg else None,
+                }
+            
+            result["fields"].append(field_info)
+        
+        return result
+
+    
     # ============ Crop Cycle Operations ============
     
     def create_crop_cycle(

@@ -498,6 +498,64 @@ async def update_field(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/farms/{farm_id}/field-status-map")
+async def get_field_status_map(
+    farm_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_permission("farms:read"))
+):
+    """
+    Get field status map for a farm.
+    
+    Returns GeoJSON boundaries of all fields for a farm, alongside the currently
+    active CropCycle mapped to each field (crop type and current growth stage),
+    so frontend can color-code the map.
+    
+    ## Path Parameters
+    - **farm_id**: UUID of the farm (required)
+    
+    ## Authentication
+    Requires authentication. Only farm owner, agent, or admin can access.
+    
+    ## Response
+    Returns a dictionary containing:
+    - **farm_id**: Farm UUID
+    - **farm_name**: Farm name
+    - **fields**: Array of field objects, each containing:
+      - **field_id**: Field UUID
+      - **field_name**: Field name
+      - **area_ha**: Field area in hectares
+      - **boundary_geojson**: Field boundary as GeoJSON
+      - **centroid_geojson**: Field centroid as GeoJSON
+      - **irrigation_type**: Irrigation system type
+      - **soil_type**: Soil type classification
+      - **active_crop_cycle**: Object with crop cycle info (if active cycle exists):
+        - **crop_cycle_id**: Crop cycle UUID
+        - **crop_name**: Name of the crop
+        - **product_category**: Product category
+        - **variety**: Crop variety
+        - **status**: Current growth stage (PLANTED, GROWING, etc.)
+        - **planting_date**: Date of planting
+        - **expected_harvest_date**: Expected harvest date
+        - **expected_yield_kg**: Expected yield in kg
+    
+    ## Responses
+    - **200**: Field status map retrieved successfully
+    - **401**: Unauthorized (not authenticated)
+    - **403**: Forbidden (insufficient permissions)
+    - **404**: Farm not found
+    - **500**: Internal server error
+    """
+    try:
+        service = FarmService(db)
+        return service.get_field_status_map(farm_id, current_user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.delete("/fields/{field_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_field(
     field_id: str,

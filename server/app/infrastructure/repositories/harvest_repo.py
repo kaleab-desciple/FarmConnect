@@ -17,6 +17,10 @@ class HarvestRepository:
         self.db.refresh(orm)
         return orm_to_domain(orm)
 
+    def find_all(self) -> List[Harvest]:
+        orms = self.db.query(HarvestORM).all()
+        return [orm_to_domain(orm) for orm in orms]
+
     def get_by_id(self, harvest_id: str) -> Optional[Harvest]:
         orm = self.db.query(HarvestORM).filter(HarvestORM.id == harvest_id).first()
         return orm_to_domain(orm) if orm else None

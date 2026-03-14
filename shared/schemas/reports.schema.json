@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://your-domain.com/schemas/reports.schema.json",
+  "title": "Reports",
+  "definitions": {
+    "BalanceSheet": {
+      "type": "object",
+      "properties": {
+        "as_of": {
+          "type": "string",
+          "format": "date",
+          "description": "Balance sheet date"
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Assets"
+        },
+        "liabilities": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Liabilities"
+        },
+        "equity": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Equity"
+        }
+      },
+      "required": ["as_of"],
+      "additionalProperties": false
+    },
+    "ProfitLoss": {
+      "type": "object",
+      "properties": {
+        "from_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date"
+        },
+        "to_date": {
+          "type": "string",
+          "format": "date",
+          "description": "End date"
+        },
+        "revenue": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Revenue items"
+        },
+        "expenses": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Expense items"
+        }
+      },
+      "required": ["from_date", "to_date"],
+      "additionalProperties": false
+    },
+    "CashFlow": {
+      "type": "object",
+      "properties": {
+        "from_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date"
+        },
+        "to_date": {
+          "type": "string",
+          "format": "date",
+          "description": "End date"
+        },
+        "operating": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Operating activities"
+        },
+        "investing": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Investing activities"
+        },
+        "financing": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "description": "Financing activities"
+        }
+      },
+      "required": ["from_date", "to_date"],
+      "additionalProperties": false
+    },
+    "FinancialSummary": {
+      "type": "object",
+      "properties": {
+        "period_start": {
+          "type": "string",
+          "format": "date",
+          "description": "Period start date"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date",
+          "description": "Period end date"
+        },
+        "total_revenue": {
+          "type": "number",
+          "description": "Total revenue"
+        },
+        "total_expenses": {
+          "type": "number",
+          "description": "Total expenses"
+        },
+        "net_profit": {
+          "type": "number",
+          "description": "Net profit"
+        },
+        "total_assets": {
+          "type": "number",
+          "description": "Total assets"
+        },
+        "total_liabilities": {
+          "type": "number",
+          "description": "Total liabilities"
+        },
+        "total_equity": {
+          "type": "number",
+          "description": "Total equity"
+        },
+        "net_cash_flow": {
+          "type": "number",
+          "description": "Net cash flow"
+        }
+      },
+      "required": ["period_start", "period_end", "total_revenue", "total_expenses", "net_profit", "total_assets", "total_liabilities", "total_equity", "net_cash_flow"],
+      "additionalProperties": false
+    }
+  }
+}

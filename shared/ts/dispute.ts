@@ -9,20 +9,28 @@ export interface Dispute {
 }
 
 export interface Properties {
-    id:            ID;
-    order_id:      ID;
-    raised_by:     RaisedBy;
-    state:         Resolution;
-    reason:        Reason;
-    resolution:    Resolution;
-    evidence_urls: EvidenceUrls;
-    created_at:    CreatedAt;
-    resolved_at:   CreatedAt;
+    id:              ID;
+    order_id:        ID;
+    raised_by:       RaisedBy;
+    state:           Resolution;
+    reason:          Reason;
+    resolution:      Resolution;
+    evidence_urls:   EvidenceUrls;
+    created_at:      CreatedAt;
+    resolved_at:     ResolvedAt;
+    handler_role:    EscalatedTo;
+    escalated_to:    EscalatedTo;
+    escalation_note: EscalatedTo;
 }
 
 export interface CreatedAt {
     type:   string;
     format: string;
+}
+
+export interface EscalatedTo {
+    type:        string[];
+    description: string;
 }
 
 export interface EvidenceUrls {
@@ -48,4 +56,9 @@ export interface Reason {
 
 export interface Resolution {
     $ref: string;
+}
+
+export interface ResolvedAt {
+    type:   string[];
+    format: string;
 }
