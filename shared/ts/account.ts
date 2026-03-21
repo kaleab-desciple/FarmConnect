@@ -1,37 +1,94 @@
+// FarmConnect Accounting Types - Mirroring Python DTOs from shared_models
+import { AccountType, OwnerType } from "./enums";
+
+/**
+ * Account model
+ */
 export interface Account {
-    $schema:              string;
-    $id:                  string;
-    title:                string;
-    type:                 string;
-    required:             string[];
-    properties:           Properties;
-    additionalProperties: boolean;
+  id: string;
+  owner_type: OwnerType;
+  owner_id: string;
+  account_type: AccountType;
+  name: string;
+  currency: string;
+  created_at: string;
 }
 
-export interface Properties {
-    id:           ID;
-    owner_type:   Type;
-    owner_id:     ID;
-    account_type: Type;
-    name:         ID;
-    currency:     Currency;
-    created_at:   CreatedAt;
+/**
+ * Account creation request
+ */
+export interface AccountCreate {
+  owner_type: OwnerType;
+  owner_id: string;
+  account_type: AccountType;
+  name: string;
+  currency?: string;
 }
 
-export interface Type {
-    $ref: string;
+/**
+ * Account balance response
+ */
+export interface AccountBalance {
+  account_id: string;
+  balance: number;
+  currency: string;
+  as_of: string;
 }
 
-export interface CreatedAt {
-    type:   string;
-    format: string;
+/**
+ * Journal entry model
+ */
+export interface JournalEntry {
+  id: string;
+  reference_type?: string;
+  reference_id?: string;
+  description?: string;
+  created_at: string;
 }
 
-export interface Currency {
-    type:    string;
-    default: string;
+/**
+ * Journal entry creation request
+ */
+export interface JournalEntryCreate {
+  reference_type?: string;
+  reference_id?: string;
+  description: string;
+  lines: JournalLineCreate[];
 }
 
-export interface ID {
-    type: string;
+/**
+ * Journal line model
+ */
+export interface JournalLine {
+  id: number;
+  journal_entry_id: string;
+  account_id: string;
+  debit_amount: number;
+  credit_amount: number;
+}
+
+/**
+ * Journal line creation request
+ */
+export interface JournalLineCreate {
+  account_id: string;
+  debit_amount: number;
+  credit_amount: number;
+}
+
+/**
+ * Ledger event model
+ */
+export interface LedgerEvent {
+  id: string;
+  aggregate_type: string;
+  aggregate_id: string;
+  event_type: string;
+  amount: number;
+  currency: string;
+  direction: string;
+  reference_type: string;
+  reference_id: string;
+  event_metadata?: Record<string, unknown>;
+  created_at: string;
 }

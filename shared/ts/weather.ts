@@ -1,274 +1,164 @@
-export interface Weather {
-    $schema:     string;
-    $id:         string;
-    title:       string;
-    definitions: Definitions;
+// FarmConnect Weather Types - Mirroring Python DTOs from shared_models
+import { WeatherSource, RiskType, RiskLevel, AlertType, AlertSeverity } from "./enums";
+
+/**
+ * Weather forecast base model
+ */
+export interface WeatherForecastBase {
+  field_id: string;
+  source: WeatherSource;
+  forecast_date: string;
+  forecast_hour?: number;
+  forecast_horizon_hours?: number;
+  issued_at: string;
+  temperature_min_c?: number;
+  temperature_max_c?: number;
+  temperature_avg_c?: number;
+  precipitation_probability_pct?: number;
+  precipitation_mm?: number;
+  precipitation_type?: string;
+  wind_speed_max_mps?: number;
+  wind_direction_deg?: number;
+  humidity_avg_pct?: number;
+  pressure_hpa?: number;
+  growing_degree_days_accumulated?: number;
+  evapotranspiration_mm?: number;
+  risk_type: RiskType;
+  risk_level: RiskLevel;
+  risk_description?: string;
+  risk_confidence_pct?: number;
+  metadata?: Record<string, unknown>;
 }
 
-export interface Definitions {
-    WeatherForecast:  WeatherForecast;
-    WeatherSnapshot:  WeatherSnapshot;
-    AdvisorySession:  AdvisorySession;
-    AdvisoryMessage:  AdvisoryMessage;
-    Alert:            Alert;
-    FieldRiskScore:   FieldRiskScore;
-    KnowledgeArticle: KnowledgeArticle;
+/**
+ * Weather forecast response model
+ */
+export interface WeatherForecast extends WeatherForecastBase {
+  id: string;
+  created_at: string;
 }
 
-export interface AdvisoryMessage {
-    type:                 Type;
-    properties:           AdvisoryMessageProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Weather forecast creation request
+ */
+export interface WeatherForecastCreate extends WeatherForecastBase {}
+
+/**
+ * Weather snapshot base model
+ */
+export interface WeatherSnapshotBase {
+  field_id: string;
+  source: WeatherSource;
+  source_station_id?: string;
+  source_station_distance_km?: number;
+  recorded_at: string;
+  temperature_c?: number;
+  feels_like_c?: number;
+  humidity_pct?: number;
+  pressure_hpa?: number;
+  wind_speed_mps?: number;
+  wind_direction_deg?: number;
+  wind_gust_mps?: number;
+  rainfall_mm?: number;
+  rainfall_intensity?: string;
+  snowfall_mm?: number;
+  cloud_cover_pct?: number;
+  visibility_m?: number;
+  uv_index?: number;
+  soil_temperature_c?: number;
+  soil_moisture_pct?: number;
+  leaf_wetness_hours?: number;
+  evapotranspiration_mm?: number;
+  growing_degree_days?: number;
+  raw_data?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
-export interface AdvisoryMessageProperties {
-    id:           ID;
-    session_id:   Message;
-    sender_id:    Message;
-    message_type: MessageType;
-    message:      Message;
-    attachments:  Attachments;
-    sent_at:      At;
-    read_at:      At;
-    metadata:     Attachments;
+/**
+ * Weather snapshot response model
+ */
+export interface WeatherSnapshot extends WeatherSnapshotBase {
+  id: string;
+  created_at: string;
 }
 
-export interface Attachments {
-    type: Type[];
+/**
+ * Weather snapshot creation request
+ */
+export interface WeatherSnapshotCreate extends WeatherSnapshotBase {}
+
+// ============ Alert Types ============
+
+/**
+ * Base alert model
+ */
+export interface AlertBase {
+  user_id: string;
+  field_id?: string;
+  alert_type: AlertType;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  acknowledged?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
-export enum Type {
-    Integer = "integer",
-    Null = "null",
-    Number = "number",
-    Object = "object",
-    String = "string",
+/**
+ * Alert response model
+ */
+export interface Alert extends AlertBase {
+  id: string;
+  created_at: string;
 }
 
-export interface ID {
-    type: Type;
+/**
+ * Alert creation request
+ */
+export interface AlertCreate extends AlertBase {}
+
+/**
+ * Alert update request
+ */
+export interface AlertUpdate {
+  acknowledged?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
-export interface Message {
-    type:        Type;
-    description: string;
+/**
+ * Paginated alert list response
+ */
+export interface AlertListResponse {
+  alerts: Alert[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
-export interface MessageType {
-    type:    Type;
-    enum:    string[];
-    default: string;
-}
+// ============ Field Risk Score Types ============
 
-export interface At {
-    type:   Type[];
-    format: string;
-}
-
-export interface AdvisorySession {
-    type:                 Type;
-    properties:           AdvisorySessionProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface AdvisorySessionProperties {
-    id:                    ID;
-    farmer_id:             Message;
-    agronomist_id:         AgronomistID;
-    field_id:              AgronomistID;
-    crop_cycle_id:         AgronomistID;
-    topic:                 Message;
-    title:                 Message;
-    description:           AgronomistID;
-    status:                MessageType;
-    priority:              MessageType;
-    requested_at:          At;
-    scheduled_at:          At;
-    started_at:            At;
-    closed_at:             At;
-    communication_method:  Attachments;
-    meeting_link:          Attachments;
-    resolution_summary:    Attachments;
-    recommendations_given: RecommendationsGiven;
-    farmer_rating:         FarmerRating;
-    metadata:              Attachments;
-    created_at:            CreatedAt;
-}
-
-export interface AgronomistID {
-    type:        Type[];
-    description: string;
-}
-
-export interface CreatedAt {
-    type:   Type;
-    format: string;
-}
-
-export interface FarmerRating {
-    type:         Type[];
-    minimum:      number;
-    maximum:      number;
-    description?: string;
-}
-
-export interface RecommendationsGiven {
-    type:  string[];
-    items: ID;
-}
-
-export interface Alert {
-    type:                 Type;
-    properties:           AlertProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface AlertProperties {
-    id:           ID;
-    user_id:      Message;
-    field_id:     AgronomistID;
-    alert_type:   AlertType;
-    severity:     AlertType;
-    title:        ID;
-    message:      ID;
-    acknowledged: Acknowledged;
-    metadata:     Attachments;
-    created_at:   CreatedAt;
-}
-
-export interface Acknowledged {
-    type:    string;
-    default: boolean;
-}
-
-export interface AlertType {
-    type: Type;
-    enum: string[];
-}
-
+/**
+ * Field risk score model
+ */
 export interface FieldRiskScore {
-    type:                 Type;
-    properties:           FieldRiskScoreProperties;
-    required:             string[];
-    additionalProperties: boolean;
+  id: string;
+  field_id: string;
+  crop_cycle_id?: string;
+  score_date: string;
+  overall_score: number;
+  risk_trend?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
 }
 
-export interface FieldRiskScoreProperties {
-    id:            ID;
-    field_id:      Message;
-    crop_cycle_id: AgronomistID;
-    score_date:    ScoreDate;
-    overall_score: OverallScore;
-    risk_trend:    Attachments;
-    metadata:      Attachments;
-    created_at:    CreatedAt;
-}
-
-export interface OverallScore {
-    type:        Type;
-    minimum:     number;
-    maximum:     number;
-    description: string;
-}
-
-export interface ScoreDate {
-    type:        Type;
-    format:      string;
-    description: string;
-}
-
-export interface KnowledgeArticle {
-    type:                 Type;
-    properties:           KnowledgeArticleProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface KnowledgeArticleProperties {
-    id:           ID;
-    author_id:    Message;
-    topic:        Message;
-    title:        Message;
-    slug:         AgronomistID;
-    summary:      AgronomistID;
-    content:      Message;
-    status:       MessageType;
-    published_at: At;
-    metadata:     Attachments;
-    created_at:   CreatedAt;
-}
-
-export interface WeatherForecast {
-    type:                 Type;
-    properties:           WeatherForecastProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface WeatherForecastProperties {
-    id:                              ID;
-    field_id:                        Message;
-    source:                          Message;
-    forecast_date:                   ScoreDate;
-    forecast_hour:                   FarmerRating;
-    forecast_horizon_hours:          AgronomistID;
-    issued_at:                       ScoreDate;
-    temperature_min_c:               AgronomistID;
-    temperature_max_c:               AgronomistID;
-    temperature_avg_c:               AgronomistID;
-    precipitation_probability_pct:   FarmerRating;
-    precipitation_mm:                AgronomistID;
-    precipitation_type:              AgronomistID;
-    wind_speed_max_mps:              AgronomistID;
-    wind_direction_deg:              FarmerRating;
-    humidity_avg_pct:                FarmerRating;
-    pressure_hpa:                    AgronomistID;
-    growing_degree_days_accumulated: AgronomistID;
-    evapotranspiration_mm:           AgronomistID;
-    risk_type:                       AgronomistID;
-    risk_level:                      AgronomistID;
-    risk_description:                AgronomistID;
-    risk_confidence_pct:             FarmerRating;
-    metadata:                        AgronomistID;
-    created_at:                      CreatedAt;
-}
-
-export interface WeatherSnapshot {
-    type:                 Type;
-    properties:           WeatherSnapshotProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface WeatherSnapshotProperties {
-    id:                         ID;
-    field_id:                   Message;
-    source:                     Message;
-    source_station_id:          AgronomistID;
-    source_station_distance_km: AgronomistID;
-    recorded_at:                ScoreDate;
-    temperature_c:              AgronomistID;
-    feels_like_c:               AgronomistID;
-    humidity_pct:               FarmerRating;
-    pressure_hpa:               AgronomistID;
-    wind_speed_mps:             AgronomistID;
-    wind_direction_deg:         FarmerRating;
-    wind_gust_mps:              AgronomistID;
-    rainfall_mm:                AgronomistID;
-    rainfall_intensity:         AgronomistID;
-    snowfall_mm:                AgronomistID;
-    cloud_cover_pct:            FarmerRating;
-    visibility_m:               AgronomistID;
-    uv_index:                   AgronomistID;
-    soil_temperature_c:         AgronomistID;
-    soil_moisture_pct:          FarmerRating;
-    leaf_wetness_hours:         AgronomistID;
-    evapotranspiration_mm:      AgronomistID;
-    growing_degree_days:        AgronomistID;
-    raw_data:                   AgronomistID;
-    metadata:                   AgronomistID;
-    created_at:                 CreatedAt;
+/**
+ * Field risk score creation request
+ */
+export interface FieldRiskScoreCreate {
+  field_id: string;
+  crop_cycle_id?: string;
+  score_date: string;
+  overall_score: number;
+  risk_trend?: string;
+  metadata?: Record<string, unknown>;
 }

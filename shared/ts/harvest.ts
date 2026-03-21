@@ -1,316 +1,315 @@
-export interface Harvest {
-    $schema:     string;
-    $id:         string;
-    title:       string;
-    definitions: Definitions;
+// FarmConnect Harvest Types - Mirroring Python DTOs from shared_models
+import { BatchQCState, QCGrade, CertificationType } from "./enums";
+
+// ============ Harvest Event Types ============
+
+/**
+ * Harvest event base model
+ */
+export interface HarvestEventBase {
+  farm_id: string;
+  field_id: string;
+  crop_cycle_id?: string;
+  collected_by?: string;
+  harvested_at: string;
+  gross_weight_kg: number;
+  moisture_pct?: number;
+  loss_kg?: number;
+  photos?: Record<string, unknown>[];
+  weighbridge_receipt?: Record<string, unknown>;
+  location?: Record<string, unknown>;
+  notes?: string;
 }
 
-export interface Definitions {
-    HarvestEvent:             HarvestEvent;
-    HarvestBatch:             HarvestBatch;
-    HarvestBatchContribution: HarvestBatchContribution;
-    BatchQCReport:            BatchQcReport;
-    BatchQCReportV2:          BatchQcReport;
-    Sample:                   Sample;
-    LabProvider:              LabProvider;
-    Certification:            Certification;
-    QCGradeRule:              QCGradeRule;
-    AuditEvent:               AuditEvent;
-    Harvest:                  HarvestClass;
+/**
+ * Harvest event response model
+ */
+export interface HarvestEvent extends HarvestEventBase {
+  id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface AuditEvent {
-    type:                 Type;
-    properties:           AuditEventProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Harvest event creation request
+ */
+export interface HarvestEventCreate extends HarvestEventBase {}
+
+/**
+ * Harvest event update request
+ */
+export interface HarvestEventUpdate {
+  photos?: Record<string, unknown>[];
+  weighbridge_receipt?: Record<string, unknown>;
+  location?: Record<string, unknown>;
+  notes?: string;
 }
 
-export interface AuditEventProperties {
-    id:                  CreatedAt;
-    event_type:          EntityID;
-    entity_type:         EntityID;
-    entity_id:           EntityID;
-    payload:             Payload;
-    payload_hash:        Payload;
-    previous_event_hash: Payload;
-    user_id:             Payload;
-    signature:           Payload;
-    created_at:          CreatedAt;
+// ============ Harvest Batch Types ============
+
+/**
+ * Harvest batch base model
+ */
+export interface HarvestBatchBase {
+  batch_code: string;
+  aggregator_id?: string;
+  notes?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface CreatedAt {
-    type:   Type;
-    format: Format;
+/**
+ * Harvest batch response model
+ */
+export interface HarvestBatch extends HarvestBatchBase {
+  id: string;
+  aggregator_id?: string;
+  status: string;
+  aggregated_weight_kg?: number;
+  moisture_avg?: number;
+  sealed_at?: string;
+  sealed_by?: string;
+  seal_evidence?: Record<string, unknown>;
+  lineage_hash?: string;
+  lineage_signature?: string;
+  created_at: string;
+  updated_at: string;
+  contributions: HarvestBatchContribution[];
 }
 
-export enum Format {
-    Date = "date",
-    DateTime = "date-time",
-    UUID = "uuid",
+/**
+ * Harvest batch creation request
+ */
+export interface HarvestBatchCreate extends HarvestBatchBase {}
+
+/**
+ * Harvest batch seal request
+ */
+export interface HarvestBatchSealRequest {
+  sealed_by: string;
+  seal_evidence?: Record<string, unknown>;
 }
 
-export enum Type {
-    Boolean = "boolean",
-    Null = "null",
-    Number = "number",
-    Object = "object",
-    String = "string",
+// ============ Harvest Batch Contribution Types ============
+
+/**
+ * Harvest batch contribution base model
+ */
+export interface HarvestBatchContributionBase {
+  harvest_batch_id: string;
+  harvest_event_id: string;
+  farmer_id: string;
+  contributed_weight_kg: number;
+  reported_moisture_pct?: number;
 }
 
-export interface EntityID {
-    type: Type;
+/**
+ * Harvest batch contribution response model
+ */
+export interface HarvestBatchContribution extends HarvestBatchContributionBase {
+  id: string;
+  created_at: string;
 }
 
-export interface Payload {
-    type: Type[];
+/**
+ * Harvest batch contribution creation request
+ */
+export interface HarvestBatchContributionCreate extends HarvestBatchContributionBase {}
+
+// ============ Batch QC Report Types ============
+
+/**
+ * Batch QC report base model
+ */
+export interface BatchQCReportBase {
+  batch_id: string;
+  lab_id?: string;
+  tested_at: string;
+  metrics?: Record<string, unknown>;
+  passed: boolean;
+  report_url?: string;
+  signed_hash?: string;
+  notes?: string;
 }
 
-export interface BatchQcReport {
-    type:                 Type;
-    properties:           BatchQCReportProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Batch QC report response model
+ */
+export interface BatchQCReport extends BatchQCReportBase {
+  id: string;
+  created_at: string;
 }
 
-export interface BatchQCReportProperties {
-    id:          CreatedAt;
-    batch_id:    CreatedAt;
-    lab_id:      Payload;
-    tested_at:   CreatedAt;
-    metrics:     Payload;
-    passed:      EntityID;
-    report_url:  Payload;
-    signed_hash: Payload;
-    notes:       Payload;
-    created_at:  CreatedAt;
-    sample_id?:  SampleID;
-    grade?:      Payload;
-    verified?:   Verified;
+/**
+ * Batch QC report creation request
+ */
+export interface BatchQCReportCreate extends BatchQCReportBase {}
+
+// ============ Batch QC Report V2 Types ============
+
+/**
+ * Batch QC report V2 base model
+ */
+export interface BatchQCReportV2Base {
+  batch_id: string;
+  sample_id?: string;
+  lab_id?: string;
+  tested_at: string;
+  metrics?: Record<string, unknown>;
+  grade?: QCGrade;
+  passed: boolean;
+  report_url?: string;
+  signed_hash?: string;
+  verified?: boolean;
+  notes?: string;
 }
 
-export interface SampleID {
-    type:   Type[];
-    format: Format;
+/**
+ * Batch QC report V2 response model
+ */
+export interface BatchQCReportV2 extends BatchQCReportV2Base {
+  id: string;
+  created_at: string;
 }
 
-export interface Verified {
-    type:    Type;
-    default: boolean;
+/**
+ * Batch QC report V2 creation request
+ */
+export interface BatchQCReportV2Create extends BatchQCReportV2Base {}
+
+// ============ Sample Types ============
+
+/**
+ * Sample base model
+ */
+export interface SampleBase {
+  sample_code: string;
+  harvest_batch_id: string;
+  collected_by?: string;
+  collected_at?: string;
+  sample_points?: Record<string, unknown>;
+  photos?: Record<string, unknown>[];
+  chain_of_custody?: Record<string, unknown>;
+  submitted_to_lab?: boolean;
 }
 
-export interface Certification {
-    type:                 Type;
-    properties:           CertificationProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Sample response model
+ */
+export interface Sample extends SampleBase {
+  id: string;
+  created_at: string;
 }
 
-export interface CertificationProperties {
-    id:               CreatedAt;
-    harvest_batch_id: CreatedAt;
-    issuer:           EntityID;
-    cert_type:        CERTType;
-    cert_number:      Payload;
-    valid_from:       CreatedAt;
-    valid_to:         CreatedAt;
-    cert_url:         Payload;
-    signed_hash:      Payload;
-    metadata:         Payload;
-    created_at:       CreatedAt;
+/**
+ * Sample creation request
+ */
+export interface SampleCreate extends SampleBase {}
+
+// ============ Lab Provider Types ============
+
+/**
+ * Lab provider base model
+ */
+export interface LabProviderBase {
+  name: string;
+  public_key?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface CERTType {
-    type: Type;
-    enum: string[];
+/**
+ * Lab provider response model
+ */
+export interface LabProvider extends LabProviderBase {
+  id: string;
+  created_at: string;
 }
 
-export interface HarvestClass {
-    type:                 Type;
-    properties:           HarvestProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Lab provider creation request
+ */
+export interface LabProviderCreate extends LabProviderBase {}
+
+// ============ Certification Types ============
+
+/**
+ * Certification base model
+ */
+export interface CertificationBase {
+  harvest_batch_id: string;
+  issuer: string;
+  cert_type: CertificationType;
+  cert_number?: string;
+  valid_from: string;
+  valid_to: string;
+  cert_url?: string;
+  signed_hash?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface HarvestProperties {
-    id:                 CreatedAt;
-    farmer_id:          EntityID;
-    crop_cycle_id:      SampleID;
-    field_id:           CreatedAt;
-    harvest_date:       CreatedAt;
-    quantity_harvested: EntityID;
-    unit:               Payload;
-    quality_grade:      Payload;
-    notes:              Payload;
-    metadata:           Payload;
-    created_at:         CreatedAt;
-    updated_at:         CreatedAt;
+/**
+ * Certification response model
+ */
+export interface Certification extends CertificationBase {
+  id: string;
+  created_at: string;
 }
 
-export interface HarvestBatch {
-    type:                 Type;
-    properties:           HarvestBatchProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Certification creation request
+ */
+export interface CertificationCreate extends CertificationBase {}
+
+// ============ QC Grade Rule Types ============
+
+/**
+ * QC grade rule base model
+ */
+export interface QCGradeRuleBase {
+  commodity: string;
+  grade: string;
+  rules: Record<string, unknown>[];
+  is_active?: boolean;
 }
 
-export interface HarvestBatchProperties {
-    id:                   CreatedAt;
-    batch_code:           BatchCode;
-    aggregator_id:        Payload;
-    notes:                Payload;
-    metadata:             Payload;
-    status:               Status;
-    aggregated_weight_kg: Payload;
-    moisture_avg:         Payload;
-    sealed_at:            SampleID;
-    sealed_by:            Payload;
-    seal_evidence:        Payload;
-    lineage_hash:         Payload;
-    lineage_signature:    Payload;
-    created_at:           CreatedAt;
-    updated_at:           CreatedAt;
-    contributions:        Contributions;
+/**
+ * QC grade rule response model
+ */
+export interface QCGradeRule extends QCGradeRuleBase {
+  id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface BatchCode {
-    type:        Type;
-    description: string;
+/**
+ * QC grade rule creation request
+ */
+export interface QCGradeRuleCreate extends QCGradeRuleBase {}
+
+// ============ Audit Event Types ============
+
+/**
+ * Audit event base model
+ */
+export interface AuditEventBase {
+  event_type: string;
+  entity_type: string;
+  entity_id: string;
+  payload?: Record<string, unknown>;
+  payload_hash?: string;
+  previous_event_hash?: string;
+  user_id?: string;
+  signature?: string;
 }
 
-export interface Contributions {
-    type:  string;
-    items: EntityID;
+/**
+ * Audit event response model
+ */
+export interface AuditEvent extends AuditEventBase {
+  id: string;
+  created_at: string;
 }
 
-export interface Status {
-    type:    Type;
-    default: string;
-}
-
-export interface HarvestBatchContribution {
-    type:                 Type;
-    properties:           HarvestBatchContributionProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface HarvestBatchContributionProperties {
-    id:                    CreatedAt;
-    harvest_batch_id:      CreatedAt;
-    harvest_event_id:      CreatedAt;
-    farmer_id:             EntityID;
-    contributed_weight_kg: EntityID;
-    reported_moisture_pct: Payload;
-    created_at:            CreatedAt;
-}
-
-export interface HarvestEvent {
-    type:                 Type;
-    properties:           HarvestEventProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface HarvestEventProperties {
-    id:                  CreatedAt;
-    farm_id:             BatchCode;
-    field_id:            BatchCode;
-    crop_cycle_id:       CropCycleID;
-    collected_by:        CollectedBy;
-    harvested_at:        HarvestedAt;
-    gross_weight_kg:     BatchCode;
-    moisture_pct:        MoisturePct;
-    loss_kg:             LossKg;
-    photos:              Photos;
-    weighbridge_receipt: Payload;
-    location:            Payload;
-    notes:               Payload;
-    created_at:          CreatedAt;
-    updated_at:          CreatedAt;
-}
-
-export interface CollectedBy {
-    type:        Type[];
-    description: string;
-}
-
-export interface CropCycleID {
-    type:        Type[];
-    format:      Format;
-    description: string;
-}
-
-export interface HarvestedAt {
-    type:        Type;
-    format:      Format;
-    description: string;
-}
-
-export interface LossKg {
-    type:    Type;
-    default: number;
-}
-
-export interface MoisturePct {
-    type:    Type[];
-    minimum: number;
-    maximum: number;
-}
-
-export interface Photos {
-    type:  string[];
-    items: EntityID;
-}
-
-export interface LabProvider {
-    type:                 Type;
-    properties:           LabProviderProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface LabProviderProperties {
-    id:         CreatedAt;
-    name:       EntityID;
-    public_key: Payload;
-    metadata:   Payload;
-    created_at: CreatedAt;
-}
-
-export interface QCGradeRule {
-    type:                 Type;
-    properties:           QCGradeRuleProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface QCGradeRuleProperties {
-    id:         CreatedAt;
-    commodity:  EntityID;
-    grade:      EntityID;
-    rules:      Contributions;
-    is_active:  Verified;
-    created_at: CreatedAt;
-    updated_at: CreatedAt;
-}
-
-export interface Sample {
-    type:                 Type;
-    properties:           SampleProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface SampleProperties {
-    id:               CreatedAt;
-    sample_code:      EntityID;
-    harvest_batch_id: CreatedAt;
-    collected_by:     Payload;
-    collected_at:     SampleID;
-    sample_points:    Payload;
-    photos:           Photos;
-    chain_of_custody: Payload;
-    submitted_to_lab: Verified;
-    created_at:       CreatedAt;
-}
+/**
+ * Audit event creation request
+ */
+export interface AuditEventCreate extends AuditEventBase {}

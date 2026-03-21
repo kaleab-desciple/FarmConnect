@@ -1,66 +1,89 @@
-export interface Delivery {
-    $schema:              string;
-    $id:                  string;
-    title:                string;
-    type:                 string;
-    properties:           Properties;
-    required:             string[];
-    additionalProperties: boolean;
+// FarmConnect Delivery Types - Mirroring Python DTOs from shared_models
+import { DeliveryStatus } from "./enums";
+
+/**
+ * Base delivery model
+ */
+export interface DeliveryBase {
+  order_id: string;
+  carrier_id?: string;
+  status?: DeliveryStatus;
+  pickup_time?: string;
+  delivered_time?: string;
+  pickup_photo_url?: string;
+  delivery_photo_url?: string;
+  recipient_signature_url?: string;
+  notes?: string;
 }
 
-export interface Properties {
-    id:                      ID;
-    order_id:                OrderID;
-    carrier_id:              CarrierID;
-    status:                  Status;
-    pickup_time:             Time;
-    delivered_time:          Time;
-    pickup_photo_url:        CarrierID;
-    delivery_photo_url:      CarrierID;
-    recipient_signature_url: CarrierID;
-    notes:                   CarrierID;
-    created_at:              CreatedAt;
-    updated_at:              UpdatedAt;
+/**
+ * Delivery response model
+ */
+export interface Delivery extends DeliveryBase {
+  id: string;
+  created_at: string;
+  updated_at?: string;
 }
 
-export interface CarrierID {
-    type:        Type[];
-    description: string;
+/**
+ * Delivery creation request
+ */
+export interface DeliveryCreate extends DeliveryBase {}
+
+/**
+ * Delivery update request
+ */
+export interface DeliveryUpdate {
+  carrier_id?: string;
+  status?: DeliveryStatus;
+  pickup_time?: string;
+  delivered_time?: string;
+  pickup_photo_url?: string;
+  delivery_photo_url?: string;
+  recipient_signature_url?: string;
+  notes?: string;
 }
 
-export enum Type {
-    Null = "null",
-    String = "string",
+/**
+ * Delivery assignment request
+ */
+export interface DeliveryAssignRequest {
+  order_id: string;
+  carrier_id: string;
 }
 
-export interface CreatedAt {
-    type:   Type;
-    format: string;
+/**
+ * Delivery status update request
+ */
+export interface DeliveryStatusUpdate {
+  status: DeliveryStatus;
+  notes?: string;
+  pickup_photo_url?: string;
+  delivery_photo_url?: string;
+  recipient_signature_url?: string;
 }
 
-export interface Time {
-    type:        Type[];
-    format:      string;
-    description: string;
+/**
+ * Delivery tracking info
+ */
+export interface DeliveryTracking {
+  delivery_id: string;
+  order_id: string;
+  status: DeliveryStatus;
+  carrier_name: string;
+  estimated_delivery_time?: string;
+  current_location?: {
+    latitude: number;
+    longitude: number;
+  };
+  timeline: DeliveryTimelineEvent[];
 }
 
-export interface ID {
-    type: Type;
-}
-
-export interface OrderID {
-    type:        Type;
-    description: string;
-}
-
-export interface Status {
-    type:        Type;
-    enum:        string[];
-    default:     string;
-    description: string;
-}
-
-export interface UpdatedAt {
-    type:   Type[];
-    format: string;
+/**
+ * Delivery timeline event
+ */
+export interface DeliveryTimelineEvent {
+  status: DeliveryStatus;
+  timestamp: string;
+  notes?: string;
 }

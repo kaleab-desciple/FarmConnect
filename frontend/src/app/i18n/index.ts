@@ -1,49 +1,42 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import en from './locales/en/translation.json';
-import am from './locales/am/translation.json';
-import om from './locales/om/translation.json';
-
-const resources = {
-  en: { translation: en },
-  am: { translation: am },
-  om: { translation: om },
-};
-
-// Get saved language or default to browser language
-const getSavedLanguage = (): string => {
-  const saved = localStorage.getItem('language');
-  if (saved && ['en', 'am', 'om'].includes(saved)) {
-    return saved;
-  }
-  
-  // Check browser language
-  const browserLang = navigator.language.split('-')[0];
-  if (['en', 'am', 'om'].includes(browserLang)) {
-    return browserLang;
-  }
-  
-  return 'en';
-};
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import LanguageDetector from 'i18next-browser-languagedetector'
 
 i18n
+  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources,
-    lng: getSavedLanguage(),
     fallbackLng: 'en',
+    debug: false,
     interpolation: {
-      escapeValue: false, // React already handles XSS
+      escapeValue: false,
     },
-    react: {
-      useSuspense: false,
-    },
-  });
+    resources: {
+      en: {
+        translation: {
+          common: {
+            appName: 'FarmConnect',
+            loading: 'Loading...',
+          }
+        }
+      },
+      am: {
+        translation: {
+          common: {
+            appName: 'ፋርም ኮኔክት',
+            loading: 'በመጫን ላይ...',
+          }
+        }
+      },
+      om: {
+        translation: {
+          common: {
+            appName: 'FarmConnect',
+            loading: 'Loading...',
+          }
+        }
+      }
+    }
+  })
 
-// Save language preference when changed
-i18n.on('languageChanged', (lng) => {
-  localStorage.setItem('language', lng);
-  document.documentElement.lang = lng;
-});
-
-export default i18n;
+export default i18n

@@ -126,7 +126,7 @@ def custom_authorization_endpoint(
         }
     
     # Other users can only access their own resources
-    if resource_id != current_user.user_id:
+    if resource_id != current_user.keycloak_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only access your own resources"
@@ -135,7 +135,7 @@ def custom_authorization_endpoint(
     return {
         "message": f"User access to own resource",
         "resource_id": resource_id,
-        "user_id": current_user.user_id,
+        "user_id": current_user.keycloak_id,
         "access_type": "owner"
     }
 

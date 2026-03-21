@@ -218,7 +218,7 @@ async def get_harvest_statistics(
     if not internal_farmer_id:
         from app.infrastructure.repositories.user_repo import UserRepository
         user_repo = UserRepository(db)
-        keycloak_id = current_user.user_id
+        keycloak_id = current_user.keycloak_id
         user = user_repo.get_by_keycloak_id(keycloak_id)
         if not user and current_user.email:
             user = user_repo.get_by_email(current_user.email)

@@ -7,8 +7,10 @@ import logging
 
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.auth.jwt import (
     verify_token, 
     extract_realm_roles,
@@ -28,21 +30,32 @@ security = HTTPBearer(auto_error=False)
 
 
 class TokenPayload:
-    """Represents decoded and validated token data."""
-    
+    """
+    Represents decoded and validated token data.
+
+    Attributes:
+        keycloak_id:    The Keycloak-generated user UUID (JWT ``sub`` claim).
+                        Use this for Keycloak API calls, ``userinfo`` lookups,
+                        and filtering on ``users.keycloak_id``.
+        system_user_id: The internal system user ID (e.g. ``FAR-00001``).
+                        Populated by the ``get_enriched_user`` dependency.
+                        Use this for any DB foreign-key that references ``users.id``.
+    """
+
     def __init__(self, payload: dict):
         self.raw_payload = payload
-        self.user_id = get_user_id(payload)
+        self.keycloak_id: Optional[str] = get_user_id(payload)   # Keycloak sub claim
+        self.system_user_id: Optional[str] = None                 # Populated lazily via get_enriched_user
         self.username = get_username(payload)
         self.email = get_email(payload)
         self.realm_roles = extract_realm_roles(payload)
         self.client_roles = extract_client_roles(payload)
         self.is_service_account = is_service_account(payload)
         self.subject = payload.get("sub")
-    
+
     def has_realm_role(self, role: str) -> bool:
         return role in self.realm_roles
-    
+
     def has_client_role(self, role: str) -> bool:
         return role in self.client_roles
 
@@ -59,7 +72,7 @@ def get_current_user(
     """
     if not settings.AUTH_ENABLED:
         logger.warning("Authentication is DISABLED - using mock user")
-        return TokenPayload({
+        mock = TokenPayload({
             "sub": "dev-user",
             "preferred_username": "dev-user",
             "email": "dev@example.com",
@@ -69,6 +82,8 @@ def get_current_user(
             },
             "azp": settings.KEYCLOAK_CLIENT_ID
         })
+        mock.system_user_id = "dev-user"  # dev sentinel — matches onboarding_agent_id in fixtures
+        return mock
     
     if not credentials:
         raise HTTPException(
@@ -81,7 +96,8 @@ def get_current_user(
     
     try:
         payload = verify_token(token)
-        return TokenPayload(payload)
+        token_payload = TokenPayload(payload)
+        return token_payload
     except JWTValidationError as e:
         logger.warning(f"Token validation failed: {e}")
         raise HTTPException(
@@ -106,6 +122,36 @@ def get_optional_user(
         return TokenPayload(payload)
     except JWTValidationError:
         return None
+
+
+def get_enriched_user(
+    current_user: TokenPayload = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> TokenPayload:
+    """
+    Enriches a validated ``TokenPayload`` with the internal system user_id.
+
+    Makes a single DB lookup by ``keycloak_id`` (falling back to email) to
+    populate ``current_user.system_user_id`` — the ``users.id`` value used
+    as a foreign key throughout the application.
+
+    Use this dependency (instead of ``get_current_user``) on any route that
+    needs to compare or store the *internal* system user ID (e.g. FK references
+    to ``users.id`` such as weather alert subscriptions, order ownership).
+    """
+    if current_user.system_user_id:  # already populated (dev mock or earlier call)
+        return current_user
+    if current_user.is_service_account or not current_user.keycloak_id:
+        return current_user
+
+    from app.infrastructure.repositories.user_repo import UserRepository
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_keycloak_id(current_user.keycloak_id)
+    if not user and current_user.email:
+        user = user_repo.get_by_email(current_user.email)
+    if user:
+        current_user.system_user_id = user.id
+    return current_user
 
 
 def require_auth(

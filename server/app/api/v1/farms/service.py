@@ -21,9 +21,11 @@ from shared_models import (
     Field as FieldDTO,
     FieldCreate as FieldCreateDTO,
     FieldUpdate as FieldUpdateDTO,
+    FieldListResponse,
     CropCycle as CropCycleDTO,
     CropCycleCreate as CropCycleCreateDTO,
     CropCycleUpdate as CropCycleUpdateDTO,
+    CropCycleListResponse,
 )
 from app.domain.farm.entities import (
     Farm as DomainFarm, 
@@ -71,7 +73,11 @@ class FarmService:
             logger.warning("AUTH_ENABLED=false - using dev mode fallback")
             
             # Check if this is the mock dev user
-            if token_payload.user_id == "dev-user" or token_payload.email == "dev@example.com":
+            if token_payload.keycloak_id == "dev-user" or token_payload.email == "dev@example.com":
+                # If system_user_id is already set (dev mock does this), use it
+                if token_payload.system_user_id:
+                    return token_payload.system_user_id
+                    
                 # Try to find any existing user to use as fallback
                 all_users = self.user_repo.list_all()
                 if all_users:
@@ -83,8 +89,12 @@ class FarmService:
                         detail="No users found in database. Please provision a user first."
                     )
         
+        # If system_user_id is already populated, return it immediately
+        if token_payload.system_user_id:
+            return token_payload.system_user_id
+            
         user = None
-        keycloak_id = token_payload.user_id
+        keycloak_id = token_payload.keycloak_id
         
         if keycloak_id:
             user = self.user_repo.get_by_keycloak_id(keycloak_id)
@@ -274,7 +284,7 @@ class FarmService:
         farms_dto = [domain_to_dto(f) for f in paginated_farms]
         
         return FarmListResponse(
-            farms=farms_dto,
+            items=farms_dto,
             total=total,
             page=page,
             page_size=page_size,
@@ -488,22 +498,43 @@ class FarmService:
     
     def list_fields(
         self,
-        farm_id: str,
-        current_user: TokenPayload
-    ) -> List[FieldDTO]:
-        """List fields for a farm (returns DTOs)"""
-        farm = self.farm_repo.get_by_id(farm_id)
-        if not farm:
-            raise HTTPException(status_code=404, detail="Farm not found")
+        current_user: TokenPayload,
+        farm_id: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> FieldListResponse:
+        """List fields for a farm or for all farmer's farms if farm_id is None."""
+        if farm_id:
+            farm = self.farm_repo.get_by_id(farm_id)
+            if not farm:
+                raise HTTPException(status_code=404, detail="Farm not found")
+            
+            if not self._can_access_farm(farm, current_user):
+                raise HTTPException(status_code=403, detail="Access denied")
+            
+            fields = self.field_repo.get_by_farm_id(farm_id)
+        else:
+            # Fetch all fields for all farms owned by this farmer
+            # Note: current_user.system_user_id is the farmer_id
+            fields = self.field_repo.get_by_farmer_id(current_user.system_user_id)
         
-        if not self._can_access_farm(farm, current_user):
-            raise HTTPException(status_code=403, detail="Access denied")
-        
-        fields = self.field_repo.get_by_farm_id(farm_id)
+        # Apply pagination
+        total = len(fields)
+        total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+        start = (page - 1) * page_size
+        paginated = fields[start:start + page_size]
         
         # Convert domain entities to DTOs
         from app.infrastructure.db.mappers import domain_to_dto
-        return [domain_to_dto(f) for f in fields]
+        items = [domain_to_dto(f) for f in paginated]
+        
+        return FieldListResponse(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
     
     def update_field(
         self,
@@ -724,9 +755,11 @@ class FarmService:
     def list_crop_cycles(
         self,
         field_id: str,
-        current_user: TokenPayload
-    ) -> List[CropCycleDTO]:
-        """List crop cycles for a field (returns DTOs)"""
+        current_user: TokenPayload,
+        page: int = 1,
+        page_size: int = 20
+    ) -> CropCycleListResponse:
+        """List crop cycles for a field with pagination (returns CropCycleListResponse)"""
         field = self.field_repo.get_by_id(field_id)
         if not field:
             raise HTTPException(status_code=404, detail="Field not found")
@@ -737,9 +770,23 @@ class FarmService:
         
         cycles = self.crop_cycle_repo.get_by_field_id(field_id)
         
+        # Apply pagination
+        total = len(cycles)
+        total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+        start = (page - 1) * page_size
+        paginated = cycles[start:start + page_size]
+        
         # Convert domain entities to DTOs
         from app.infrastructure.db.mappers import domain_to_dto
-        return [domain_to_dto(c) for c in cycles]
+        items = [domain_to_dto(c) for c in paginated]
+        
+        return CropCycleListResponse(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
     
     def update_crop_cycle(
         self,

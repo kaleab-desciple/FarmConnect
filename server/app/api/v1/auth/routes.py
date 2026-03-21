@@ -129,8 +129,9 @@ async def login(request: LoginRequest):
         refresh_token = token_data.get("refresh_token", "")
         expires_in = token_data.get("expires_in", 3600)
         
-        # Get user info from Keycloak
+        # Try to get user info from Keycloak userinfo endpoint
         userinfo_url = f"{keycloak_url}/realms/{realm}/protocol/openid-connect/userinfo"
+        userinfo = None
         async with httpx.AsyncClient() as client:
             user_response = await client.get(
                 userinfo_url,
@@ -139,16 +140,68 @@ async def login(request: LoginRequest):
         
         if user_response.status_code == 200:
             userinfo = user_response.json()
+        else:
+            # Fallback: decode JWT token directly to get user info
+            # This handles cases where userinfo endpoint is unavailable
+            logger.warning(f"userinfo endpoint failed ({user_response.status_code}), falling back to JWT decode")
+            try:
+                # Decode JWT without verification to extract claims
+                import base64
+                import json
+                token_parts = access_token.split('.')
+                if len(token_parts) >= 2:
+                    # Add padding if needed
+                    payload = token_parts[1]
+                    padding = 4 - len(payload) % 4
+                    if padding != 4:
+                        payload += '=' * padding
+                    decoded = base64.urlsafe_b64decode(payload)
+                    token_data = json.loads(decoded)
+                    userinfo = {
+                        "sub": token_data.get("sub"),
+                        "preferred_username": token_data.get("preferred_username"),
+                        "email": token_data.get("email"),
+                        "name": token_data.get("name"),
+                    }
+            except Exception as e:
+                logger.warning(f"JWT decode fallback failed: {e}")
+        
+        if userinfo:
+            # Extract role from JWT token's realm_roles
+            role = "FARMER"  # Default
+            try:
+                # Decode JWT without verification to extract claims
+                import base64
+                import json
+                token_parts = access_token.split('.')
+                if len(token_parts) >= 2:
+                    # Add padding if needed
+                    payload = token_parts[1]
+                    padding = 4 - len(payload) % 4
+                    if padding != 4:
+                        payload += '=' * padding
+                    decoded = base64.urlsafe_b64decode(payload)
+                    token_data = json.loads(decoded)
+                    realm_roles = token_data.get("realm_roles", [])
+                    # Find the first real role (exclude default Keycloak roles)
+                    default_roles = {"default-roles-farm-connect", "offline_access", "uma_authorization"}
+                    for r in realm_roles:
+                        if r not in default_roles:
+                            role = r
+                            break
+            except Exception:
+                pass
+            
             user = {
-                "id": userinfo.get("sub", ""),
+                "id": userinfo.get("sub"),  # Can be None if token lacks sub claim
                 "email": userinfo.get("email", request.email),
-                "name": userinfo.get("name", userinfo.get("preferred_username", "")),
+                "name": userinfo.get("name", userinfo.get("preferred_username", request.email)),
                 "phone": userinfo.get("phone_number"),
-                "role": "FARMER",  # Default role, will be updated from Keycloak claims
+                "role": role,
             }
         else:
             user = {
-                "id": "",
+                "id": None,
                 "email": request.email,
                 "name": request.email,
                 "role": "FARMER",
@@ -261,7 +314,7 @@ def get_current_user_info(current_user: Optional[TokenPayload] = Depends(get_opt
     
     return TokenInfoResponse(
         valid=True,
-        user_id=current_user.user_id,
+        user_id=current_user.keycloak_id,
         username=current_user.username,
         email=current_user.email,
         roles=current_user.all_roles,

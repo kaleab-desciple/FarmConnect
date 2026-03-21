@@ -1,71 +1,83 @@
-export interface Order {
-    $schema:              string;
-    $id:                  string;
-    title:                string;
-    type:                 string;
-    required:             string[];
-    properties:           Properties;
-    additionalProperties: boolean;
+// FarmConnect Order Types - Mirroring Python DTOs from shared_models
+import { OrderStatus } from "./enums";
+
+/**
+ * Base order model
+ */
+export interface OrderBase {
+  farmer_id: string;
+  merchant_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  delivery_cost?: number;
+  platform_fee?: number;
+  total_price?: number;
+  status?: OrderStatus;
+  escrow_id?: string;
+  subtotal?: number;
+  delivery_fee?: number;
+  delivery_margin?: number;
+  quality_fee?: number;
+  batch_id?: string;
+  cancelled_at?: string;
+  cancelled_reason?: string;
 }
 
-export interface Properties {
-    id:               EscrowID;
-    farmer_id:        EscrowID;
-    merchant_id:      EscrowID;
-    product_id:       EscrowID;
-    quantity:         DeliveryFee;
-    unit_price:       DeliveryFee;
-    delivery_cost:    DeliveryCost;
-    platform_fee:     DeliveryCost;
-    total_price:      TotalPrice;
-    status:           Status;
-    escrow_id:        EscrowID;
-    created_at:       CreatedAt;
-    subtotal:         DeliveryFee;
-    delivery_fee:     DeliveryFee;
-    delivery_margin:  DeliveryFee;
-    quality_fee:      DeliveryFee;
-    batch_id:         BatchID;
-    cancelled_at:     CancelledAt;
-    cancelled_reason: BatchID;
+/**
+ * Order response model
+ */
+export interface Order extends OrderBase {
+  id: string;
+  created_at: string;
 }
 
-export interface BatchID {
-    type:        string[];
-    description: string;
+/**
+ * Order creation request
+ */
+export interface OrderCreate extends OrderBase {}
+
+/**
+ * Order update request
+ */
+export interface OrderUpdate {
+  status?: OrderStatus;
+  escrow_id?: string;
+  batch_id?: string;
+  cancelled_at?: string;
+  cancelled_reason?: string;
 }
 
-export interface CancelledAt {
-    type:        string[];
-    format:      string;
-    description: string;
+/**
+ * Paginated order list response
+ */
+export interface OrderListResponse {
+  orders: Order[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
-export interface CreatedAt {
-    type:   string;
-    format: string;
+/**
+ * Order with product and user details
+ */
+export interface OrderDetail extends Order {
+  product_name: string;
+  product_category: string;
+  farmer_name: string;
+  merchant_name: string;
+  delivery_status?: string;
 }
 
-export interface DeliveryCost {
-    type:    string;
-    minimum: number;
-}
-
-export interface DeliveryFee {
-    type:             string;
-    exclusiveMinimum: number;
-}
-
-export interface EscrowID {
-    type: string;
-}
-
-export interface Status {
-    $ref: string;
-}
-
-export interface TotalPrice {
-    type:             string;
-    exclusiveMinimum: number;
-    description:      string;
+/**
+ * Order summary for dashboard
+ */
+export interface OrderSummary {
+  total_orders: number;
+  pending_payment: number;
+  in_delivery: number;
+  completed: number;
+  cancelled: number;
+  total_value: number;
 }

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth.dependencies import get_current_user, get_optional_user, require_auth, require_permission
+from app.core.auth.dependencies import get_optional_user, require_auth, require_permission, get_enriched_user
 from shared_models import (
     Farm as FarmDTO,
     FarmCreate as FarmCreateDTO,
@@ -20,9 +20,11 @@ from shared_models import (
     Field as FieldDTO,
     FieldCreate as FieldCreateDTO,
     FieldUpdate as FieldUpdateDTO,
+    FieldListResponse,
     CropCycle as CropCycleDTO,
     CropCycleCreate as CropCycleCreateDTO,
     CropCycleUpdate as CropCycleUpdateDTO,
+    CropCycleListResponse,
 )
 
 from .service import FarmService
@@ -62,7 +64,7 @@ async def list_farms(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user = Depends(get_optional_user)
+    current_user = Depends(get_enriched_user)  # Use enriched user to get system_user_id
 ):
     """
     List farms with filtering and pagination.
@@ -72,7 +74,7 @@ async def list_farms(
     
     ## Query Parameters
     - **farmer_id**: Filter farms by farmer UUID (optional)
-      - Regular users: automatically filtered to their own farms
+      - If not provided and user is authenticated, automatically uses the logged-in user's ID
       - Agents/admins: can query any farmer's farms
     - **page**: Page number for pagination (default: 1, min: 1)
     - **page_size**: Number of items per page (default: 20, min: 1, max: 100)
@@ -102,6 +104,10 @@ async def list_farms(
     - **500**: Internal server error
     """
     try:
+        # If farmer_id not provided and user is authenticated, use system_user_id
+        if not farmer_id and current_user and current_user.system_user_id:
+            farmer_id = current_user.system_user_id
+            
         service = FarmService(db)
         return service.list_farms(farmer_id, current_user, page, page_size)
     except HTTPException:
@@ -305,37 +311,28 @@ async def create_field(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/fields", response_model=List[FieldDTO])
+@router.get("/fields", response_model=FieldListResponse)
 async def list_fields(
-    farm_id: str = Query(..., description="Farm ID"),
+    farm_id: Optional[str] = Query(None, description="Farm ID (optional, defaults to all farmer's farms)"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user = Depends(require_permission("fields:read"))
+    current_user = Depends(get_enriched_user)  # Use enriched user for system_user_id
 ):
     """
-    List all fields belonging to a specific farm.
-    
-    Retrieves all fields for a farm, including their area, soil type,
-    and geographic information. Access restricted to farm owner and admins.
+    List all fields belonging to a specific farm (paginated).
     
     ## Query Parameters
     - **farm_id**: UUID of the farm whose fields to retrieve (required)
-    
-    ## Authentication
-    Requires authentication. Only farm owner or admin can view fields.
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 20, max: 100)
     
     ## Response
-    Returns an array of field objects with complete details.
-    
-    ## Responses
-    - **200**: Fields retrieved successfully
-    - **401**: Unauthorized (not authenticated)
-    - **403**: Forbidden (not farm owner)
-    - **404**: Farm not found
-    - **500**: Internal server error
+    Returns a paginated response: `{ items: [...], total, page, page_size, total_pages }`
     """
     try:
         service = FarmService(db)
-        return service.list_fields(farm_id, current_user)
+        return service.list_fields(current_user, farm_id, page, page_size)
     except HTTPException:
         raise
     except Exception as e:
@@ -648,37 +645,28 @@ async def create_crop_cycle(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/crop-cycles", response_model=List[CropCycleDTO])
+@router.get("/crop-cycles", response_model=CropCycleListResponse)
 async def list_crop_cycles(
     field_id: str = Query(..., description="Field ID"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("crop_cycles:read"))
 ):
     """
-    List all crop cycles for a specific field.
-    
-    Retrieves historical and current crop cycles for a field, showing
-    planting dates, harvest dates, yields, and status.
+    List all crop cycles for a specific field (paginated).
     
     ## Query Parameters
-    - **field_id**: UUID of the field whose crop cycles to retrieve (required)
-    
-    ## Authentication
-    Requires authentication. Only field owner or admin can view crop cycles.
+    - **field_id**: UUID of the field (required)
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 20, max: 100)
     
     ## Response
-    Returns array of crop cycle objects ordered by planting date (most recent first).
-    
-    ## Responses
-    - **200**: Crop cycles retrieved successfully
-    - **401**: Unauthorized (not authenticated)
-    - **403**: Forbidden (not field owner)
-    - **404**: Field not found
-    - **500**: Internal server error
+    Returns a paginated response: `{ items: [...], total, page, page_size, total_pages }`
     """
     try:
         service = FarmService(db)
-        return service.list_crop_cycles(field_id, current_user)
+        return service.list_crop_cycles(field_id, current_user, page, page_size)
     except HTTPException:
         raise
     except Exception as e:

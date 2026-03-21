@@ -1,153 +1,228 @@
-export interface Farm {
-    $schema:     string;
-    $id:         string;
-    title:       string;
-    definitions: Definitions;
+// FarmConnect Farm, Field, and Crop Cycle Types - Mirroring Python DTOs from shared_models
+import { CropCycleStatus } from "./enums";
+
+/**
+ * GeoJSON point for coordinates
+ */
+export interface GeoJSONPoint {
+  type: "Point";
+  coordinates: [number, number]; // [longitude, latitude]
 }
 
-export interface Definitions {
-    Farm:      FarmClass;
-    Field:     Field;
-    CropCycle: CropCycle;
+/**
+ * GeoJSON polygon for boundaries
+ */
+export interface GeoJSONPolygon {
+  type: "Polygon";
+  coordinates: number[][][]; // Array of rings, first ring is exterior
 }
 
-export interface CropCycle {
-    type:                 Type;
-    properties:           CropCycleProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Base farm model
+ */
+export interface FarmBase {
+  farmer_id: string;
+  name: string;
+  location_lat: number; // Decimal in Python, number in TS
+  location_lng: number;
+  location_address?: string;
+  total_area_ha?: number;
+  boundary_geojson?: GeoJSONPolygon;
+  centroid_geojson?: GeoJSONPoint;
+  metadata?: Record<string, unknown>;
 }
 
-export interface CropCycleProperties {
-    id:                      CreatedAt;
-    field_id:                FieldID;
-    product_category:        CropName;
-    crop_name:               CropName;
-    variety:                 ActualYieldKg;
-    cultivar:                ActualYieldKg;
-    planting_date:           FieldID;
-    expected_harvest_date:   HarvestDate;
-    actual_harvest_date:     HarvestDate;
-    status:                  CropName;
-    expected_yield_kg:       ActualYieldKg;
-    actual_yield_kg:         ActualYieldKg;
-    yield_quality_grade:     ActualYieldKg;
-    seed_source:             ActualYieldKg;
-    planting_density_per_ha: ActualYieldKg;
-    seed_cost_usd:           ActualYieldKg;
-    notes:                   ActualYieldKg;
-    metadata:                ActualYieldKg;
-    created_at:              CreatedAt;
-    updated_at:              CreatedAt;
-    deleted_at:              DeletedAt;
+/**
+ * Farm response model
+ */
+export interface Farm extends FarmBase {
+  id: string;
+  created_at: string; // ISO datetime
+  updated_at: string;
+  deleted_at?: string;
 }
 
-export interface HarvestDate {
-    type:        Type[];
-    format:      string;
-    description: string;
+/**
+ * Farm creation request
+ */
+export interface FarmCreate extends FarmBase {}
+
+/**
+ * Farm update request - all fields optional for partial updates
+ */
+export interface FarmUpdate {
+  farmer_id?: string;
+  name?: string;
+  location_lat?: number;
+  location_lng?: number;
+  location_address?: string;
+  total_area_ha?: number;
+  boundary_geojson?: GeoJSONPolygon;
+  centroid_geojson?: GeoJSONPoint;
+  metadata?: Record<string, unknown>;
 }
 
-export enum Type {
-    Integer = "integer",
-    Null = "null",
-    Number = "number",
-    Object = "object",
-    String = "string",
+/**
+ * Paginated farm list response
+ */
+export interface FarmListResponse {
+  farms: Farm[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
-export interface ActualYieldKg {
-    type:        Type[];
-    description: string;
+// ============ Field Types ============
+
+/**
+ * Base field model
+ */
+export interface FieldBase {
+  farm_id: string;
+  name: string;
+  area_ha: number;
+  boundary_geojson: GeoJSONPolygon;
+  centroid_geojson?: GeoJSONPoint;
+  soil_type?: string;
+  soil_classification?: string;
+  elevation_m?: number;
+  slope_degree?: number;
+  irrigation_type?: string;
+  drainage_type?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface CreatedAt {
-    type:   Type;
-    format: string;
+/**
+ * Field response model
+ */
+export interface Field extends FieldBase {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
 }
 
-export interface CropName {
-    type:        Type;
-    description: string;
+/**
+ * Field creation request
+ */
+export interface FieldCreate extends FieldBase {}
+
+/**
+ * Field update request - all fields optional for partial updates
+ */
+export interface FieldUpdate {
+  farm_id?: string;
+  name?: string;
+  area_ha?: number;
+  boundary_geojson?: GeoJSONPolygon;
+  centroid_geojson?: GeoJSONPoint;
+  soil_type?: string;
+  soil_classification?: string;
+  elevation_m?: number;
+  slope_degree?: number;
+  irrigation_type?: string;
+  drainage_type?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface DeletedAt {
-    type:   Type[];
-    format: string;
+// ============ Crop Cycle Types ============
+
+/**
+ * Base crop cycle model
+ */
+export interface CropCycleBase {
+  field_id: string;
+  product_category: string;
+  crop_name: string;
+  variety?: string;
+  cultivar?: string;
+  planting_date: string; // date string (YYYY-MM-DD)
+  expected_harvest_date?: string;
+  actual_harvest_date?: string;
+  status: CropCycleStatus;
+  expected_yield_kg?: number;
+  actual_yield_kg?: number;
+  yield_quality_grade?: string;
+  seed_source?: string;
+  planting_density_per_ha?: number;
+  seed_cost_usd?: number;
+  notes?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface FieldID {
-    type:        Type;
-    format:      string;
-    description: string;
+/**
+ * Crop cycle response model
+ */
+export interface CropCycle extends CropCycleBase {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
 }
 
-export interface FarmClass {
-    type:                 Type;
-    properties:           FarmProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Crop cycle creation request
+ */
+export interface CropCycleCreate extends CropCycleBase {}
+
+/**
+ * Crop cycle update request - all fields optional for partial updates
+ */
+export interface CropCycleUpdate {
+  field_id?: string;
+  product_category?: string;
+  crop_name?: string;
+  variety?: string;
+  cultivar?: string;
+  planting_date?: string;
+  expected_harvest_date?: string;
+  actual_harvest_date?: string;
+  status?: CropCycleStatus;
+  expected_yield_kg?: number;
+  actual_yield_kg?: number;
+  yield_quality_grade?: string;
+  seed_source?: string;
+  planting_density_per_ha?: number;
+  seed_cost_usd?: number;
+  notes?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface FarmProperties {
-    id:               CreatedAt;
-    farmer_id:        CropName;
-    name:             Name;
-    location_lat:     LocationL;
-    location_lng:     LocationL;
-    location_address: ActualYieldKg;
-    total_area_ha:    ActualYieldKg;
-    boundary_geojson: ActualYieldKg;
-    centroid_geojson: ActualYieldKg;
-    metadata:         ActualYieldKg;
-    created_at:       CreatedAt;
-    updated_at:       CreatedAt;
-    deleted_at:       DeletedAt;
+// ============ Field Status Map Types ============
+
+/**
+ * Active crop cycle info for field status map
+ */
+export interface FieldStatusMapCropCycle {
+  id: string;
+  crop_name: string;
+  status: CropCycleStatus;
+  planting_date?: string;
+  expected_harvest_date?: string;
+  expected_yield_kg?: number;
+  variety?: string;
 }
 
-export interface LocationL {
-    type:        Type;
-    minimum:     number;
-    maximum:     number;
-    description: string;
+/**
+ * Field status for map visualization
+ */
+export interface FieldStatusMapField {
+  field_id: string;
+  field_name: string;
+  area_ha: number;
+  boundary_geojson: GeoJSONPolygon;
+  centroid_geojson?: GeoJSONPoint;
+  irrigation_type?: string;
+  soil_type?: string;
+  active_crop_cycle?: FieldStatusMapCropCycle;
 }
 
-export interface Name {
-    type:        Type;
-    minLength:   number;
-    maxLength:   number;
-    description: string;
-}
-
-export interface Field {
-    type:                 Type;
-    properties:           FieldProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface FieldProperties {
-    id:                  CreatedAt;
-    farm_id:             FieldID;
-    name:                Name;
-    area_ha:             CropName;
-    boundary_geojson:    CropName;
-    centroid_geojson:    ActualYieldKg;
-    soil_type:           ActualYieldKg;
-    soil_classification: ActualYieldKg;
-    elevation_m:         ActualYieldKg;
-    slope_degree:        SlopeDegree;
-    irrigation_type:     ActualYieldKg;
-    drainage_type:       ActualYieldKg;
-    metadata:            ActualYieldKg;
-    created_at:          CreatedAt;
-    updated_at:          CreatedAt;
-    deleted_at:          DeletedAt;
-}
-
-export interface SlopeDegree {
-    type:        Type[];
-    minimum:     number;
-    maximum:     number;
-    description: string;
+/**
+ * Farm field status map response
+ */
+export interface FieldStatusMapResponse {
+  farm_id: string;
+  farm_name: string;
+  fields: FieldStatusMapField[];
 }

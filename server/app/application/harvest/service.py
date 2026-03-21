@@ -44,15 +44,15 @@ class HarvestService:
         # Look up the authenticated user's farmer_id from users table
         from app.infrastructure.repositories.user_repo import UserRepository
         user_repo = UserRepository(self.db)
-        authenticated_user = user_repo.get_by_keycloak_id(current_user.user_id) if current_user.user_id else None
+        authenticated_user = user_repo.get_by_keycloak_id(current_user.keycloak_id) if current_user.keycloak_id else None
         
         # Auto-link: if user not found by keycloak_id, try to find by email and update keycloak_id
         if not authenticated_user and current_user.email:
             authenticated_user = user_repo.get_by_email(current_user.email)
             if authenticated_user and not authenticated_user.keycloak_id:
                 # Link the Keycloak ID to the existing user
-                user_repo.update(authenticated_user.id, {"keycloak_id": current_user.user_id})
-                authenticated_user = user_repo.get_by_keycloak_id(current_user.user_id)
+                user_repo.update(authenticated_user.id, {"keycloak_id": current_user.keycloak_id})
+                authenticated_user = user_repo.get_by_keycloak_id(current_user.keycloak_id)
         
         authenticated_farmer_id = authenticated_user.id if authenticated_user else None
         
@@ -123,15 +123,15 @@ class HarvestService:
         # Look up the authenticated user's farmer_id from users table
         from app.infrastructure.repositories.user_repo import UserRepository
         user_repo = UserRepository(self.db)
-        authenticated_user = user_repo.get_by_keycloak_id(current_user.user_id) if current_user.user_id else None
+        authenticated_user = user_repo.get_by_keycloak_id(current_user.keycloak_id) if current_user.keycloak_id else None
         
         # Auto-link: if user not found by keycloak_id, try to find by email and update keycloak_id
         if not authenticated_user and current_user.email:
             authenticated_user = user_repo.get_by_email(current_user.email)
             if authenticated_user and not authenticated_user.keycloak_id:
                 # Link the Keycloak ID to the existing user
-                user_repo.update(authenticated_user.id, {"keycloak_id": current_user.user_id})
-                authenticated_user = user_repo.get_by_keycloak_id(current_user.user_id)
+                user_repo.update(authenticated_user.id, {"keycloak_id": current_user.keycloak_id})
+                authenticated_user = user_repo.get_by_keycloak_id(current_user.keycloak_id)
         
         authenticated_farmer_id = authenticated_user.id if authenticated_user else None
         

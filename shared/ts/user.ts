@@ -1,65 +1,69 @@
+// FarmConnect User Types - Mirroring Python DTOs from shared_models
+import { OnboardingStatus, UserRole } from "./enums";
+
+/**
+ * User model - represents a platform user
+ */
 export interface User {
-    $schema:              string;
-    $id:                  string;
-    title:                string;
-    type:                 string;
-    required:             string[];
-    properties:           Properties;
-    additionalProperties: boolean;
+  id: string;
+  keycloak_id?: string;
+  role: UserRole;
+  name: string;
+  email: string;
+  phone?: string;
+  created_at: string; // ISO datetime
+  metadata?: Record<string, unknown>;
+  onboarding_status?: OnboardingStatus;
+  onboarding_agent_id?: string;
 }
 
-export interface Properties {
-    id:                  ID;
-    keycloak_id:         KeycloakID;
-    role:                Role;
-    name:                Name;
-    email:               Email;
-    phone:               KeycloakID;
-    created_at:          CreatedAt;
-    metadata:            Metadata;
-    onboarding_status:   OnboardingStatus;
-    onboarding_agent_id: OnboardingAgentID;
+/**
+ * User creation request
+ */
+export interface UserCreate {
+  keycloak_id?: string;
+  role: UserRole;
+  name: string;
+  email: string;
+  phone?: string;
+  metadata?: Record<string, unknown>;
+  onboarding_status?: OnboardingStatus;
+  onboarding_agent_id?: string;
 }
 
-export interface CreatedAt {
-    type:   string;
-    format: string;
+/**
+ * User update request
+ */
+export interface UserUpdate {
+  role?: UserRole;
+  name?: string;
+  email?: string;
+  phone?: string;
+  metadata?: Record<string, unknown>;
+  onboarding_status?: OnboardingStatus;
+  onboarding_agent_id?: string;
 }
 
-export interface Email {
-    type:   string[];
-    format: string;
+/**
+ * Paginated user list response
+ */
+export interface UserListResponse {
+  users: User[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
-export interface ID {
-    type: string;
-}
-
-export interface KeycloakID {
-    type: string[];
-}
-
-export interface Metadata {
-    type:                 string;
-    additionalProperties: boolean;
-}
-
-export interface Name {
-    type:      string;
-    minLength: number;
-}
-
-export interface OnboardingAgentID {
-    type:        string[];
-    description: string;
-}
-
-export interface OnboardingStatus {
-    type:        string[];
-    enum:        string[];
-    description: string;
-}
-
-export interface Role {
-    $ref: string;
+/**
+ * User profile for display
+ */
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  avatar_url?: string;
+  created_at: string;
 }

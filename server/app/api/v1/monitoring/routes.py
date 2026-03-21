@@ -13,7 +13,7 @@ from uuid import UUID
 from decimal import Decimal
 
 from app.core.database import get_db
-from app.core.auth.dependencies import get_current_user, get_optional_user, require_auth
+from app.core.auth.dependencies import get_optional_user, require_auth, get_enriched_user
 from app.domain.monitoring.entities import (
     SoilReadingCreate, SoilReadingUpdate,
     NDVISnapshotCreate,
@@ -236,7 +236,7 @@ async def create_pest_report(
     observed_at: Optional[datetime] = Query(None, description="Observation timestamp"),
     description: Optional[str] = Query(None, description="Description"),
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(get_enriched_user)  # needs system_user_id for reported_by FK
 ):
     """
     Create a new pest/disease report for a field.
@@ -255,7 +255,7 @@ async def create_pest_report(
             affected_area_pct=Decimal(str(affected_area_pct)),
             observed_at=observed_at or datetime.now(timezone.utc),
             description=description,
-            reported_by=current_user.user_id,
+            reported_by=current_user.system_user_id,
         )
         
         service = MonitoringService(db)

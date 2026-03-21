@@ -134,7 +134,7 @@ def approve_user_onboarding(
     return {
         "user_id": user_id,
         "onboarding_status": OnboardingStatus.ACTIVE.value,
-        "approved_by": current_user.sub,
+        "approved_by": current_user.keycloak_id,
         "note": request.note,
     }
 
@@ -170,6 +170,6 @@ def reject_user_onboarding(
     return {
         "user_id": user_id,
         "onboarding_status": OnboardingStatus.REJECTED.value,
-        "rejected_by": current_user.sub,
+        "rejected_by": current_user.keycloak_id,
         "note": request.note,
     }

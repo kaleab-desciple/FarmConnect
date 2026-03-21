@@ -153,7 +153,7 @@ class FarmUpdate(FarmBase):
 
 class FarmListResponse(BaseModel):
     """Paginated farm list response"""
-    farms: List[Farm]
+    items: List[Farm]
     total: int
     page: int
     page_size: int
@@ -197,6 +197,15 @@ class FieldUpdate(FieldBase):
     pass
 
 
+class FieldListResponse(BaseModel):
+    """Paginated field list response"""
+    items: List[Field]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
 # ============ Crop Cycle DTOs ============
 
 class CropCycleBase(BaseModel):
@@ -238,6 +247,13 @@ class CropCycleUpdate(CropCycleBase):
     pass
 
 
+class CropCycleListResponse(BaseModel):
+    """Paginated crop cycle list response"""
+    items: List[CropCycle]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 # ============ Enums (for reference) ============

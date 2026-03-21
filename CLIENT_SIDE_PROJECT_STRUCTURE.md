@@ -134,6 +134,7 @@ src/
 │   │   │   ├── FarmCard.tsx
 │   │   │   ├── FarmForm.tsx
 │   │   │   ├── FarmStats.tsx
+│   │   │   ├── FarmSettings.tsx
 │   │   │   └── FarmList.tsx
 │   │   ├── hooks/
 │   │   │   ├── useFarms.ts
@@ -185,6 +186,7 @@ src/
 │   │   │   ├── ProductFilters.tsx
 │   │   │   ├── InventoryFunnel.tsx   # Farmer inventory view
 │   │   │   ├── ProductForm.tsx
+│   │   │   ├── BatchQCAssessment.tsx
 │   │   │   └── CategoryNav.tsx
 │   │   ├── hooks/
 │   │   │   └── useProducts.ts
@@ -384,6 +386,7 @@ src/
 │       │   ├── HarvestSchedule.tsx
 │       │   ├── InventoryManagement.tsx
 │       │   ├── AIMobileScanner.tsx
+│       │   ├── FarmSettingsPage.tsx
 │       │   └── Profile.tsx
 │       ├── merchant/
 │       │   ├── MerchantDashboard.tsx

@@ -120,7 +120,7 @@ services:
       KEYCLOAK_CLIENT_ID: farm-connect-backend
       KEYCLOAK_CLIENT_SECRET: CHANGE_ME_BACKEND_SECRET
       KEYCLOAK_ISSUER_URL: http://keycloak:8080/realms/farm-connect
-      PYTHONPATH: /app/shared/py
+      PYTHONPATH: "/app/shared/py:/app"
       AUTH_ENABLED: "true"
     ports:
       - "8000:8000"
@@ -152,6 +152,7 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+    #  - ./shared:/shared
       - /app/node_modules
     environment:
       - NODE_ENV=development

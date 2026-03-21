@@ -139,6 +139,17 @@ class FieldRepository:
         ).all()
         return [self._to_domain(orm) for orm in orms]
 
+    def get_by_farmer_id(self, farmer_id: str) -> List[Field]:
+        """Get all fields for all farms owned by a farmer."""
+        orms = self.session.query(FieldORM).join(FarmORM).filter(
+            and_(
+                FarmORM.farmer_id == farmer_id,
+                FieldORM.deleted_at.is_(None),
+                FarmORM.deleted_at.is_(None)
+            )
+        ).all()
+        return [self._to_domain(orm) for orm in orms]
+
     def update(self, field_id: str, field_data: FieldUpdate) -> Optional[Field]:
         """Update a field."""
         orm = self.session.query(FieldORM).filter(FieldORM.id == field_id).first()

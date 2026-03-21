@@ -1,64 +1,59 @@
-export interface Dispute {
-    $schema:              string;
-    $id:                  string;
-    title:                string;
-    type:                 string;
-    required:             string[];
-    properties:           Properties;
-    additionalProperties: boolean;
+// FarmConnect Dispute Types - Mirroring Python DTOs from shared_models
+import { DisputeState, DisputeResolution } from "./enums";
+
+/**
+ * Base dispute model
+ */
+export interface DisputeBase {
+  order_id: string;
+  raised_by: string;
+  state?: DisputeState;
+  reason?: string;
+  resolution?: DisputeResolution;
+  evidence_urls?: string[];
+  handler_role?: string;
+  escalated_to?: string;
+  escalation_note?: string;
 }
 
-export interface Properties {
-    id:              ID;
-    order_id:        ID;
-    raised_by:       RaisedBy;
-    state:           Resolution;
-    reason:          Reason;
-    resolution:      Resolution;
-    evidence_urls:   EvidenceUrls;
-    created_at:      CreatedAt;
-    resolved_at:     ResolvedAt;
-    handler_role:    EscalatedTo;
-    escalated_to:    EscalatedTo;
-    escalation_note: EscalatedTo;
+/**
+ * Dispute response model
+ */
+export interface Dispute extends DisputeBase {
+  id: string;
+  created_at: string;
+  resolved_at?: string;
 }
 
-export interface CreatedAt {
-    type:   string;
-    format: string;
+/**
+ * Dispute creation request
+ */
+export interface DisputeCreate extends DisputeBase {}
+
+/**
+ * Dispute update request
+ */
+export interface DisputeUpdate {
+  state?: DisputeState;
+  resolution?: DisputeResolution;
+  evidence_urls?: string[];
+  handler_role?: string;
+  escalated_to?: string;
+  escalation_note?: string;
 }
 
-export interface EscalatedTo {
-    type:        string[];
-    description: string;
+/**
+ * Dispute resolution request
+ */
+export interface DisputeResolveRequest {
+  resolution: DisputeResolution;
+  resolution_notes: string;
 }
 
-export interface EvidenceUrls {
-    type:     string;
-    items:    CreatedAt;
-    maxItems: number;
-}
-
-export interface ID {
-    type: string;
-}
-
-export interface RaisedBy {
-    type:        string;
-    description: string;
-}
-
-export interface Reason {
-    type:      string;
-    minLength: number;
-    maxLength: number;
-}
-
-export interface Resolution {
-    $ref: string;
-}
-
-export interface ResolvedAt {
-    type:   string[];
-    format: string;
+/**
+ * Dispute escalation request
+ */
+export interface DisputeEscalateRequest {
+  escalated_to: string;
+  escalation_note: string;
 }

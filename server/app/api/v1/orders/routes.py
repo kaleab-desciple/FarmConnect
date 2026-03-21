@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import require_permission, get_current_user, TokenPayload
+from app.core.auth import require_permission, get_enriched_user, TokenPayload
 from shared_models import Order as OrderDTO, OrderCreate
 from shared_models.order_escrow_pair import OrderEscrowPair
 
@@ -114,7 +114,7 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/", response_model=List[OrderDTO], dependencies=[Depends(require_permission("orders:read"))])
-def list_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
+def list_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_enriched_user)):
     """
     List orders with row-level authorization.
     
@@ -157,7 +157,7 @@ def list_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depe
     return service.list_orders(current_user)
 
 @router.get("/actionable", response_model=List[OrderDTO], dependencies=[Depends(require_permission("orders:read"))])
-def get_actionable_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
+def get_actionable_orders(db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_enriched_user)):
     """
     Get orders that require action from the current user based on their role.
     
@@ -194,7 +194,7 @@ def get_actionable_orders(db: Session = Depends(get_db), current_user: TokenPayl
     return service.get_actionable_orders(current_user)
 
 @router.get("/{order_id}", response_model=OrderDTO, dependencies=[Depends(require_permission("orders:read"))])
-def get_order(order_id: str, db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
+def get_order(order_id: str, db: Session = Depends(get_db), current_user: TokenPayload = Depends(get_enriched_user)):
     """
     Get detailed information about a specific order.
     
@@ -257,7 +257,7 @@ def cancel_order(
     order_id: str,
     reason: str,
     db: Session = Depends(get_db),
-    current_user: TokenPayload = Depends(get_current_user)
+    current_user: TokenPayload = Depends(get_enriched_user)  # needs system_user_id for FK comparison
 ):
     """
     Cancel an order and release inventory reservation.
@@ -281,8 +281,8 @@ def cancel_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    # Check authorization (only merchant or farmer can cancel)
-    if order.merchant_id != current_user.user_id and order.farmer_id != current_user.user_id:
+    # Check authorization — order IDs are internal system IDs, compare against system_user_id
+    if order.merchant_id != current_user.system_user_id and order.farmer_id != current_user.system_user_id:
         # Check if admin/manager/agent
         if not any(role in current_user.all_roles for role in ['ADMIN', 'MANAGER', 'AGENT']):
             raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
@@ -329,7 +329,7 @@ def cancel_order(
 def confirm_delivery(
     order_id: str,
     db: Session = Depends(get_db),
-    current_user: TokenPayload = Depends(get_current_user)
+    current_user: TokenPayload = Depends(get_enriched_user)
 ):
     """
     Confirm delivery - mark order as delivered.
@@ -374,7 +374,7 @@ def report_delivery_failure(
     order_id: str,
     reason: str,
     db: Session = Depends(get_db),
-    current_user: TokenPayload = Depends(get_current_user)
+    current_user: TokenPayload = Depends(get_enriched_user)
 ):
     """
     Report delivery failure.
@@ -422,7 +422,7 @@ def report_delivery_failure(
 def complete_order(
     order_id: str,
     db: Session = Depends(get_db),
-    current_user: TokenPayload = Depends(get_current_user)
+    current_user: TokenPayload = Depends(get_enriched_user)
 ):
     """
     Complete an order - release escrow to farmer.
@@ -466,7 +466,7 @@ def complete_order(
 def confirm_order(
     order_id: str,
     db: Session = Depends(get_db),
-    current_user: TokenPayload = Depends(get_current_user)
+    current_user: TokenPayload = Depends(get_enriched_user)  # needs system_user_id for FK comparison
 ):
     """
     Confirm an order - mark as ready for delivery.
@@ -494,11 +494,11 @@ def confirm_order(
     user_repo = UserRepository(db)
     farmer = user_repo.get_by_id(order.farmer_id)
     
+    # Check authorization — farmer_id is an internal system ID
     is_authorized = (
-        current_user.user_id == order.farmer_id or
-        current_user.user_id == str(farmer.keycloak_id) if farmer and farmer.keycloak_id else False or
-        any(role in current_user.all_roles for role in ['ADMIN', 'MANAGER', 'AGENT', 'MODERATOR'])
-    )
+        current_user.system_user_id is not None
+        and current_user.system_user_id == order.farmer_id
+    ) or any(role in current_user.all_roles for role in ['ADMIN', 'MANAGER', 'AGENT', 'MODERATOR'])
     
     if not is_authorized:
         raise HTTPException(status_code=403, detail="Not authorized to confirm this order")

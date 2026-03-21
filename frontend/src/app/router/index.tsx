@@ -1,138 +1,68 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../store/useAuthStore';
-import { UserRole } from '../config/roles';
-import { Spinner } from '../../shared/components/ui/Spinner';
-import { AuthGuard } from './guards';
-import { useMemo } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ROUTES } from './routes';
 
-// Lazy load pages for code splitting
-const LoginPage = lazy(() => import('../../features/auth/pages/LoginPage'));
+// Auth Components
+import LoginForm from '@features/auth/components/LoginForm';
+import RegisterForm from '@features/auth/components/RegisterForm';
 
-// Farmer pages
-const FarmerDashboard = lazy(() => import('../../features/farms/pages/FarmerDashboard'));
-const FieldsListPage = lazy(() => import('../../features/farms/pages/FieldsListPage'));
-const CropCyclesListPage = lazy(() => import('../../features/farms/pages/CropCyclesListPage'));
+// Farmer Components
+import FarmerDashboard from '@/pages/roles/farmer/FarmerDashboard';
+import FarmList from '@features/farms/components/FarmList';
+import FarmSettingsPage from '@/pages/roles/farmer/FarmSettingsPage';
+import FieldsPage from '@/pages/roles/farmer/FieldsPage';
+import FieldDetailsPage from '@/pages/roles/farmer/FieldDetailsPage';
+import InventoryPage from '@/pages/roles/farmer/InventoryPage';
+import StockUpdateForm from '@features/inventory/components/StockUpdateForm';
+import FarmerOrderPage from '@/pages/roles/farmer/FarmerOrderPage';
+import AIDiagnosticsPage from '@/pages/roles/farmer/AIDiagnosticsPage';
+import DailyLogForm from '@features/logs/components/DailyLogForm';
 
-// Harvest pages
-const HarvestListPage = lazy(() => import('../../features/harvest/pages/HarvestListPage'));
 
-// Orders pages
-const OrdersListPage = lazy(() => import('../../features/orders/pages/OrdersListPage'));
 
-// Admin pages
-const AdminDashboard = lazy(() => import('../../features/admin/pages/AdminDashboard'));
 
-// Loading fallback
-const PageLoader = () => (
-  <div className="flex min-h-screen items-center justify-center">
-    <Spinner size="lg" />
+
+// Placeholder for other roles
+const Placeholder = ({ name }: { name: string }) => (
+  <div className="p-8 text-center text-gray-500">
+    <h2 className="text-xl font-bold mb-2">{name}</h2>
+    <p>This page is currently under development.</p>
   </div>
 );
 
-// Route definitions
-interface RouteConfig {
-  path: string;
-  component: ReturnType<typeof lazy>;
-  roles?: UserRole[];
-  requiresAuth?: boolean;
-}
-
-const routes: RouteConfig[] = [
-  // Public routes
-  { path: '/', component: LoginPage },
-  { path: '/login', component: LoginPage },
-  
-  // Farmer routes
-  { 
-    path: '/farmer', 
-    component: FarmerDashboard, 
-    roles: [UserRole.FARMER],
-    requiresAuth: true 
-  },
-  { 
-    path: '/farmer/fields', 
-    component: FieldsListPage, 
-    roles: [UserRole.FARMER],
-    requiresAuth: true 
-  },
-  { 
-    path: '/farmer/crop-cycles', 
-    component: CropCyclesListPage, 
-    roles: [UserRole.FARMER],
-    requiresAuth: true 
-  },
-  { 
-    path: '/farmer/harvests', 
-    component: HarvestListPage, 
-    roles: [UserRole.FARMER],
-    requiresAuth: true 
-  },
-  
-  // Merchant routes
-  { 
-    path: '/merchant/orders', 
-    component: OrdersListPage, 
-    roles: [UserRole.MERCHANT],
-    requiresAuth: true 
-  },
-  
-  // Admin routes
-  { 
-    path: '/admin', 
-    component: AdminDashboard, 
-    roles: [UserRole.ADMIN],
-    requiresAuth: true 
-  },
-  
-  // Default redirect
-  { path: '*', component: LoginPage },
-];
-
-export function Router() {
-  const location = useLocation();
-  const { isAuthenticated, user } = useAuthStore();
-  
-  // Filter routes based on auth and permissions
-  const filteredRoutes = useMemo(() => {
-    return routes.map((route) => {
-      // Check auth requirement
-      if (route.requiresAuth && !isAuthenticated) {
-        return { ...route, component: () => <Navigate to="/login" state={{ from: location }} replace /> };
-      }
-      
-      // Check role requirement
-      if (route.roles && user) {
-        if (!route.roles.includes(user.role)) {
-          return { ...route, component: () => <Navigate to="/login" replace /> };
-        }
-      }
-      
-      return route;
-    });
-  }, [isAuthenticated, user, location]);
-  
+const AppRouter: React.FC = () => {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        {filteredRoutes.map((route, index) => (
-          <Route
-            key={route.path + index}
-            path={route.path}
-            element={
-              <AuthGuard
-                requireAuth={route.requiresAuth ?? false}
-                allowedRoles={route.roles}
-                fallbackPath={route.requiresAuth === false ? undefined : '/login'}
-              >
-                <route.component />
-              </AuthGuard>
-            }
-          />
-        ))}
-      </Routes>
-    </Suspense>
+    <Routes>
+      {/* Auth Routes */}
+      <Route path={ROUTES.LOGIN} element={<LoginForm />} />
+      <Route path={ROUTES.REGISTER} element={<RegisterForm />} />
+      
+      {/* Farmer Routes */}
+      <Route path={ROUTES.FARMER_DASHBOARD} element={<FarmerDashboard />} />
+      <Route path={ROUTES.FARMER_FARMS} element={<FarmList />} />
+      <Route path={ROUTES.FARMER_FARM_SETTINGS} element={<FarmSettingsPage />} />
+      <Route path={ROUTES.FARMER_FIELDS} element={<FieldsPage />} />
+      <Route path={ROUTES.FARMER_FIELD_DETAIL} element={<FieldDetailsPage />} />
+      <Route path={ROUTES.FARMER_HARVEST_NEW} element={<StockUpdateForm />} />
+      <Route path={ROUTES.FARMER_INVENTORY} element={<InventoryPage />} />
+      <Route path={ROUTES.FARMER_ORDERS} element={<FarmerOrderPage />} />
+      <Route path={ROUTES.FARMER_AI_DIAGNOSIS} element={<AIDiagnosticsPage />} />
+      <Route path={ROUTES.FARMER_LOGS_NEW} element={<DailyLogForm />} />
+      
+      {/* Merchant Routes (Placeholders) */}
+      <Route path={ROUTES.MERCHANT_MARKETPLACE} element={<Placeholder name="Merchant Marketplace" />} />
+      <Route path={ROUTES.MERCHANT_DASHBOARD} element={<Placeholder name="Merchant Dashboard" />} />
+      
+      {/* Delivery Routes (Placeholders) */}
+      <Route path={ROUTES.DELIVERY_AVAILABLE} element={<Placeholder name="Delivery Job Discovery" />} />
+      
+      {/* Landing/Default Redirect */}
+      <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+      
+      {/* 404 Fallback */}
+      <Route path="*" element={<div className="p-8 text-center text-red-500 font-bold underline">404: Page Not Found</div>} />
+    </Routes>
   );
-}
+};
 
-export default Router;
+export default AppRouter;

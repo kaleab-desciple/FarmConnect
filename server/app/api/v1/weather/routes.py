@@ -14,7 +14,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
-from app.core.auth.dependencies import get_current_user, get_optional_user, require_auth
+from app.core.auth.dependencies import get_enriched_user, get_optional_user, get_enriched_user, require_auth
 from app.core.config import settings
 
 
@@ -230,7 +230,7 @@ async def get_weather_alerts(
     latitude: Optional[float] = Query(None, ge=-90, le=90),
     longitude: Optional[float] = Query(None, ge=-180, le=180),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get weather alerts for fields.
@@ -252,7 +252,7 @@ async def get_weather_alerts(
 @router.get("/alerts/active", response_model=List[WeatherAlertResponse])
 async def get_active_alerts(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)  # needs system_user_id for alert FK
 ):
     """
     Get all active weather alerts for user's fields.
@@ -260,7 +260,7 @@ async def get_active_alerts(
     from app.application.weather.service import WeatherService
     
     service = WeatherService(db)
-    alerts = await service.get_active_alerts(current_user.user_id)
+    alerts = await service.get_active_alerts(current_user.system_user_id)
     
     return alerts
 
@@ -270,7 +270,7 @@ async def subscribe_to_alerts(
     field_id: str = Query(..., description="Field ID to subscribe"),
     alert_types: List[str] = Query(default=["frost", "heat", "drought", "heavy_rain"]),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)  # needs system_user_id for subscription FK
 ):
     """
     Subscribe to weather alerts for a field.
@@ -283,7 +283,7 @@ async def subscribe_to_alerts(
     result = await service.subscribe_to_alerts(
         field_id, 
         alert_types,
-        current_user.user_id
+        current_user.system_user_id
     )
     
     return result
@@ -293,7 +293,7 @@ async def subscribe_to_alerts(
 async def unsubscribe_from_alerts(
     field_id: str = Query(..., description="Field ID to unsubscribe"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)  # needs system_user_id for subscription FK
 ):
     """
     Unsubscribe from weather alerts for a field.
@@ -301,7 +301,7 @@ async def unsubscribe_from_alerts(
     from app.application.weather.service import WeatherService
     
     service = WeatherService(db)
-    result = await service.unsubscribe_from_alerts(field_id, current_user.user_id)
+    result = await service.unsubscribe_from_alerts(field_id, current_user.system_user_id)
     
     return result
 
@@ -422,7 +422,7 @@ async def create_manual_observation(
     notes: Optional[str] = None,
     observed_at: Optional[datetime] = None,
     db: Session = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(get_enriched_user)  # needs system_user_id for observation FK
 ):
     """
     Record manual weather observation.
@@ -434,7 +434,7 @@ async def create_manual_observation(
     service = WeatherService(db)
     observation = await service.create_manual_observation(
         field_id, temperature, humidity, rainfall, wind_speed, 
-        notes, observed_at, current_user.user_id
+        notes, observed_at, current_user.system_user_id
     )
     
     return observation
@@ -484,7 +484,7 @@ async def get_field_weather_complete(
     field_id: str,
     days: int = Query(default=7, ge=1, le=14, description="Number of forecast days (1-14)"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get complete weather data for a specific field.
@@ -548,7 +548,7 @@ async def get_field_weather_complete(
 async def get_field_current_weather(
     field_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get current weather for a specific field.
@@ -608,7 +608,7 @@ async def get_field_forecast_weather(
     field_id: str,
     days: int = Query(default=7, ge=1, le=14, description="Forecast days (1-14)"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get weather forecast for a specific field.
@@ -682,7 +682,7 @@ async def get_field_historical_weather(
     start_date: date = Query(..., description="Start date (ISO format: YYYY-MM-DD)"),
     end_date: date = Query(..., description="End date (max 30 days from start)"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get historical weather data for a specific field.
@@ -754,7 +754,7 @@ async def get_field_weather_alerts(
     field_id: str,
     limit: int = Query(default=10, ge=1, le=100, description="Maximum number of alerts to return"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get weather alerts for a specific field.
@@ -797,7 +797,7 @@ async def get_field_weather_alerts(
 async def get_field_risk_score(
     field_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get weather risk score for a field.
@@ -878,7 +878,7 @@ async def get_farm_weather_summary(
     page: int = Query(default=1, ge=1, description="Page number for pagination"),
     page_size: int = Query(default=10, ge=1, le=100, description="Number of fields per page"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get weather summary for all fields in a farm.
@@ -910,7 +910,7 @@ async def get_field_weather_history(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(100, ge=1, le=365, description="Items per page"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get historical weather data for a field.
@@ -985,7 +985,7 @@ async def get_field_weather_history(
 async def get_farm_weather_summary(
     farm_id: str,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get current weather summary for all fields in a farm.
@@ -1041,7 +1041,7 @@ async def export_field_weather(
     end_date: date = Query(..., description="End date"),
     format: str = Query("json", pattern="^(json|csv)$", description="Export format (json or csv)"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Export weather data in JSON or CSV format.

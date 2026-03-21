@@ -19,7 +19,7 @@ class OrderRepository:
 
         business_user = (
             self.session.query(UserORM)
-            .filter(UserORM.keycloak_id == current_user.user_id)
+            .filter(UserORM.keycloak_id == current_user.keycloak_id)
             .one_or_none()
         )
         

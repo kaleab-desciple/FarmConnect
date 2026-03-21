@@ -1,51 +1,66 @@
-export interface Escrow {
-    $schema:              string;
-    $id:                  string;
-    title:                string;
-    type:                 string;
-    required:             string[];
-    properties:           Properties;
-    additionalProperties: boolean;
+// FarmConnect Escrow Types - Mirroring Python DTOs from shared_models
+import { EscrowState, Provider } from "./enums";
+
+/**
+ * Base escrow model
+ */
+export interface EscrowBase {
+  order_id: string;
+  state?: EscrowState;
+  amount?: number;
+  penalty_applied?: boolean;
+  provider?: Provider;
 }
 
-export interface Properties {
-    id:                 ID;
-    order_id:           ID;
-    state:              State;
-    amount:             Amount;
-    penalty_applied:    PenaltyApplied;
-    provider:           Provider;
-    created_at:         EdAt;
-    updated_at:         EdAt;
-    funded_at:          EdAt;
-    released_at:        EdAt;
-    provider_reference: ID;
+/**
+ * Escrow response model
+ */
+export interface Escrow extends EscrowBase {
+  id: string;
+  created_at: string;
+  updated_at?: string;
+  funded_at?: string;
+  released_at?: string;
+  provider_reference?: string;
 }
 
-export interface Amount {
-    type:             string;
-    exclusiveMinimum: number;
+/**
+ * Escrow creation request
+ */
+export interface EscrowCreate extends EscrowBase {}
+
+/**
+ * Escrow update request
+ */
+export interface EscrowUpdate {
+  state?: EscrowState;
+  amount?: number;
+  penalty_applied?: boolean;
+  provider?: Provider;
 }
 
-export interface EdAt {
-    type:   string;
-    format: string;
+/**
+ * Escrow funding request
+ */
+export interface EscrowFundRequest {
+  order_id: string;
+  amount: number;
+  provider: Provider;
+  payment_reference: string;
 }
 
-export interface ID {
-    type: string;
+/**
+ * Escrow release request
+ */
+export interface EscrowReleaseRequest {
+  escrow_id: string;
+  release_reason?: string;
 }
 
-export interface PenaltyApplied {
-    type:    string;
-    default: boolean;
-}
-
-export interface Provider {
-    type: string;
-    enum: string[];
-}
-
-export interface State {
-    $ref: string;
+/**
+ * Escrow refund request
+ */
+export interface EscrowRefundRequest {
+  escrow_id: string;
+  refund_reason: string;
 }

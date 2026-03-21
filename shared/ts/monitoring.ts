@@ -1,199 +1,201 @@
-export interface Monitoring {
-    $schema:     string;
-    $id:         string;
-    title:       string;
-    definitions: Definitions;
+// FarmConnect Monitoring Types - Mirroring Python DTOs from shared_models
+import { NDVISource, StressLevel, SoilReadingSource, SeverityLevel, ReportType, TreatmentStatus } from "./enums";
+
+// ============ Soil Reading Types ============
+
+/**
+ * Soil reading base model
+ */
+export interface SoilReadingBase {
+  field_id: string;
+  location_geojson?: Record<string, unknown>;
+  sample_depth_cm?: number;
+  sample_depth_range?: string;
+  moisture_pct?: number;
+  temperature_c?: number;
+  ph?: number;
+  nitrogen_ppm?: number;
+  phosphorus_ppm?: number;
+  potassium_ppm?: number;
+  organic_matter_pct?: number;
+  source: SoilReadingSource;
+  lab_name?: string;
+  lab_report_url?: string;
+  recorded_by?: string;
+  recorded_at?: string;
+  weather_conditions?: string;
+  days_since_rain?: number;
+  cation_exchange_capacity?: number;
+  electrical_conductivity_ms_cm?: number;
+  texture_analysis?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
-export interface Definitions {
-    SoilReading:             SoilReading;
-    NDVISnapshot:            NDVISnapshot;
-    PestDiseaseReport:       PestDiseaseReport;
-    TreatmentRecommendation: TreatmentRecommendation;
+/**
+ * Soil reading response model
+ */
+export interface SoilReading extends SoilReadingBase {
+  id: string;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string;
 }
 
-export interface NDVISnapshot {
-    type:                 Type;
-    properties:           NDVISnapshotProperties;
-    required:             string[];
-    additionalProperties: boolean;
+/**
+ * Soil reading creation request
+ */
+export interface SoilReadingCreate extends SoilReadingBase {}
+
+/**
+ * Soil reading update request
+ */
+export interface SoilReadingUpdate {
+  location_geojson?: Record<string, unknown>;
+  sample_depth_cm?: number;
+  sample_depth_range?: string;
+  moisture_pct?: number;
+  temperature_c?: number;
+  ph?: number;
+  nitrogen_ppm?: number;
+  phosphorus_ppm?: number;
+  potassium_ppm?: number;
+  cation_exchange_capacity?: number;
+  electrical_conductivity_ms_cm?: number;
+  texture_analysis?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
-export interface NDVISnapshotProperties {
-    id:                 ID;
-    field_id:           FieldID;
-    crop_cycle_id:      CropCycleID;
-    source:             FieldID;
-    source_metadata:    CropCycleID;
-    captured_at:        EdAt;
-    processed_at:       ProcessedAt;
-    ndvi_mean:          NdviMean;
-    ndvi_min:           CloudCoverPct;
-    ndvi_max:           CloudCoverPct;
-    ndvi_stddev:        CropCycleID;
-    stress_level:       CropCycleID;
-    cloud_cover_pct:    CloudCoverPct;
-    data_quality_score: CloudCoverPct;
-    tile_urls:          CropCycleID;
-    metadata:           CropCycleID;
-    created_at:         CreatedAt;
+// ============ NDVI Snapshot Types ============
+
+/**
+ * NDVI snapshot base model
+ */
+export interface NDVISnapshotBase {
+  field_id?: string;
+  crop_cycle_id?: string;
+  source?: string;
+  source_metadata?: Record<string, unknown>;
+  captured_at?: string;
+  processed_at?: string;
+  ndvi_mean?: number;
+  ndvi_min?: number;
+  ndvi_max?: number;
+  ndvi_stddev?: number;
+  stress_level?: StressLevel;
+  cloud_cover_pct?: number;
+  data_quality_score?: number;
+  tile_urls?: Record<string, unknown>;
 }
 
-export interface EdAt {
-    type:        Type;
-    format:      string;
-    description: string;
+/**
+ * NDVI snapshot response model
+ */
+export interface NDVISnapshot extends NDVISnapshotBase {
+  id: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
 }
 
-export enum Type {
-    Integer = "integer",
-    Null = "null",
-    Number = "number",
-    Object = "object",
-    String = "string",
+/**
+ * NDVI snapshot creation request
+ */
+export interface NDVISnapshotCreate extends NDVISnapshotBase {}
+
+/**
+ * NDVI snapshot update request
+ */
+export interface NDVISnapshotUpdate {
+  source?: string;
+  source_metadata?: Record<string, unknown>;
+  captured_at?: string;
+  processed_at?: string;
+  ndvi_mean?: number;
+  ndvi_min?: number;
+  ndvi_max?: number;
+  ndvi_stddev?: number;
+  stress_level?: StressLevel;
+  cloud_cover_pct?: number;
+  data_quality_score?: number;
+  tile_urls?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
-export interface CloudCoverPct {
-    type:        Type[];
-    minimum:     number;
-    maximum:     number;
-    description: string;
+// ============ Pest/Disease Report Types ============
+
+/**
+ * Pest/disease report base model
+ */
+export interface PestDiseaseReportBase {
+  field_id?: string;
+  crop_cycle_id?: string;
+  report_type?: ReportType;
+  pest_disease_name?: string;
+  severity?: SeverityLevel;
+  affected_area_pct?: number;
+  location_geojson?: Record<string, unknown>;
+  observed_at?: string;
+  description?: string;
+  treatment_status?: TreatmentStatus;
+  reported_by?: string;
+  image_urls?: string[];
 }
 
-export interface CreatedAt {
-    type:   Type;
-    format: string;
+/**
+ * Pest/disease report response model
+ */
+export interface PestDiseaseReport extends PestDiseaseReportBase {
+  id: string;
+  created_at: string;
+  updated_at?: string;
 }
 
-export interface CropCycleID {
-    type:        Type[];
-    description: string;
+/**
+ * Pest/disease report creation request
+ */
+export interface PestDiseaseReportCreate extends PestDiseaseReportBase {}
+
+/**
+ * Pest/disease report update request
+ */
+export interface PestDiseaseReportUpdate {
+  severity?: SeverityLevel;
+  affected_area_pct?: number;
+  location_geojson?: Record<string, unknown>;
+  description?: string;
+  treatment_status?: TreatmentStatus;
+  image_urls?: string[];
+  metadata?: Record<string, unknown>;
 }
 
-export interface FieldID {
-    type:        Type;
-    description: string;
+// ============ Treatment Recommendation Types ============
+
+/**
+ * Treatment recommendation base model
+ */
+export interface TreatmentRecommendationBase {
+  report_id?: string;
+  product_name?: string;
+  product_type?: string;
+  application_method?: string;
+  dosage?: string;
+  application_timing?: string;
+  reapplication_interval_days?: number;
+  estimated_cost_usd?: number;
+  effectiveness_score?: number;
+  notes?: string;
 }
 
-export interface ID {
-    type: Type;
+/**
+ * Treatment recommendation response model
+ */
+export interface TreatmentRecommendation extends TreatmentRecommendationBase {
+  id: string;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string;
 }
 
-export interface NdviMean {
-    type:        Type;
-    minimum:     number;
-    maximum:     number;
-    description: string;
-}
-
-export interface ProcessedAt {
-    type:        Type[];
-    format:      string;
-    description: string;
-}
-
-export interface PestDiseaseReport {
-    type:                 Type;
-    properties:           PestDiseaseReportProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface PestDiseaseReportProperties {
-    id:                ID;
-    field_id:          FieldID;
-    crop_cycle_id:     CropCycleID;
-    report_type:       ReportType;
-    pest_disease_name: FieldID;
-    severity:          ReportType;
-    affected_area_pct: NdviMean;
-    location_geojson:  CropCycleID;
-    observed_at:       EdAt;
-    description:       CropCycleID;
-    treatment_status:  TreatmentStatus;
-    reported_by:       CropCycleID;
-    image_urls:        ImageUrls;
-    created_at:        CreatedAt;
-    updated_at:        TedAt;
-}
-
-export interface ImageUrls {
-    type:  string[];
-    items: ID;
-}
-
-export interface ReportType {
-    type:        Type;
-    enum:        string[];
-    description: string;
-}
-
-export interface TreatmentStatus {
-    type:    Type;
-    enum:    string[];
-    default: string;
-}
-
-export interface TedAt {
-    type:   Type[];
-    format: string;
-}
-
-export interface SoilReading {
-    type:                 Type;
-    properties:           SoilReadingProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface SoilReadingProperties {
-    id:                            ID;
-    field_id:                      FieldID;
-    location_geojson:              CropCycleID;
-    sample_depth_cm:               CropCycleID;
-    sample_depth_range:            CropCycleID;
-    moisture_pct:                  CloudCoverPct;
-    temperature_c:                 CropCycleID;
-    ph:                            CloudCoverPct;
-    nitrogen_ppm:                  CropCycleID;
-    phosphorus_ppm:                CropCycleID;
-    potassium_ppm:                 CropCycleID;
-    organic_matter_pct:            CloudCoverPct;
-    source:                        FieldID;
-    lab_name:                      CropCycleID;
-    lab_report_url:                CropCycleID;
-    recorded_by:                   CropCycleID;
-    recorded_at:                   EdAt;
-    weather_conditions:            CropCycleID;
-    days_since_rain:               CropCycleID;
-    cation_exchange_capacity:      CropCycleID;
-    electrical_conductivity_ms_cm: CropCycleID;
-    texture_analysis:              CropCycleID;
-    metadata:                      CropCycleID;
-    created_at:                    CreatedAt;
-    updated_at:                    TedAt;
-    deleted_at:                    TedAt;
-}
-
-export interface TreatmentRecommendation {
-    type:                 Type;
-    properties:           TreatmentRecommendationProperties;
-    required:             string[];
-    additionalProperties: boolean;
-}
-
-export interface TreatmentRecommendationProperties {
-    id:                          ID;
-    report_id:                   FieldID;
-    product_name:                FieldID;
-    product_type:                FieldID;
-    application_method:          FieldID;
-    dosage:                      CropCycleID;
-    application_timing:          CropCycleID;
-    reapplication_interval_days: CropCycleID;
-    estimated_cost_usd:          CropCycleID;
-    effectiveness_score:         CloudCoverPct;
-    notes:                       CropCycleID;
-    created_at:                  CreatedAt;
-    updated_at:                  TedAt;
-}
+/**
+ * Treatment recommendation creation request
+ */
+export interface TreatmentRecommendationCreate extends TreatmentRecommendationBase {}

@@ -72,9 +72,9 @@ class MonitoringService:
             current_user.is_service_account):
             return True
         
-        # Check ownership
+        # Check ownership — farm.farmer_id is an internal system user ID
         owner_id = self._get_field_owner(field_id)
-        return owner_id == current_user.user_id
+        return bool(current_user.system_user_id) and owner_id == current_user.system_user_id
     
     def _can_edit_field(self, field_id: str, current_user: TokenPayload) -> bool:
         """Check if user can edit data for the field"""
@@ -86,9 +86,9 @@ class MonitoringService:
             current_user.is_service_account):
             return True
         
-        # Check ownership
+        # Check ownership — farm.farmer_id is an internal system user ID
         owner_id = self._get_field_owner(field_id)
-        return owner_id == current_user.user_id
+        return bool(current_user.system_user_id) and owner_id == current_user.system_user_id
     
     # ============ Soil Reading Operations ============
     

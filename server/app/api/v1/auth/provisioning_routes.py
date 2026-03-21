@@ -162,7 +162,7 @@ def _provision_user_handler(
             last_name=request.last_name,
             role=role,
             location=request.location,
-            agent_id=current_user.user_id
+            agent_id=current_user.keycloak_id  # Keycloak UUID for audit trail
         )
         
         # For FARMER and MERCHANT, set onboarding_status to PENDING_REVIEW
@@ -174,7 +174,7 @@ def _provision_user_handler(
             user_repo = UserRepository(db)
             user_repo.update(result.user_id, {
                 "onboarding_status": OnboardingStatus.PENDING_REVIEW.value,
-                "onboarding_agent_id": current_user.user_id,
+                "onboarding_agent_id": current_user.keycloak_id,  # Keycloak UUID for audit trail
             })
         
         logger.info(

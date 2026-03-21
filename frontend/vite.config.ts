@@ -82,7 +82,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, './src/shared'),
+      '@shared': path.resolve(__dirname, '../shared/ts'),
       '@components': path.resolve(__dirname, './src/shared/components'),
       '@features': path.resolve(__dirname, './src/features'),
       '@hooks': path.resolve(__dirname, './src/shared/hooks'),

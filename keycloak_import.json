@@ -1,163 +1,183 @@
 {
-    "realm": "farm-connect",
-    "enabled": true,
-    "displayName": "Farm Connect Platform",
-    "registrationAllowed": false,
-    "loginWithEmailAllowed": true,
-    "duplicateEmailsAllowed": false,
-    "resetPasswordAllowed": true,
-    "editUsernameAllowed": false,
-    "bruteForceProtected": true,
-    "roles": {
-        "realm": [
-            {
-                "name": "ADMIN",
-                "description": "System Administrator"
-            },
-            {
-                "name": "MANAGER",
-                "description": "Operations / Regional Manager"
-            },
-            {
-                "name": "MODERATOR",
-                "description": "Market Integrity Moderator"
-            },
-            {
-                "name": "AGENT",
-                "description": "Field Agent"
-            },
-            {
-                "name": "FARMER",
-                "description": "Farmer User"
-            },
-            {
-                "name": "MERCHANT",
-                "description": "Merchant User"
-            },
-            {
-                "name": "DELIVERY",
-                "description": "Delivery Personnel"
-            },
-            {
-                "name": "AGRONOMIST",
-                "description": "Agricultural Expert / Agronomist"
-            },
-            {
-                "name": "FIELD_ANALYST",
-                "description": "Field Data Analyst"
-            }
-        ],
-        "client": {
-            "farm-connect-backend": [
-                {
-                    "name": "system_internal",
-                    "description": "Internal backend system operations"
-                },
-                {
-                    "name": "escrow_service",
-                    "description": "Escrow and payment settlement service"
-                },
-                {
-                    "name": "reporting_service",
-                    "description": "Financial & regulatory reporting service"
-                }
-            ]
-        }
-    },
-    "groups": [
-        {
-            "name": "Admins",
-            "realmRoles": [
-                "ADMIN"
-            ]
-        },
-        {
-            "name": "Managers",
-            "realmRoles": [
-                "MANAGER"
-            ]
-        },
-        {
-            "name": "Agents",
-            "realmRoles": [
-                "AGENT"
-            ]
-        },
-        {
-            "name": "Farmers",
-            "realmRoles": [
-                "FARMER"
-            ]
-        },
-        {
-            "name": "Merchants",
-            "realmRoles": [
-                "MERCHANT"
-            ]
-        },
-        {
-            "name": "Moderators",
-            "realmRoles": [
-                "MODERATOR"
-            ]
-        },
-        {
-            "name": "Delivery",
-            "realmRoles": [
-                "DELIVERY"
-            ]
-        },
-        {
-            "name": "Agronomists",
-            "realmRoles": [
-                "AGRONOMIST"
-            ]
-        },
-        {
-            "name": "Field Analysts",
-            "realmRoles": [
-                "FIELD_ANALYST"
-            ]
-        }
+  "realm": "farm-connect",
+  "enabled": true,
+  "displayName": "Farm Connect Platform",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "System Administrator"
+      },
+      {
+        "name": "MANAGER",
+        "description": "Operations / Regional Manager"
+      },
+      {
+        "name": "MODERATOR",
+        "description": "Market Integrity Moderator"
+      },
+      {
+        "name": "AGENT",
+        "description": "Field Agent"
+      },
+      {
+        "name": "FARMER",
+        "description": "Farmer User"
+      },
+      {
+        "name": "MERCHANT",
+        "description": "Merchant User"
+      },
+      {
+        "name": "DELIVERY",
+        "description": "Delivery Personnel"
+      },
+      {
+        "name": "AGRONOMIST",
+        "description": "Agricultural Expert / Agronomist"
+      },
+      {
+        "name": "FIELD_ANALYST",
+        "description": "Field Data Analyst"
+      }
     ],
-    "clients": [
+    "client": {
+      "farm-connect-backend": [
         {
-            "clientId": "farm-connect-backend",
-            "name": "Farm Connect Backend API",
-            "enabled": true,
-            "protocol": "openid-connect",
-            "publicClient": false,
-            "secret": "CHANGE_ME_BACKEND_SECRET",
-            "standardFlowEnabled": true,
-            "directAccessGrantsEnabled": true,
-            "serviceAccountsEnabled": true,
-            "authorizationServicesEnabled": false,
-            "redirectUris": [
-                "*"
-            ],
-            "webOrigins": [
-                "*"
-            ],
-            "defaultClientScopes": [
-                "profile",
-                "email",
-                "roles"
-            ],
-            "protocolMappers": [
-                {
-                    "name": "realm-roles",
-                    "protocol": "openid-connect",
-                    "protocolMapper": "oidc-usermodel-realm-role-mapper",
-                    "consentRequired": false,
-                    "config": {
-                        "multivalued": "true",
-                        "access.token.claim": "true",
-                        "id.token.claim": "true",
-                        "claim.name": "realm_roles",
-                        "jsonType.label": "String"
-                    }
-                }
-            ]
+          "name": "system_internal",
+          "description": "Internal backend system operations"
+        },
+        {
+          "name": "escrow_service",
+          "description": "Escrow and payment settlement service"
+        },
+        {
+          "name": "reporting_service",
+          "description": "Financial & regulatory reporting service"
         }
-    ]
+      ]
+    }
+  },
+  "groups": [
+    {
+      "name": "Admins",
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "name": "Managers",
+      "realmRoles": ["MANAGER"]
+    },
+    {
+      "name": "Agents",
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "name": "Farmers",
+      "realmRoles": ["FARMER"]
+    },
+    {
+      "name": "Merchants",
+      "realmRoles": ["MERCHANT"]
+    },
+    {
+      "name": "Moderators",
+      "realmRoles": ["MODERATOR"]
+    },
+    {
+      "name": "Delivery",
+      "realmRoles": ["DELIVERY"]
+    },
+    {
+      "name": "Agronomists",
+      "realmRoles": ["AGRONOMIST"]
+    },
+    {
+      "name": "Field Analysts",
+      "realmRoles": ["FIELD_ANALYST"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "farm-connect-backend",
+      "name": "Farm Connect Backend API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "CHANGE_ME_BACKEND_SECRET",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "defaultClientScopes": ["profile", "email", "roles"],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "realm_roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "subject",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "preferred-username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "username",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "preferred_username"
+          }
+        },
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "email"
+          }
+        },
+        {
+          "name": "name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "firstName",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "name"
+          }
+        }
+      ]
+    }
+  ]
 }

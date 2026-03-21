@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.auth import require_permission, get_current_user
+from app.core.auth import require_permission, get_enriched_user
 from app.infrastructure.repositories.account_repo import AccountRepository
 from app.infrastructure.repositories.journal_repo import JournalRepository
 from app.application.accounting.get_trial_balance import GetTrialBalance, TrialBalance
@@ -477,7 +477,7 @@ def get_user_statement(
 def get_farmer_earnings(
     farmer_id: Optional[str] = Query(None, description="Filter by farmer ID"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_enriched_user)
 ):
     """
     Get farmer earnings summary.
@@ -518,13 +518,7 @@ def get_farmer_earnings(
     # Get internal user ID if farmer_id not specified
     internal_farmer_id = farmer_id
     if not internal_farmer_id:
-        user_repo = UserRepository(db)
-        keycloak_id = current_user.user_id
-        user = user_repo.get_by_keycloak_id(keycloak_id)
-        if not user and current_user.email:
-            user = user_repo.get_by_email(current_user.email)
-        if user:
-            internal_farmer_id = user.id
+        internal_farmer_id = current_user.system_user_id
     
     # Get user's cash account
     account_repo = AccountRepository(db)
